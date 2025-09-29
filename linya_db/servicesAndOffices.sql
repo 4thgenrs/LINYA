@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 29, 2025 at 07:59 PM
+-- Generation Time: Sep 29, 2025 at 08:30 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -24,6 +24,25 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `offices`
+--
+
+CREATE TABLE `offices` (
+  `office_id` int(10) NOT NULL,
+  `office_description` varchar(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `offices`
+--
+
+INSERT INTO `offices` (`office_id`, `office_description`) VALUES
+(1, 'Registrar'),
+(2, 'Accounting');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `services`
 --
 
@@ -40,11 +59,19 @@ CREATE TABLE `services` (
 INSERT INTO `services` (`service_id`, `service_description`, `office`) VALUES
 (1, 'T.O.R', 1),
 (2, 'Diploma', 1),
-(3, 'Good Moral', 1);
+(3, 'Good Moral', 1),
+(4, 'Adding and Changing', 1),
+(5, 'Payment Failure', 2);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `offices`
+--
+ALTER TABLE `offices`
+  ADD PRIMARY KEY (`office_id`);
 
 --
 -- Indexes for table `services`
@@ -58,10 +85,16 @@ ALTER TABLE `services`
 --
 
 --
+-- AUTO_INCREMENT for table `offices`
+--
+ALTER TABLE `offices`
+  MODIFY `office_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `services`
 --
 ALTER TABLE `services`
-  MODIFY `service_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `service_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
