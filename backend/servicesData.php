@@ -2,26 +2,36 @@
 include('../linya_db/config.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['service_description'], $_POST['office_id'])) {
-        // Add service
-        $desc = trim($_POST['service_description']);
-        $officeId = intval($_POST['office_id']);
-        if ($desc !== '' && $officeId > 0) {
-            addService($conn, $desc, $officeId);
+
+    $desc = trim($_POST['service_description'] ?? '');
+    $officeId = intval($_POST['office_id'] ?? 0);
+
+    // UPDATE service
+    if (!empty($_POST['update_id'])) {
+        $id = intval($_POST['update_id']);
+        if ($id > 0 && $desc !== '' && $officeId > 0) {
+            updateService($conn, $id, $desc, $officeId);
             header("Location: services.php");
             exit;
         }
     }
 
+    // ADD service
+    if ($desc !== '' && $officeId > 0 && empty($_POST['update_id'])) {
+        addService($conn, $desc, $officeId);
+        header("Location: services.php");
+        exit;
+    }
+
+    // DELETE service
     if (isset($_POST['delete_id'])) {
-        // Delete service
         $id = intval($_POST['delete_id']);
         deleteService($conn, $id);
         header("Location: services.php");
         exit;
     }
-
 }
+
 
 
 function getServiceData($conn) {
@@ -56,14 +66,21 @@ function addService($conn, $serviceDesc, $officeId) {
     return $stmt->execute();
 }
 
-function updateService($conn, $id, $desc, $officeId) {
-    $id = intval($id);
-    $desc = $conn->real_escape_string($desc);
-    $officeId = intval($officeId);
+// function updateService($conn, $id, $desc, $officeId) {
+//     $id = intval($id);
+//     $desc = $conn->real_escape_string($desc);
+//     $officeId = intval($officeId);
 
-    $sql = "UPDATE services SET service_description = '$desc', office = $officeId WHERE service_id = $id";
-    return $conn->query($sql);
+//     $sql = "UPDATE services SET service_description = '$desc', office = $officeId WHERE service_id = $id";
+//     return $conn->query($sql);
+// }
+
+function updateService($conn, $serviceId, $serviceDesc, $officeId) {
+    $stmt = $conn->prepare("UPDATE services SET service_description = ?, office = ? WHERE service_id = ?");
+    $stmt->bind_param("sii", $serviceDesc, $officeId, $serviceId);
+    return $stmt->execute();
 }
+
 
 function deleteService($conn, $id) {
     $id = intval($id);
