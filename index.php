@@ -6,6 +6,7 @@
     <title>Document</title>
 </head>
 <body>
+    <!-- These supposed to be a kiosk form -->
     Hello Worlds
 </body>
 </html>
