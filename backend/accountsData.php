@@ -1,7 +1,7 @@
 <?php
 include('../linya_db/config.php');
 
-// ✅ Handle Add / Update / Delete Accounts
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get and sanitize form inputs
