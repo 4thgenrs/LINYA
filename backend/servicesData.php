@@ -66,15 +66,6 @@ function addService($conn, $serviceDesc, $officeId) {
     return $stmt->execute();
 }
 
-// function updateService($conn, $id, $desc, $officeId) {
-//     $id = intval($id);
-//     $desc = $conn->real_escape_string($desc);
-//     $officeId = intval($officeId);
-
-//     $sql = "UPDATE services SET service_description = '$desc', office = $officeId WHERE service_id = $id";
-//     return $conn->query($sql);
-// }
-
 function updateService($conn, $serviceId, $serviceDesc, $officeId) {
     $stmt = $conn->prepare("UPDATE services SET service_description = ?, office = ? WHERE service_id = ?");
     $stmt->bind_param("sii", $serviceDesc, $officeId, $serviceId);
