@@ -1,121 +1,212 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Queue Window with List</title>
-  <style>
-    :root{--bg:#f6f8fb;--box:#ffffff;--accent:#2563eb;--muted:#6b7280}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#111}
-    .wrap{
-      min-height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:24px;
-      padding:24px;
-      flex-wrap:wrap;
-    }
-    .box{
-      background:var(--box);
-      border-radius:12px;
-      padding:18px 22px;
-      box-shadow:0 6px 18px rgba(15,23,42,0.06);
-      display:flex;flex-direction:column;gap:12px;align-items:center;min-width:220px;
-      transition:all .2s ease-in-out;
-    }
-    .window{
-      font-size:48px;font-weight:700;line-height:1;color:var(--accent);
-      width:100%;text-align:center
-    }
-    .number{
-      font-size:32px;font-weight:600;color:#333;text-align:center;
-    }
-    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-    button{
-      appearance:none;
-      border:0;
-      padding:10px 14px;
-      border-radius:8px;
-      font-weight:600;
-      cursor:pointer;
-      transition:all 0.2s ease-in-out;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1);
-    }
-    button:hover{
-      transform:translateY(-2px);
-      box-shadow:0 4px 8px rgba(0,0,0,0.15);
-      opacity:0.9;
-    }
-    #finished{background:#08CB00;color:#fff}
-    #onBreak{background:#ED3500;color:#fff}
-    #nextQueue{background:var(--accent);color:#fff}
+<?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-    .queue-box{
-      background:var(--box);
-      border-radius:12px;
-      padding:18px 22px;
-      box-shadow:0 6px 18px rgba(15,23,42,0.06);
-      display:flex;flex-direction:column;
-      align-items:center;
-      min-width:200px;
-      max-height:400px;
-      overflow-y:auto;
-    }
-    .queue-title{
-      font-size:20px;font-weight:700;margin-bottom:12px;color:var(--accent);
-    }
-    .queue-item{
-      width:100%;
-      text-align:center;
-      padding:8px 0;
-      margin:4px 0;
-      border-radius:6px;
-      background:#eef2ff;
-      color:#000;
-      font-weight:600;
-    }
+include('../backend/queueData.php');
 
-    .queue-box::-webkit-scrollbar {
-      display: none;
+// Handle AJAX actions directly from this file so we don't need an extra endpoint file.
+if (isset($_REQUEST['action'])) {
+  header('Content-Type: application/json');
+  $window = isset($_REQUEST['window']) ? intval($_REQUEST['window']) : 1;
+  
+  if ($_REQUEST['action'] === 'next') {
+    $res = getNextLine($conn, $window);
+    if ($res) {
+      echo json_encode(['success' => true, 'data' => $res]);
+    } else {
+      echo json_encode(['success' => false, 'message' => 'No waiting queue item to call.']);
     }
-    .queue-box {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+  }
+  else if ($_REQUEST['action'] === 'finish') {
+    $res = finishCurrentQueue($conn, $window);
+    if ($res) {
+      echo json_encode(['success' => true]);
+    } else {
+      echo json_encode(['success' => false, 'message' => 'Failed to finish the current queue.']);
     }
+  }
+  else if ($_REQUEST['action'] === 'break') {
+    $isBreak = isset($_REQUEST['isBreak']) ? filter_var($_REQUEST['isBreak'], FILTER_VALIDATE_BOOLEAN) : true;
+    $res = setWindowBreak($conn, $window, $isBreak);
+    if ($res) {
+      echo json_encode(['success' => true]);
+    } else {
+      echo json_encode(['success' => false, 'message' => 'Failed to update break status.']);
+    }
+  }
+  exit;
+}
 
-    @media (max-width:380px){.number{font-size:28px}.window{font-size:36px}}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="box" role="group" aria-label="Window Control">
-      <div id="window" class="window" aria-live="polite">Window 1</div>
-      <div id="number" class="number">REG 001</div>
-      <div><i>Ongoing</i></div>
+$queue_data = getRegistrarQueue($conn);
+$display_on_air = displayOnAir($conn, 1);
+?>
 
-      <div class="controls">
-        <button id="finished" type="button">Finished</button>
-        <button id="onBreak" type="button">Break</button>
-        <button id="nextQueue" type="button">Call Next</button>
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Queue Window with List</title>
+    <link rel="stylesheet" href="../css/queueSelect.css" />
+  </head>
+  <body>
+    <div class="wrap">
+
+        <div class="box" role="group" aria-label="Window Control" data-has-ongoing="<?php echo is_array($display_on_air) ? 'true' : 'false'; ?>">
+        <div id="window" class="window" aria-live="polite">Window 1</div>
+        <div id="number" class="number">
+          <?php 
+            if (isset($_SESSION['window_1_break']) && $_SESSION['window_1_break']) {
+              echo 'On Break';
+            } else {
+              echo is_array($display_on_air) ? $display_on_air['number'] : 'Waiting';
+            }
+          ?>
+        </div>
+        <div><i>
+          <?php echo is_array($display_on_air) ? 'Ongoing' : ''; ?>
+        </i></div>
+        
+        <div class="controls">
+          <button id="finished" type="button" onclick="finishCurrent(1)" <?php echo !is_array($display_on_air) ? 'disabled' : ''; ?>>Finished</button>
+          <button id="onBreak" type="button" onclick="toggleBreak(1)" data-break="false">Break</button>
+          <button id="nextQueue" type="button" onclick="callNext(1)" <?php echo is_array($display_on_air) ? 'disabled' : ''; ?>>Call Next</button>
+        </div>
+      </div>
+
+      <div class="queue-box" aria-label="Queue List">
+        <div class="queue-title">Queue List</div>
+        <?php foreach ($queue_data as $qd) { ?>
+              <div class="queue-item"><?php echo $qd['number']; ?></div>
+        <?php } ?>
       </div>
     </div>
 
-    <div class="queue-box" aria-label="Queue List">
-      <div class="queue-title">Queue List</div>
-      <div class="queue-item">REG 002</div>
-      <div class="queue-item">REG 003</div>
-      <div class="queue-item">REG 004</div>
-      <div class="queue-item">REG 005</div>
-      <div class="queue-item">REG 006</div>
-      <div class="queue-item">REG 007</div>
-      <div class="queue-item">REG 008</div>
-      <div class="queue-item">REG 009</div>
-    </div>
-  </div>
+    <script>
+      // Toggle break status for the window
+      function toggleBreak(windowNumber) {
+        var breakBtn = document.getElementById('onBreak');
+        var isBreak = breakBtn.dataset.break !== 'true'; // Toggle the state
+        
+        var url = '?action=break&window=' + encodeURIComponent(windowNumber) + '&isBreak=' + isBreak;
+        fetch(url, { credentials: 'same-origin' })
+          .then(function(response) { 
+            return response.json();
+          })
+          .then(function(data) {
+            if (data && data.success) {
+              // Update break button state
+              breakBtn.dataset.break = isBreak;
+              breakBtn.textContent = isBreak ? 'Resume' : 'Break';
+              
+              if (isBreak) {
+                // Going on break
+                var numberEl = document.getElementById('number');
+                if (numberEl) numberEl.textContent = 'On Break';
 
-  <script>
-    // Future JavaScript logic for dynamic queue control can go here.
-  </script>
-</body>
-</html>
+                // Clear the Ongoing text
+                var ongoingI = document.querySelector('.box i');
+                if (ongoingI) ongoingI.textContent = '';
+
+                // Disable other buttons during break
+                document.getElementById('finished').disabled = true;
+                document.getElementById('nextQueue').disabled = true;
+                
+                // Set break visual state
+                document.querySelector('.box').dataset.hasOngoing = 'false';
+              } else {
+                // Resuming from break
+                var numberEl = document.getElementById('number');
+                if (numberEl) numberEl.textContent = 'Waiting';
+
+                // Enable Next button when resuming
+                document.getElementById('nextQueue').disabled = false;
+                
+                // Clear break visual state
+                document.querySelector('.box').dataset.hasOngoing = 'false';
+              }
+            } else {
+              alert((data && data.message) ? data.message : 'Failed to update break status');
+            }
+          })
+          .catch(function(err) {
+            console.error('Error updating break status:', err);
+            alert('Error updating break status. See console for details.');
+          });
+      }
+
+      // Mark the current queue as finished
+      function finishCurrent(windowNumber) {
+        var url = '?action=finish&window=' + encodeURIComponent(windowNumber);
+        fetch(url, { credentials: 'same-origin' })
+          .then(function(response) { 
+            return response.json();
+          })
+          .then(function(data) {
+            if (data && data.success) {
+              // Update the display to show no current queue
+              var numberEl = document.getElementById('number');
+              if (numberEl) numberEl.textContent = 'Waiting';
+
+              // Clear the Ongoing text
+              var ongoingI = document.querySelector('.box i');
+              if (ongoingI) ongoingI.textContent = '';
+
+              // Update button states
+              document.querySelector('.box').dataset.hasOngoing = 'false';
+              document.getElementById('finished').disabled = true;
+              document.getElementById('onBreak').disabled = false;
+              document.getElementById('nextQueue').disabled = false;
+
+              // Reload to refresh the queue list
+              window.location.reload();
+            } else {
+              alert((data && data.message) ? data.message : 'Failed to finish the current queue');
+            }
+          })
+          .catch(function(err) {
+            console.error('Error finishing queue:', err);
+            alert('Error finishing queue. See console for details.');
+          });
+      }
+
+      // Call the backend endpoint to get the next queue number for a window
+      function callNext(windowNumber) {
+        var url = '?action=next&window=' + encodeURIComponent(windowNumber);
+        fetch(url, { credentials: 'same-origin' })
+          .then(function(response) { 
+            return response.json(); // Parse JSON directly
+          })
+          .then(function(data) {
+            if (data && data.success) {
+              var number = data.data.number;
+              // Update the on-air number
+              var numberEl = document.getElementById('number');
+              if (numberEl) numberEl.textContent = number;
+
+              // Show Ongoing text
+              var ongoingI = document.querySelector('.box i');
+              if (ongoingI) ongoingI.textContent = 'Ongoing';
+
+              // Update button states
+              document.querySelector('.box').dataset.hasOngoing = 'true';
+              document.getElementById('finished').disabled = false;
+              document.getElementById('onBreak').disabled = true;
+              document.getElementById('nextQueue').disabled = true;
+
+              // Reload the page to refresh the queue list
+              // This ensures we see the accurate queue state
+              window.location.reload();
+            } else {
+              alert((data && data.message) ? data.message : 'No next queue available');
+            }
+          })
+          .catch(function(err) {
+            console.error('Error calling next:', err);
+            alert('Error calling next queue. See console for details.');
+          });
+      }
+    </script>
+  </body>
+  </html>
