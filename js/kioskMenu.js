@@ -158,6 +158,9 @@ function postQueue(services) {
         return;
     }
 
+    const confirmBtn = document.getElementById("confirmBtn");
+    if (confirmBtn) confirmBtn.disabled = true; // prevent duplicate submits
+
     const form = new FormData();
     form.append('office_id', officeId);
     services.forEach(s => form.append('services[]', s));
@@ -170,13 +173,17 @@ function postQueue(services) {
                 // clear selection UI/state
                 window.selectedServicesSet.clear();
                 refreshUIForMode();
+                // return to main menu (office list)
+                if (typeof goBack === 'function') goBack();
             } else {
                 alert('Error: ' + (json.error || 'unknown'));
+                if (confirmBtn) confirmBtn.disabled = false;
             }
         })
         .catch(err => {
             console.error(err);
             alert('Network or server error');
+            if (confirmBtn) confirmBtn.disabled = false;
         });
 }
 
