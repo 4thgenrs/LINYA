@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2025 at 10:15 PM
+-- Generation Time: Oct 23, 2025 at 11:18 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -41,7 +41,9 @@ CREATE TABLE `accounts` (
 --
 
 INSERT INTO `accounts` (`user_id`, `user_name`, `password`, `name`, `user_type`, `office`) VALUES
-(1, 'admin', 'admin', 'administrator', 1, 1);
+(1, 'admin', 'admin', 'administrator', 1, 1),
+(2, 'Astaff1', 'Astaff1', 'Jason', 2, 2),
+(3, 'Astaff2', 'Astaff2', 'Jameson', 2, 2);
 
 -- --------------------------------------------------------
 
@@ -88,7 +90,8 @@ INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `created_at`, `stat
 (3, 'REG-002', 1, '2025-10-24 03:51:19', 'pending'),
 (4, 'ACC-002', 2, '2025-10-24 03:53:28', 'pending'),
 (5, 'ACC-003', 2, '2025-10-24 04:14:15', 'pending'),
-(6, 'ACC-004', 2, '2025-10-24 04:14:24', 'pending');
+(6, 'ACC-004', 2, '2025-10-24 04:14:24', 'pending'),
+(7, 'ACC-005', 2, '2025-10-24 04:28:06', 'pending');
 
 -- --------------------------------------------------------
 
@@ -107,7 +110,7 @@ CREATE TABLE `queue_counters` (
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
 (1, 2),
-(2, 4);
+(2, 5);
 
 -- --------------------------------------------------------
 
@@ -135,7 +138,8 @@ INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`) VALUES
 (7, 4, 11),
 (8, 5, 10),
 (9, 6, 10),
-(10, 6, 11);
+(10, 6, 11),
+(11, 7, 11);
 
 -- --------------------------------------------------------
 
@@ -242,7 +246,7 @@ ALTER TABLE `services`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `offices`
@@ -254,13 +258,13 @@ ALTER TABLE `offices`
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `roles`
