@@ -45,9 +45,10 @@ form#officeForm {
 /* Input Fields */
 input[type="text"] {
     padding: 8px;
-    width: 40%;
+    width: 180px;              /* fixed width works better for multiple inputs */
     border: 1px solid #333;
     border-radius: 3px;
+    box-sizing: border-box;
 }
 
 /* Buttons */
@@ -59,7 +60,7 @@ input[type="submit"], button {
     font-weight: bold;
 }
 
-/* Add Button */
+/* Add/Update Button */
 #submitBtn {
     background-color: #2ecc71;
     color: white;
@@ -84,4 +85,18 @@ input[name="delete_office"] {
 }
 input[name="delete_office"]:hover {
     background-color: #c0392b;
+}
+
+/* Responsive adjustments for small screens */
+@media screen and (max-width: 600px) {
+    form#officeForm {
+        flex-direction: column;
+        gap: 8px;
+    }
+    input[type="text"], input[type="submit"], button {
+        width: 90%;
+    }
+    table {
+        width: 95%;
+    }
 }
