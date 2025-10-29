@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2025 at 11:18 PM
+-- Generation Time: Oct 29, 2025 at 08:46 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -43,7 +43,9 @@ CREATE TABLE `accounts` (
 INSERT INTO `accounts` (`user_id`, `user_name`, `password`, `name`, `user_type`, `office`) VALUES
 (1, 'admin', 'admin', 'administrator', 1, 1),
 (2, 'Astaff1', 'Astaff1', 'Jason', 2, 2),
-(3, 'Astaff2', 'Astaff2', 'Jameson', 2, 2);
+(3, 'Astaff2', 'Astaff2', 'Jameson', 2, 2),
+(4, 'robert', 'robert', 'Robert', 2, 1),
+(5, 'badong', '1234', 'badong', 2, 2);
 
 -- --------------------------------------------------------
 
@@ -65,6 +67,32 @@ INSERT INTO `offices` (`office_id`, `office_description`, `office_code`) VALUES
 (1, 'Registrar', 'REG'),
 (2, 'Accounting', 'ACC'),
 (8, 'MIS', 'MIS');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `office_windows`
+--
+
+CREATE TABLE `office_windows` (
+  `window_id` int(11) NOT NULL,
+  `office_id` int(11) NOT NULL,
+  `window_no` int(11) NOT NULL,
+  `assigned_staff_id` int(11) DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `office_windows`
+--
+
+INSERT INTO `office_windows` (`window_id`, `office_id`, `window_no`, `assigned_staff_id`, `enabled`, `created_at`) VALUES
+(1, 2, 1, 2, 1, '2025-10-30 03:30:48'),
+(2, 2, 2, 3, 1, '2025-10-30 03:32:07'),
+(4, 2, 3, NULL, 0, '2025-10-30 03:32:19'),
+(5, 2, 4, 5, 1, '2025-10-30 03:44:24'),
+(6, 1, 1, 4, 1, '2025-10-30 03:45:40');
 
 -- --------------------------------------------------------
 
@@ -91,7 +119,9 @@ INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `created_at`, `stat
 (4, 'ACC-002', 2, '2025-10-24 03:53:28', 'pending'),
 (5, 'ACC-003', 2, '2025-10-24 04:14:15', 'pending'),
 (6, 'ACC-004', 2, '2025-10-24 04:14:24', 'pending'),
-(7, 'ACC-005', 2, '2025-10-24 04:28:06', 'pending');
+(7, 'ACC-005', 2, '2025-10-24 04:28:06', 'pending'),
+(8, 'ACC-006', 2, '2025-10-24 05:56:35', 'pending'),
+(9, 'REG-003', 1, '2025-10-24 13:30:42', 'pending');
 
 -- --------------------------------------------------------
 
@@ -109,8 +139,8 @@ CREATE TABLE `queue_counters` (
 --
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
-(1, 2),
-(2, 5);
+(1, 3),
+(2, 6);
 
 -- --------------------------------------------------------
 
@@ -139,7 +169,9 @@ INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`) VALUES
 (8, 5, 10),
 (9, 6, 10),
 (10, 6, 11),
-(11, 7, 11);
+(11, 7, 11),
+(12, 8, 12),
+(13, 9, 3);
 
 -- --------------------------------------------------------
 
@@ -204,6 +236,15 @@ ALTER TABLE `offices`
   ADD PRIMARY KEY (`office_id`);
 
 --
+-- Indexes for table `office_windows`
+--
+ALTER TABLE `office_windows`
+  ADD PRIMARY KEY (`window_id`),
+  ADD UNIQUE KEY `uk_office_window` (`office_id`,`window_no`),
+  ADD KEY `idx_office` (`office_id`),
+  ADD KEY `idx_staff` (`assigned_staff_id`);
+
+--
 -- Indexes for table `queues`
 --
 ALTER TABLE `queues`
@@ -246,7 +287,7 @@ ALTER TABLE `services`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `offices`
@@ -255,16 +296,22 @@ ALTER TABLE `offices`
   MODIFY `office_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
+-- AUTO_INCREMENT for table `office_windows`
+--
+ALTER TABLE `office_windows`
+  MODIFY `window_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `roles`
