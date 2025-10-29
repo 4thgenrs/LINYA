@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 08:46 PM
+-- Generation Time: Oct 29, 2025 at 09:33 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -121,7 +121,14 @@ INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `created_at`, `stat
 (6, 'ACC-004', 2, '2025-10-24 04:14:24', 'pending'),
 (7, 'ACC-005', 2, '2025-10-24 04:28:06', 'pending'),
 (8, 'ACC-006', 2, '2025-10-24 05:56:35', 'pending'),
-(9, 'REG-003', 1, '2025-10-24 13:30:42', 'pending');
+(9, 'REG-003', 1, '2025-10-24 13:30:42', 'pending'),
+(10, 'REG-004', 1, '2025-10-30 04:04:31', 'pending'),
+(11, 'REG-005', 1, '2025-10-30 04:07:37', 'pending'),
+(12, 'REG-006', 1, '2025-10-30 04:07:58', 'pending'),
+(13, 'REG-007', 1, '2025-10-30 04:08:09', 'pending'),
+(14, 'REG-008', 1, '2025-10-30 04:13:49', 'pending'),
+(15, 'REG-009', 1, '2025-10-30 04:14:18', 'pending'),
+(16, 'ACC-007', 2, '2025-10-30 04:29:09', 'pending');
 
 -- --------------------------------------------------------
 
@@ -139,8 +146,8 @@ CREATE TABLE `queue_counters` (
 --
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
-(1, 3),
-(2, 6);
+(1, 9),
+(2, 7);
 
 -- --------------------------------------------------------
 
@@ -151,27 +158,42 @@ INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
 CREATE TABLE `queue_services` (
   `id` int(11) NOT NULL,
   `queue_id` int(11) NOT NULL,
-  `service_id` int(11) NOT NULL
+  `service_id` int(11) NOT NULL,
+  `soft_copy` tinyint(1) NOT NULL DEFAULT 0,
+  `hard_copy` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `queue_services`
 --
 
-INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`) VALUES
-(1, 1, 10),
-(2, 1, 11),
-(3, 2, 3),
-(4, 2, 4),
-(5, 3, 3),
-(6, 3, 2),
-(7, 4, 11),
-(8, 5, 10),
-(9, 6, 10),
-(10, 6, 11),
-(11, 7, 11),
-(12, 8, 12),
-(13, 9, 3);
+INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`, `soft_copy`, `hard_copy`) VALUES
+(1, 1, 10, 0, 1),
+(2, 1, 11, 0, 1),
+(3, 2, 3, 0, 1),
+(4, 2, 4, 0, 1),
+(5, 3, 3, 0, 1),
+(6, 3, 2, 0, 1),
+(7, 4, 11, 0, 1),
+(8, 5, 10, 0, 1),
+(9, 6, 10, 0, 1),
+(10, 6, 11, 0, 1),
+(11, 7, 11, 0, 1),
+(12, 8, 12, 0, 1),
+(13, 9, 3, 0, 1),
+(14, 10, 4, 0, 1),
+(15, 10, 3, 0, 1),
+(16, 11, 3, 1, 1),
+(17, 12, 3, 1, 1),
+(18, 12, 4, 1, 1),
+(19, 13, 3, 0, 1),
+(20, 13, 4, 1, 1),
+(21, 14, 3, 1, 1),
+(22, 15, 3, 1, 1),
+(23, 15, 4, 1, 1),
+(24, 15, 2, 0, 1),
+(25, 16, 11, 0, 1),
+(26, 16, 12, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -305,13 +327,13 @@ ALTER TABLE `office_windows`
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `roles`
