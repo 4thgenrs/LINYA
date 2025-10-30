@@ -1,4 +1,3 @@
-    
 <?php include '../linya_db/config.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -33,15 +32,21 @@
             <h2 id="serviceTitle">Services</h2>
 
             <!-- external toggle for multi-select: no inline onclick -->
-            <div style="margin-bottom:12px;">
+            <div class="controls-row" style="margin-bottom:12px;">
                 <button id="multiSelectToggle" class="back-btn" type="button">Select multiple</button>
+
+                <!-- soft copy toggle: default OFF (hard copy) -->
+                <label class="soft-toggle" title="Request a soft copy (PDF) instead of hard copy">
+                    <input type="checkbox" id="softCopyToggle" />
+                    <span id="softCopyLabel">Hard copy (default)</span>
+                </label>
             </div>
 
             <div class="grid" id="serviceGrid"></div>
 
             <div id="serviceActions" class="service-actions">
                 <span id="selectedCount">0 selected</span>
-                <button id="confirmBtn" class="back-btn" type="button">Confirm</button>
+                <button id="confirmBtn" class="back-btn" type="button" disabled>Confirm</button>
             </div>
 
             <!-- back button without inline onclick -->

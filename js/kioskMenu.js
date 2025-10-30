@@ -3,6 +3,8 @@
 // global state
 window.multiSelectMode = window.multiSelectMode || false;
 window.selectedServicesSet = window.selectedServicesSet || new Set();
+// new: soft copy request state (default false = hard copy)
+window.requestSoftCopy = window.requestSoftCopy || false;
 
 // helper: update UI elements that depend on multiSelectMode
 function refreshUIForMode() {
@@ -16,9 +18,16 @@ function refreshUIForMode() {
         if (toggleBtn) toggleBtn.textContent = 'Cancel multi-select';
     } else {
         document.body.classList.remove('multi-select-mode');
-        if (serviceActions) serviceActions.style.display = 'none';
+        // show actions only if there are selections (even in single-select mode)
+        if (serviceActions) {
+            serviceActions.style.display = (window.selectedServicesSet && window.selectedServicesSet.size > 0) ? 'flex' : 'none';
+        }
         if (toggleBtn) toggleBtn.textContent = 'Select multiple';
     }
+
+    // update confirm button enabled state
+    const confirmBtn = document.getElementById('confirmBtn');
+    if (confirmBtn) confirmBtn.disabled = !(window.selectedServicesSet && window.selectedServicesSet.size > 0);
 }
 
 // load services for an office
@@ -80,22 +89,12 @@ function loadServices(officeId, officeName) {
                             btn.classList.remove('selected');
                             window.selectedServicesSet.delete(sid);
                         }
-                        updateActions();
+                        refreshUIForMode();
+                        updateSelectedCount();
                     });
                 }
 
-                // clicking behavior
-                btn.addEventListener('click', (e) => {
-                    if (window.multiSelectMode) {
-                        if (!cb) return;
-                        if (e.target === cb) return; // checkbox click handled separately
-                        cb.checked = !cb.checked;
-                        cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        return;
-                    }
-                    // single-select behavior (replace as needed)
-                    alert('Selected service: ' + sid);
-                });
+                // remove per-button click here - serviceGrid click will handle selection uniformly
             });
 
             // show services screen (transition)
@@ -106,17 +105,20 @@ function loadServices(officeId, officeName) {
                 setTimeout(() => serviceSection && serviceSection.classList.add("active"), 100);
             }, 400);
 
-            updateActions();
+            updateSelectedCount();
+            refreshUIForMode();
         })
         .catch(err => {
             console.error('fetch error:', err);
             serviceGrid.innerHTML = "<p>Error loading services</p>";
         });
 
-    function updateActions() {
+    function updateSelectedCount() {
         const count = window.selectedServicesSet ? window.selectedServicesSet.size : 0;
         if (selectedCountEl) selectedCountEl.textContent = `${count} selected`;
         if (confirmBtn) confirmBtn.disabled = count === 0;
+        const serviceActions = document.getElementById('serviceActions');
+        if (serviceActions) serviceActions.style.display = (count > 0) ? 'flex' : 'none';
     }
 }
 
@@ -127,6 +129,7 @@ function toggleMultiSelect() {
 
     // when turning off, clear selections
     if (!window.multiSelectMode) {
+        // keep selections cleared to avoid accidental carries between modes
         window.selectedServicesSet && window.selectedServicesSet.clear();
         const serviceGrid = document.getElementById("serviceGrid");
         if (serviceGrid) {
@@ -163,7 +166,10 @@ function postQueue(services) {
 
     const form = new FormData();
     form.append('office_id', officeId);
+    // append services
     services.forEach(s => form.append('services[]', s));
+    // append soft_copy flag for the request (0 = hard copy default, 1 = soft copy)
+    form.append('soft_copy', window.requestSoftCopy ? 1 : 0);
 
     fetch('../backend/queueInsert.php', { method: 'POST', body: form })
         .then(r => r.json())
@@ -214,6 +220,7 @@ function goBack() {
     // clear selections and reset mode
     window.selectedServicesSet && window.selectedServicesSet.clear();
     window.multiSelectMode = false;
+    window.requestSoftCopy = false;
     document.body.classList.remove('multi-select-mode');
     if (serviceGrid) {
         serviceGrid.querySelectorAll('.service-btn.selected').forEach(b => b.classList.remove('selected'));
@@ -223,6 +230,11 @@ function goBack() {
     const confirmBtn = document.getElementById("confirmBtn");
     if (selectedCountEl) selectedCountEl.textContent = "0 selected";
     if (confirmBtn) confirmBtn.disabled = true;
+
+    const softToggle = document.getElementById('softCopyToggle');
+    const softLabel = document.getElementById('softCopyLabel');
+    if (softToggle) softToggle.checked = false;
+    if (softLabel) softLabel.textContent = 'Hard copy (default)';
 
     const serviceActions = document.getElementById("serviceActions");
     if (serviceActions) serviceActions.style.display = 'none';
@@ -246,6 +258,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     } else {
         console.warn('#multiSelectToggle not found');
+    }
+
+    // soft copy toggle handler
+    const softToggle = document.getElementById('softCopyToggle');
+    const softLabel = document.getElementById('softCopyLabel');
+    if (softToggle) {
+        softToggle.addEventListener('change', (e) => {
+            window.requestSoftCopy = !!softToggle.checked;
+            if (softLabel) softLabel.textContent = window.requestSoftCopy ? 'Soft copy (PDF)' : 'Hard copy (default)';
+        });
     }
 
     const confirmBtn = document.getElementById('confirmBtn');
@@ -287,11 +309,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     const cb = btn.querySelector('.service-checkbox');
                     if (cb) cb.checked = true;
                 }
-                // update any action UI
-                if (typeof updateActions === 'function') updateActions();
+                refreshUIForMode();
             } else {
-                // single select: immediately post this service
-                postQueue([svcId]);
+                // single select: do NOT immediately post — require confirmation
+                // clear previous selection, select this one
+                window.selectedServicesSet = new Set([svcId]);
+                // update visuals
+                serviceGrid.querySelectorAll('.service-btn.selected').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                // ensure checkboxes hidden remain consistent
+                const cb = btn.querySelector('.service-checkbox');
+                if (cb) cb.checked = true;
+                // show action bar so user must press Confirm
+                const serviceActions = document.getElementById('serviceActions');
+                if (serviceActions) serviceActions.style.display = 'flex';
+                refreshUIForMode();
+                updateSelectedCount();
+            }
+
+            function updateSelectedCount() {
+                const selectedCountEl = document.getElementById("selectedCount");
+                const count = window.selectedServicesSet ? window.selectedServicesSet.size : 0;
+                if (selectedCountEl) selectedCountEl.textContent = `${count} selected`;
+                const confirmBtn = document.getElementById('confirmBtn');
+                if (confirmBtn) confirmBtn.disabled = count === 0;
             }
         });
     }
