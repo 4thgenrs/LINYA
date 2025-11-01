@@ -1,83 +1,92 @@
-
 <?php
 header('Content-Type: application/json; charset=utf-8');
 include '../linya_db/config.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error'=>'Method not allowed']);
+if (!isset($conn)) {
+    echo json_encode(['success'=>false, 'error'=>'DB connection missing']);
     exit;
 }
 
-$input = $_POST;
-$officeId = isset($input['office_id']) ? intval($input['office_id']) : 0;
-$services = isset($_POST['services']) ? (array)$_POST['services'] : [];
+$office_id = isset($_POST['office_id']) ? intval($_POST['office_id']) : 0;
+$services = isset($_POST['services']) ? $_POST['services'] : [];
+$softs = isset($_POST['soft_copy']) ? $_POST['soft_copy'] : [];
 
-if (!$officeId || empty($services)) {
-    http_response_code(400);
-    echo json_encode(['error'=>'Missing office_id or services']);
+if (!$office_id || !is_array($services) || empty($services)) {
+    echo json_encode(['success'=>false, 'error'=>'Missing data']);
     exit;
+}
+
+if (!is_array($softs)) $softs = [];
+
+// ensure arrays align
+if (count($softs) && count($softs) !== count($services)) {
+    // pad softs with zeros
+    while(count($softs) < count($services)) $softs[] = 0;
 }
 
 $conn->begin_transaction();
 
 try {
     // get office code
-    $stmt = $conn->prepare("SELECT office_code FROM offices WHERE office_id = ?");
-    $stmt->bind_param("i", $officeId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    if ($row = $res->fetch_assoc()) {
-        $officeCode = $row['office_code'];
-    } else throw new Exception('Invalid office');
-    $stmt->close();
+    $oSt = $conn->prepare("SELECT office_code FROM offices WHERE office_id = ?");
+    $oSt->bind_param("i",$office_id);
+    $oSt->execute();
+    $oRes = $oSt->get_result();
+    $office = $oRes->fetch_assoc();
+    $oSt->close();
 
-    // lock or create counter row
-    $stmt = $conn->prepare("SELECT last_number FROM queue_counters WHERE office_id = ? FOR UPDATE");
-    $stmt->bind_param("i", $officeId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    if ($row = $res->fetch_assoc()) {
+    $office_code = ($office && !empty($office['office_code'])) ? $office['office_code'] : 'OFF';
+
+    // lock/update queue counter
+    $cSt = $conn->prepare("SELECT last_number FROM queue_counters WHERE office_id = ? FOR UPDATE");
+    $cSt->bind_param("i",$office_id);
+    $cSt->execute();
+    $cRes = $cSt->get_result();
+    $row = $cRes->fetch_assoc();
+    $cSt->close();
+
+    if ($row) {
         $last = intval($row['last_number']) + 1;
-        $stmt->close();
-        $stmt = $conn->prepare("UPDATE queue_counters SET last_number = ? WHERE office_id = ?");
-        $stmt->bind_param("ii", $last, $officeId);
-        $stmt->execute();
-        $stmt->close();
+        $uSt = $conn->prepare("UPDATE queue_counters SET last_number = ? WHERE office_id = ?");
+        $uSt->bind_param("ii", $last, $office_id);
+        $uSt->execute();
+        $uSt->close();
     } else {
-        // first time for this office
         $last = 1;
-        $stmt->close();
-        $stmt = $conn->prepare("INSERT INTO queue_counters (office_id, last_number) VALUES (?, ?)");
-        $stmt->bind_param("ii", $officeId, $last);
-        $stmt->execute();
-        $stmt->close();
+        $iSt = $conn->prepare("INSERT INTO queue_counters (office_id, last_number) VALUES (?, ?)");
+        $iSt->bind_param("ii", $office_id, $last);
+        $iSt->execute();
+        $iSt->close();
     }
 
-    $queueCode = strtoupper($officeCode) . '-' . str_pad($last, 3, '0', STR_PAD_LEFT);
+    $queue_code = $office_code . '-' . str_pad($last, 3, '0', STR_PAD_LEFT);
 
-    // insert queue
-    $stmt = $conn->prepare("INSERT INTO queues (queue_code, office_id) VALUES (?, ?)");
-    $stmt->bind_param("si", $queueCode, $officeId);
-    $stmt->execute();
-    $queueId = $conn->insert_id;
-    $stmt->close();
+    // insert into queues
+    $now = date('Y-m-d H:i:s');
+    $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status) VALUES (?, ?, ?, 'pending')");
+    $qSt->bind_param("sis", $queue_code, $office_id, $now);
+    $qSt->execute();
+    $queue_id = $qSt->insert_id;
+    $qSt->close();
 
-    // insert services requested
-    $stmt = $conn->prepare("INSERT INTO queue_services (queue_id, service_id) VALUES (?, ?)");
-    foreach ($services as $s) {
-        $sid = intval($s);
-        $stmt->bind_param("ii", $queueId, $sid);
-        $stmt->execute();
+    if (!$queue_id) throw new Exception('Failed to create queue');
+
+    // insert queue_services
+    $qsSt = $conn->prepare("INSERT INTO queue_services (queue_id, service_id, soft_copy, hard_copy) VALUES (?, ?, ?, 1)");
+    foreach ($services as $idx => $svc) {
+        $svcId = intval($svc);
+        $soft = (isset($softs[$idx]) && intval($softs[$idx]) === 1) ? 1 : 0;
+        $qsSt->bind_param("iii", $queue_id, $svcId, $soft);
+        $qsSt->execute();
     }
-    $stmt->close();
+    $qsSt->close();
 
     $conn->commit();
 
-    echo json_encode(['success'=>true, 'queue_id'=>$queueId, 'queue_code'=>$queueCode]);
+    echo json_encode(['success'=>true, 'queue_id'=>intval($queue_id), 'queue_code'=>$queue_code]);
+    exit;
 } catch (Exception $e) {
     $conn->rollback();
-    http_response_code(500);
-    echo json_encode(['error'=>$e->getMessage()]);
+    echo json_encode(['success'=>false, 'error'=>$e->getMessage()]);
+    exit;
 }
-?>
