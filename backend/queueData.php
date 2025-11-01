@@ -4,9 +4,9 @@ ini_set('display_errors', 1);
 
 include('../linya_db/config.php');
 
-function getRegistrarQueue($conn) {
+function getOfficeQueue($conn, $office) {
     $queue_data = [];
-    $sql = "SELECT number FROM queue WHERE status='waiting' ORDER BY number ASC";
+    $sql = "SELECT queue_id, queue_code FROM queues WHERE status='pending' AND office_id = '$office' ORDER BY queue_id ASC";
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {
@@ -17,28 +17,27 @@ function getRegistrarQueue($conn) {
     return $queue_data;
 
 }
-
-function getNextLine($conn, $window) {
-    // Select the next waiting row by smallest number
-    $sql_select = "SELECT number FROM queue WHERE status='waiting' ORDER BY number ASC LIMIT 1";
+//NOTE: $window is For specific window in session
+function getNextLine($conn, $office, $window) { 
+    // Select the next pending queue (by smallest queue_id)
+    $sql_select = "SELECT queue_id, queue_code FROM queues WHERE status='pending' AND office_id = '$office' ORDER BY queue_id ASC LIMIT 1";
     $res = $conn->query($sql_select);
 
     if ($res && $res->num_rows > 0) {
         $row = $res->fetch_assoc();
-        $number = $row['number'];
+        $queue_id = (int)$row['queue_id'];
+        $queue_code = $row['queue_code'];
 
-        // Update that specific number to ongoing status
-        $sql_update = "UPDATE queue SET status='ongoing', window = '" . $conn->real_escape_string($window) . "' WHERE number = '" . $conn->real_escape_string($number) . "' AND status='waiting'";
+        $sql_update = "UPDATE queues SET status='ongoing', window_id='$window' WHERE queue_id = $queue_id AND status='pending'";
         if ($conn->query($sql_update)) {
-            // Return just the number since we don't have id
-            return ['number' => $number];
+            return ['queue_id' => $queue_id, 'queue_code' => $queue_code];
         }
     }
     return null;
 }
 
 function displayOnAir($conn,$window) {
-    $sql = "SELECT number FROM queue WHERE status='ongoing' AND window = $window ORDER BY number DESC LIMIT 1";
+    $sql = "SELECT queue_id, queue_code FROM queues WHERE status='ongoing' AND window_id='$window' ORDER BY queue_id DESC LIMIT 1";
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {
@@ -49,27 +48,27 @@ function displayOnAir($conn,$window) {
 }
 
 function finishCurrentQueue($conn, $window) {
-    // Update the current ongoing queue for this window to finished
-    $sql_update = "UPDATE queue SET status='finished' WHERE status='ongoing' AND window = '" . $conn->real_escape_string($window) . "'";
-    if ($conn->query($sql_update)) {
-        return true;
+    // Find the most recent ongoing queue for this window
+    $sql_select = "SELECT queue_id FROM queues WHERE status='ongoing' AND window_id='$window' ORDER BY queue_id DESC LIMIT 1";
+    $res = $conn->query($sql_select);
+    if ($res && $res->num_rows > 0) {
+        $row = $res->fetch_assoc();
+        $qid = (int)$row['queue_id'];
+        $sql_update = "UPDATE queues SET status='finished' WHERE queue_id = $qid";
+        return (bool)$conn->query($sql_update);
     }
     return false;
 }
 
-function setWindowBreak($conn, $window, $isBreak) {
+function setWindowBreak($conn, $isBreak) {
     if ($isBreak) {
-        // If going on break, update any ongoing queue to waiting
-        $sql = "UPDATE queue SET status='waiting', window=NULL WHERE status='ongoing' AND window = '" . $conn->real_escape_string($window) . "'";
-        if (!$conn->query($sql)) {
+        // If going on break, move any ongoing queue back to pending (global)
+        $sql = "UPDATE queues SET status='pending' , window_id ='0' WHERE status='ongoing'";
+        if ($conn->query($sql) === false) {
             return false;
         }
-        // Store break status in a session variable or database table if needed
-        $_SESSION['window_' . $window . '_break'] = true;
         return true;
     } else {
-        // Returning from break
-        $_SESSION['window_' . $window . '_break'] = false;
         return true;
     }
 }

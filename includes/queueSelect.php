@@ -1,7 +1,4 @@
 <?php
-session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 include('../backend/queueData.php');
 
@@ -11,7 +8,8 @@ if (isset($_REQUEST['action'])) {
   $window = isset($_REQUEST['window']) ? intval($_REQUEST['window']) : 1;
   
   if ($_REQUEST['action'] === 'next') {
-    $res = getNextLine($conn, $window);
+    $office = isset($_REQUEST['office']) ? intval($_REQUEST['office']) : 1;
+    $res = getNextLine($conn, $office, $window);
     if ($res) {
       echo json_encode(['success' => true, 'data' => $res]);
     } else {
@@ -38,8 +36,12 @@ if (isset($_REQUEST['action'])) {
   exit;
 }
 
-$queue_data = getRegistrarQueue($conn);
-$display_on_air = displayOnAir($conn, 1);
+$queue_data = getOfficeQueue($conn, 1); // Get queue for office ID 1
+$display_on_air = displayOnAir($conn, 1); // Display ongoing for window 1
+
+//NOTE: Sample window and office for buttons
+$sample_window = 2;
+$sample_office = 2;
 ?>
 
   <!doctype html>
@@ -60,7 +62,7 @@ $display_on_air = displayOnAir($conn, 1);
             if (isset($_SESSION['window_1_break']) && $_SESSION['window_1_break']) {
               echo 'On Break';
             } else {
-              echo is_array($display_on_air) ? $display_on_air['number'] : 'Waiting';
+              echo is_array($display_on_air) ? $display_on_air['queue_code'] : 'Waiting';
             }
           ?>
         </div>
@@ -69,16 +71,17 @@ $display_on_air = displayOnAir($conn, 1);
         </i></div>
         
         <div class="controls">
-          <button id="finished" type="button" onclick="finishCurrent(1)" <?php echo !is_array($display_on_air) ? 'disabled' : ''; ?>>Finished</button>
-          <button id="onBreak" type="button" onclick="toggleBreak(1)" data-break="false">Break</button>
-          <button id="nextQueue" type="button" onclick="callNext(1)" <?php echo is_array($display_on_air) ? 'disabled' : ''; ?>>Call Next</button>
+          <!-- Numbers in parameters are for session -->
+          <button id="finished" type="button" onclick="finishCurrent(1,1)" <?php echo !is_array($display_on_air) ? 'disabled' : ''; ?>>Finished</button>
+          <button id="onBreak" type="button" onclick="toggleBreak(1,1)" data-break="false">Break</button>
+          <button id="nextQueue" type="button" onclick="callNext(1,1)" <?php echo is_array($display_on_air) ? 'disabled' : ''; ?>>Call Next</button>
         </div>
       </div>
 
       <div class="queue-box" aria-label="Queue List">
         <div class="queue-title">Queue List</div>
         <?php foreach ($queue_data as $qd) { ?>
-              <div class="queue-item"><?php echo $qd['number']; ?></div>
+              <div class="queue-item"><?php echo $qd['queue_code']; ?></div>
         <?php } ?>
       </div>
     </div>
@@ -126,13 +129,15 @@ $display_on_air = displayOnAir($conn, 1);
                 // Clear break visual state
                 document.querySelector('.box').dataset.hasOngoing = 'false';
               }
+              window.location.reload();
             } else {
               alert((data && data.message) ? data.message : 'Failed to update break status');
+              
             }
           })
           .catch(function(err) {
             console.error('Error updating break status:', err);
-            alert('Error updating break status. See console for details.');
+            alert('Error updating break status. See console for details. 0');
           });
       }
 
@@ -167,23 +172,23 @@ $display_on_air = displayOnAir($conn, 1);
           })
           .catch(function(err) {
             console.error('Error finishing queue:', err);
-            alert('Error finishing queue. See console for details.');
+            alert('Error finishing queue. See console for details. 1');
           });
       }
 
       // Call the backend endpoint to get the next queue number for a window
-      function callNext(windowNumber) {
-        var url = '?action=next&window=' + encodeURIComponent(windowNumber);
+      function callNext(windowNumber,officeNumber) {
+        var url = '?action=next&window=' + encodeURIComponent(windowNumber) + '&office=' + encodeURIComponent(officeNumber);
         fetch(url, { credentials: 'same-origin' })
           .then(function(response) { 
             return response.json(); // Parse JSON directly
           })
           .then(function(data) {
             if (data && data.success) {
-              var number = data.data.number;
-              // Update the on-air number
+              var code = data.data.queue_code || data.data.queueCode || data.data.number;
+              // Update the on-air number/code
               var numberEl = document.getElementById('number');
-              if (numberEl) numberEl.textContent = number;
+              if (numberEl) numberEl.textContent = code;
 
               // Show Ongoing text
               var ongoingI = document.querySelector('.box i');
@@ -204,7 +209,7 @@ $display_on_air = displayOnAir($conn, 1);
           })
           .catch(function(err) {
             console.error('Error calling next:', err);
-            alert('Error calling next queue. See console for details.');
+            alert('Error calling next queue. See console for details. 2');
           });
       }
     </script>
