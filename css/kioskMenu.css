@@ -1,190 +1,230 @@
+:root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --muted:#7c8593;
+    --accent:#0f62fe; /* modern blue */
+    --success:#22c55e;
+    --danger:#ef4444;
+    --glass: rgba(15,98,254,0.06);
+    --radius:14px;
+    --shadow: 0 6px 18px rgba(12,18,29,0.06);
+    --card-padding:16px;
+}
+
+*{box-sizing:border-box}
 body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f2f6fc;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
     margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    padding: 28px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
     height: 100vh;
 }
 
+/* container */
 .kiosk-container {
-    width: 90%;
-    max-width: 1000px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    padding: 30px;
-    text-align: center;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 28px;
     overflow: hidden;
 }
 
-h2 {
-    margin-bottom: 25px;
-    font-size: 28px;
-    color: #333;
+/* headings */
+.title {
+    margin: 0;
+    font-size: 20px;
+    color: #0b1230;
+    font-weight: 600;
 }
 
+/* layout */
+.header-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.controls-row {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:18px;
+}
+
+/* grid */
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
-    justify-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    align-items: start;
 }
 
-.office-btn, .service-btn {
-    background: #0078d7;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    padding: 14px 18px;
-    font-size: 20px;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-
-    /* new: layout for checkbox + label */
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    text-align: left;
-}
-
-.service-checkbox {
-    display: none;
-    width: 22px;
-    height: 22px;
-    flex: 0 0 auto;
-    accent-color: white; /* modern browsers show white check on colored background */
-}
-
-.service-checkbox.visible {
-    display: block;
-}
-
-body.multi-select-mode .service-checkbox {
-    display: block;
-}
-
-.service-label {
-    flex: 1 1 auto;
-}
-
-/* changed: selected service visual */
-.service-btn.selected {
-    background: #28a745;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
-    transform: scale(1.03);
-}
-
-/* ensure checkbox stays checked color when selected */
-.service-btn.selected .service-checkbox {
-    accent-color: #ffffff;
-}
-
-/* action bar */
-.service-actions {
-    margin-top: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-
-.back-btn {
-    margin-top: 30px;
-    background: #f44336;
-    color: white;
-    border: none;
+/* minimal office buttons */
+.office-btn {
+    background: var(--card);
+    color: #0b1230;
+    border: 1px solid rgba(11,18,48,0.06);
     border-radius: 12px;
-    padding: 15px 40px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.back-btn:hover {
-    background: #c62828;
-}
-
-/* Screen transition effect */
-.screen {
-    opacity: 0;
-    transform: scale(0.95);
-    transition: all 0.5s ease;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-}
-
-.screen.active {
-    opacity: 1;
-    transform: scale(1);
-    position: relative;
-}
-
-/* hide checkboxes by default; show only in multi-select mode */
-.service-checkbox {
-    display: none;
-    width: 22px;
-    height: 22px;
-    flex: 0 0 auto;
-    accent-color: white;
-}
-
-/* action bar hidden by default (JS also toggles) */
-#serviceActions {
-    display: none;
-}
-
-/* small spacing for external toggle */
-#multiSelectToggle {
-    background: #ff9800;
-    border: none;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-}
-#multiSelectToggle:hover {
-    background: #f57c00;
-}
-
-/* ensure service-btn still layouts nicely with (hidden) checkbox space */
-.service-btn {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    text-align: left;
-}
-
-/* soft copy toggle styles */
-.controls-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    justify-content: center;
-}
-
-.soft-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    padding: 18px;
     font-size: 16px;
     cursor: pointer;
-    user-select: none;
-    color: #333;
+    text-align: left;
+    box-shadow: none;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.office-btn:hover{ transform: translateY(-4px); box-shadow: 0 8px 20px rgba(11,18,48,0.06); }
+
+/* service card */
+.cards .service-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: var(--card-padding);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    justify-content:space-between;
+    border: 1px solid rgba(11,18,48,0.04);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    cursor: pointer;
+}
+.cards .service-card:hover { transform: translateY(-6px); box-shadow: 0 10px 24px rgba(11,18,48,0.06); border-color: rgba(15,98,254,0.06); }
+
+.service-main{ display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
+.service-title{
+    font-size:16px;
+    color:#0b1230;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
-.soft-toggle input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+/* hidden checkbox used for selection state (kept for accessibility) */
+.service-checkbox{ display:none; }
+
+/* selection state */
+.service-card.selected{
+    border-color: rgba(34,197,94,0.14);
+    box-shadow: 0 12px 30px rgba(34,197,94,0.06);
+}
+.service-card.selected .service-title{ color: var(--success); }
+
+/* per-service controls (toggle + label) */
+.service-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-left:12px;
+}
+
+.soft-label{
+    font-size:13px;
+    color:var(--muted);
+}
+
+/* modern toggle switch */
+.switch{
+    position:relative;
+    display:inline-block;
+    width:44px;
+    height:26px;
+}
+.switch input{ display:none; }
+.slider{
+    position:absolute;
+    inset:0;
+    border-radius:999px;
+    background: rgba(11,18,48,0.06);
+    transition: all .18s ease;
+    box-shadow: inset 0 0 0 1px rgba(11,18,48,0.02);
+}
+.slider:before{
+    content:'';
+    position:absolute;
+    left:4px;
+    top:4px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:white;
+    box-shadow: 0 2px 6px rgba(11,18,48,0.08);
+    transition: all .18s ease;
+}
+.switch input:checked + .slider{
+    background: linear-gradient(90deg, var(--accent), #2aa7ff);
+}
+.switch input:checked + .slider:before{
+    transform: translateX(18px);
+}
+
+/* make disabled soft toggle visually distinct */
+.switch input:disabled + .slider{
+    background: rgba(11,18,48,0.04);
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+.switch input:disabled + .slider:before{
+    background: #f5f7fa;
+    box-shadow: none;
+}
+
+/* ensure label doesn't appear interactive when disabled */
+.service-soft-label[aria-disabled="true"], .switch[disabled] {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+/* buttons */
+.primary-btn{
+    background: linear-gradient(90deg,var(--accent), #2aa7ff);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight:600;
+    cursor:pointer;
+}
+.secondary-btn{
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(15,98,254,0.08);
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor:pointer;
+}
+.ghost-btn{
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor:pointer;
+}
+
+/* actions bar */
+.service-actions{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+/* helper text */
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+
+/* responsive tweaks */
+@media (max-width:520px){
+    .grid{ grid-template-columns: 1fr; }
+    .service-controls{ gap:6px; }
 }
 
 

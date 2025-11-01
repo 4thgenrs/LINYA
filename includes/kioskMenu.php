@@ -9,7 +9,7 @@
 <body>
     <div class="kiosk-container">
         <div id="officeSection" class="screen active">
-            <h2>Select an Office</h2>
+            <h1 class="title">Select an Office</h1>
             <div class="grid" id="officeGrid">
                 <?php
                 $sql = "SELECT * FROM offices";
@@ -18,39 +18,35 @@
                     while ($row = $result->fetch_assoc()) {
                         $id = $row['office_id'];
                         $desc = htmlspecialchars($row['office_description']);
-                        // keep using json_encode for safe JS string
                         echo "<button class='office-btn' onclick='loadServices($id, " . json_encode($row['office_description']) . ")'>$desc</button>";
                     }
                 } else {
-                    echo "<p>No offices found.</p>";
+                    echo "<p class='muted'>No offices found.</p>";
                 }
                 ?>
             </div>
         </div>
 
         <div id="serviceSection" class="screen">
-            <h2 id="serviceTitle">Services</h2>
-
-            <!-- external toggle for multi-select: no inline onclick -->
-            <div class="controls-row" style="margin-bottom:12px;">
-                <button id="multiSelectToggle" class="back-btn" type="button">Select multiple</button>
-
-                <!-- soft copy toggle: default OFF (hard copy) -->
-                <label class="soft-toggle" title="Request a soft copy (PDF) instead of hard copy">
-                    <input type="checkbox" id="softCopyToggle" />
-                    <span id="softCopyLabel">Hard copy (default)</span>
-                </label>
+            <div class="header-row">
+                <h1 class="title" id="serviceTitle">Services</h1>
+                <button id="backBtn" class="ghost-btn" type="button">Back</button>
             </div>
 
-            <div class="grid" id="serviceGrid"></div>
+            <div class="controls-row">
+                <button id="multiSelectToggle" class="secondary-btn" type="button">Select multiple</button>
+                <div class="muted small" id="hint">
+                    Tap a service to select — press Confirm to continue.
+                    Toggle the PDF switch after selecting a service to request a soft copy.
+                </div>
+            </div>
+
+            <div class="grid cards" id="serviceGrid"></div>
 
             <div id="serviceActions" class="service-actions">
-                <span id="selectedCount">0 selected</span>
-                <button id="confirmBtn" class="back-btn" type="button" disabled>Confirm</button>
+                <div id="selectedCount" class="muted">0 selected</div>
+                <button id="confirmBtn" class="primary-btn" type="button" disabled>Confirm</button>
             </div>
-
-            <!-- back button without inline onclick -->
-            <button id="backBtn" class="back-btn" type="button">⬅ Back</button>
         </div>
     </div>
 

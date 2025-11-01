@@ -10,7 +10,7 @@ if (!isset($conn)) {
 if (isset($_GET['office_id'])) {
     $officeId = intval($_GET['office_id']);
 
-    $stmt = $conn->prepare("SELECT * FROM services WHERE office = ?");
+    $stmt = $conn->prepare("SELECT * FROM services WHERE office = ? ORDER BY service_description ASC");
     if (!$stmt) {
         echo "<p>DB prepare error: " . htmlspecialchars($conn->error) . "</p>";
         exit;
@@ -34,19 +34,34 @@ if (isset($_GET['office_id'])) {
         while ($row = $result->fetch_assoc()) {
             $serviceId = isset($row['service_id']) ? intval($row['service_id']) : 0;
             $desc = isset($row['service_description']) ? $row['service_description'] : 'Service';
-            // button contains a checkbox and label; id used for label association
             $cbId = "svc-" . $serviceId;
-            echo "<button type='button' class='service-btn' data-service-id='" . $serviceId . "'>";
-            // add a value so checkbox.value is available if JS scans checkboxes
-            echo "<input type='checkbox' class='service-checkbox' id='" . htmlspecialchars($cbId) . "' value='" . intval($serviceId) . "' />";
-            echo "<span class='service-label'>" . htmlspecialchars($desc) . "</span>";
-            echo "</button>";
+
+            // card-style service item with per-service soft toggle (PDF)
+            echo "<div class='service-card' data-service-id='" . $serviceId . "'>";
+            echo "  <div class='service-main'>";
+            echo "    <div class='service-info'>";
+            echo "      <div class='service-title'>" . htmlspecialchars($desc) . "</div>";
+            echo "    </div>";
+            // hidden selection checkbox (for multi-select) kept for keyboard/accessibility
+            echo "    <input type='checkbox' class='service-checkbox' id='" . htmlspecialchars($cbId) . "' value='" . intval($serviceId) . "' aria-hidden='true' />";
+            echo "  </div>";
+
+            // per-service soft toggle (modern switch) - DISABLED by default until service selected
+            echo "  <div class='service-controls'>";
+            echo "    <label class='switch' title='Request soft copy (PDF)'>";
+            echo "      <input type='checkbox' class='service-soft-checkbox' data-service-id='" . intval($serviceId) . "' disabled />";
+            echo "      <span class='slider'></span>";
+            echo "    </label>";
+            echo "    <div class='soft-label'>PDF</div>";
+            echo "  </div>";
+
+            echo "</div>";
         }
     } else {
-        echo "<p>No services found for this office.</p>";
+        echo "<p class='muted'>No services found for this office.</p>";
     }
 
     $stmt->close();
 } else {
-    echo "<p>Missing office_id</p>";
+    echo "<p class='muted'>Missing office_id</p>";
 }
