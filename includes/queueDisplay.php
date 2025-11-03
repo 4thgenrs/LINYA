@@ -1,4 +1,7 @@
-<?php include '../backend/queueDisplayData.php'; ?>
+<?php
+session_start();
+include '../backend/queueDisplayData.php';
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -26,6 +29,7 @@
                 </select>
             </form>
 
+            <!-- Reset button available to all users (admin-only restriction removed) -->
             <button id="resetBtn" onclick="resetQueues()">Reset All</button>
         </div>
 
@@ -66,10 +70,40 @@
 
     <script>
     function resetQueues() {
-        if (confirm('Reset all queues?')) {
-            fetch('../backend/queueReset.php', {method:'POST'})
-                .then(() => location.reload());
-        }
+        if (!confirm('Reset all queues?')) return;
+
+        fetch('../backend/queueReset.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({ confirm: '1' }).toString()
+        })
+        .then(async response => {
+            let json = {};
+            try { json = await response.json(); } catch (e) { }
+
+            if (!response.ok) {
+                const serverMsg = json && (json.message || json.error) ? (json.message || json.error) : ('Server returned ' + response.status);
+                alert('Reset failed: ' + serverMsg);
+                throw new Error(serverMsg);
+            }
+
+            if (json && json.success === false) {
+                const msg = json.message || 'Reset failed';
+                alert('Reset failed: ' + msg);
+                throw new Error(msg);
+            }
+
+            location.reload();
+        })
+        .catch(err => {
+            console.error('Reset failed', err);
+            if (!err || !err.message) alert('Reset failed');
+        });
     }
     </script>
 </body>

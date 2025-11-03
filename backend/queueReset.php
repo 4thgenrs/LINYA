@@ -1,23 +1,27 @@
-
 <?php
-include '../linya_db/config.php';
+session_start();
+header('Content-Type: application/json; charset=utf-8');
 
+// Allow POST requests from any session (removed admin-only check)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo "Method not allowed";
+    echo json_encode(['success'=>false,'message'=>'Method not allowed']);
     exit;
 }
 
-$conn->begin_transaction();
+require_once __DIR__ . '/../linya_db/config.php';
+
 try {
-    $conn->query("TRUNCATE TABLE queue_services");
-    $conn->query("TRUNCATE TABLE queues");
-    $conn->query("TRUNCATE TABLE queue_counters");
+    $conn->begin_transaction();
+    // clear queues and queue_services (destructive)
+    $conn->query("DELETE FROM queue_services");
+    $conn->query("DELETE FROM queues");
+    // reset counters
+    $conn->query("UPDATE queue_counters SET last_number = 0");
     $conn->commit();
-    echo "OK";
+    echo json_encode(['success'=>true]);
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    echo $e->getMessage();
+    echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
 }
-?>
