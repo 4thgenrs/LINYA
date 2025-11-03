@@ -33,7 +33,7 @@ include '../linya_db/config.php';
 $queueId = isset($_GET['queue_id']) ? intval($_GET['queue_id']) : 0;
 if (!$queueId) { die('Missing queue_id'); }
 
-$q = $conn->prepare("SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, o.office_description
+$q = $conn->prepare("SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, q.customer_name, q.customer_phone, q.customer_email, o.office_description
                      FROM queues q JOIN offices o ON q.office_id = o.office_id
                      WHERE q.queue_id = ?");
 $q->bind_param('i',$queueId);
@@ -94,6 +94,24 @@ $pdf->SetFont('Arial','',9);
 $pdf->Cell(30,6,'Date:',0,0);
 $pdf->Cell(0,6, date('Y-m-d H:i', strtotime($queue['created_at'])), 0,1);
 $pdf->Ln(2);
+
+// print visitor info if present
+$pdf->SetFont('Arial','',9);
+if (!empty($queue['customer_name'])) {
+    $pdf->Cell(30,6,'Name:',0,0);
+    $pdf->Cell(0,6, $queue['customer_name'], 0,1);
+}
+if (!empty($queue['customer_phone'])) {
+    $pdf->Cell(30,6,'Phone:',0,0);
+    $pdf->Cell(0,6, $queue['customer_phone'], 0,1);
+}
+if (!empty($queue['customer_email'])) {
+    $pdf->Cell(30,6,'Email:',0,0);
+    $pdf->Cell(0,6, $queue['customer_email'], 0,1);
+}
+if (!empty($queue['customer_name']) || !empty($queue['customer_phone']) || !empty($queue['customer_email'])) {
+    $pdf->Ln(2);
+}
 
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(0,6,'Services:',0,1);

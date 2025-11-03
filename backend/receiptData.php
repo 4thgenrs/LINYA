@@ -1,4 +1,3 @@
-
 <?php
 header('Content-Type: application/json; charset=utf-8');
 include '../linya_db/config.php';
@@ -15,7 +14,7 @@ if (!$queueId) {
 }
 
 // main queue info
-$q = $conn->prepare("SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, o.office_description
+$q = $conn->prepare("SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, q.customer_name, q.customer_phone, q.customer_email, o.office_description
                      FROM queues q JOIN offices o ON q.office_id = o.office_id
                      WHERE q.queue_id = ?");
 $q->bind_param('i',$queueId);
@@ -67,6 +66,9 @@ $response = [
         'office_description' => $queue['office_description'],
         'created_at' => $queue['created_at'],
         'status' => $queue['status'],
+        'customer_name' => isset($queue['customer_name']) ? $queue['customer_name'] : null,
+        'customer_phone' => isset($queue['customer_phone']) ? $queue['customer_phone'] : null,
+        'customer_email' => isset($queue['customer_email']) ? $queue['customer_email'] : null,
     ],
     'services' => $services,
     'pending' => $pending

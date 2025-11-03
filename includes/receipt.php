@@ -29,6 +29,20 @@
           <div class="value" id="rOffice">—</div>
         </div>
 
+        <!-- visitor fields -->
+        <div class="r-row" id="rRowName" style="display:none">
+          <div class="label">Name</div>
+          <div class="value" id="rName">—</div>
+        </div>
+        <div class="r-row" id="rRowPhone" style="display:none">
+          <div class="label">Phone</div>
+          <div class="value" id="rPhone">—</div>
+        </div>
+        <div class="r-row" id="rRowEmail" style="display:none">
+          <div class="label">Email</div>
+          <div class="value" id="rEmail">—</div>
+        </div>
+
         <div class="r-row">
           <div class="label">Services</div>
           <div class="value" id="rServices">—</div>

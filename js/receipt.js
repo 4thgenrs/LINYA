@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const confirmBtn = document.getElementById('confirmBtn');
   const printBtn = document.getElementById('printBtn');
 
+  // new visitor elements
+  const rName = document.getElementById('rName');
+  const rPhone = document.getElementById('rPhone');
+  const rEmail = document.getElementById('rEmail');
+  const rRowName = document.getElementById('rRowName');
+  const rRowPhone = document.getElementById('rRowPhone');
+  const rRowEmail = document.getElementById('rRowEmail');
+
   if (!queueId) {
     rQueue.textContent = 'Missing queue id';
     return;
@@ -26,6 +34,26 @@ document.addEventListener('DOMContentLoaded', () => {
       rQueue.textContent = q.queue_code;
       rOffice.textContent = q.office_description;
       rServices.textContent = services.map(s => s.description + (s.soft_copy ? ' (PDF)' : '') ).join(', ') || '—';
+
+      // populate visitor fields if present
+      if (q.customer_name && q.customer_name.trim().length) {
+        rName.textContent = q.customer_name;
+        rRowName.style.display = '';
+      } else {
+        rRowName.style.display = 'none';
+      }
+      if (q.customer_phone && q.customer_phone.trim().length) {
+        rPhone.textContent = q.customer_phone;
+        rRowPhone.style.display = '';
+      } else {
+        rRowPhone.style.display = 'none';
+      }
+      if (q.customer_email && q.customer_email.trim().length) {
+        rEmail.textContent = q.customer_email;
+        rRowEmail.style.display = '';
+      } else {
+        rRowEmail.style.display = 'none';
+      }
 
       // compute app base dynamically (if app sits in /LINYA this will detect it)
       const path = window.location.pathname || '/';
