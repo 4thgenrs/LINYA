@@ -1,6 +1,7 @@
 // Frontend logic for queue select page — externalized
 (function(){
   const api = '../backend/queueSelectData.php';
+  const attachApi = '../backend/queueAttach.php';
 
   function $(id){ return document.getElementById(id); }
   function qs(sel, root){ return (root||document).querySelector(sel); }
@@ -26,7 +27,24 @@
     list.forEach(q => {
       const d = document.createElement('div');
       d.className = 'queue-item';
-      d.textContent = q.queue_code;
+      const code = document.createElement('div');
+      code.textContent = q.queue_code;
+      code.className = 'queue-code';
+      d.appendChild(code);
+
+      // services
+      if (q.services && q.services.length) {
+        const svcWrap = document.createElement('div');
+        svcWrap.className = 'queue-services';
+        q.services.forEach(s => {
+          const span = document.createElement('span');
+          span.className = 'svc-chip';
+          span.textContent = s.service_description;
+          svcWrap.appendChild(span);
+        });
+        d.appendChild(svcWrap);
+      }
+
       container.appendChild(d);
     });
   }
@@ -37,6 +55,10 @@
     const finishedBtn = $('finished');
     const nextBtn = $('nextQueue');
     const breakBtn = $('onBreak');
+    const svcContainer = $('currentServices');
+    const attachQueue = $('attachQueueId');
+    const attachStatus = $('attachStatus');
+    attachStatus.style.display = 'none';
 
     if (onAir && onAir.queue_code) {
       numberEl.textContent = onAir.queue_code;
@@ -44,12 +66,27 @@
       finishedBtn.disabled = false;
       nextBtn.disabled = true;
       breakBtn.disabled = true;
+
+      // show services as chips
+      svcContainer.innerHTML = '';
+      if (onAir.services && onAir.services.length) {
+        onAir.services.forEach(s => {
+          const chip = document.createElement('span');
+          chip.className = 'svc-chip large';
+          chip.textContent = s.service_description;
+          svcContainer.appendChild(chip);
+        });
+      }
+      // set attach queue id
+      attachQueue.value = onAir.queue_id;
     } else {
       numberEl.textContent = 'Waiting';
       ongoingI.textContent = '';
       finishedBtn.disabled = true;
       nextBtn.disabled = false;
       breakBtn.disabled = false;
+      svcContainer.innerHTML = '';
+      attachQueue.value = '';
     }
   }
 
@@ -124,6 +161,11 @@
     const nextBtn = $('nextQueue');
     const breakBtn = $('onBreak');
     const logoutBtn = $('logoutBtn');
+    const attachBtn = $('attachBtn');
+    const notifyBtn = $('notifyBtn');
+    const attachInput = $('attachmentInput');
+    const attachForm = $('attachForm');
+    const attachStatus = $('attachStatus');
 
     finishedBtn.addEventListener('click', function(){ finishCurrent(window); });
     nextBtn.addEventListener('click', function(){ callNext(window, office); });
@@ -134,6 +176,58 @@
         fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
           .then(()=> { window.location.href = 'login.php'; })
           .catch(()=> { window.location.href = 'login.php'; });
+      });
+    }
+
+    if (attachBtn && attachInput) {
+      attachBtn.addEventListener('click', () => {
+        attachInput.value = '';
+        attachInput.click();
+      });
+
+      attachInput.addEventListener('change', () => {
+        const file = attachInput.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+          attachStatus.style.display = 'block';
+          attachStatus.textContent = 'File too large (max 10 MB).';
+          return;
+        }
+        attachStatus.style.display = 'block';
+        attachStatus.textContent = 'Uploading...';
+
+        const form = new FormData();
+        const qid = $('attachQueueId').value;
+        if (!qid) {
+          attachStatus.textContent = 'No active queue to attach to.';
+          return;
+        }
+        form.append('queue_id', qid);
+        form.append('attachment', file);
+
+        fetch(attachApi, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: form
+        }).then(r => r.json())
+          .then(json => {
+            if (json && json.success) {
+              attachStatus.textContent = 'Uploaded: ' + (json.file || 'attached');
+            } else {
+              attachStatus.textContent = 'Upload failed: ' + (json && json.error ? json.error : 'unknown');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            attachStatus.textContent = 'Upload error';
+          });
+      });
+    }
+
+    if (notifyBtn) {
+      // no-op as requested; keep button UI only
+      notifyBtn.addEventListener('click', () => {
+        // intentionally left empty
       });
     }
   }
@@ -148,15 +242,11 @@
         const data = json.data || {};
         renderQueueList(data.queue_list || []);
         updateOnAir(data.on_air || null);
-        // reflect break button state (if you want server-side state to carry break flag, extend API)
+        // reset break button text/state (server-side break persistence not implemented)
         const breakBtn = $('onBreak');
         if (breakBtn) {
           breakBtn.dataset.break = 'false';
           breakBtn.textContent = 'Break';
-        }
-        if (!suppressReload) {
-          // optional auto-refresh after actions (short delay)
-          // location.reload(); // not necessary — we update UI client-side
         }
       })
       .catch(err => {
@@ -181,7 +271,7 @@
     const window = parseInt(root.getAttribute('data-window'),10) || 1;
     bindUI(office, window);
     loadAndRender(office, window);
-    // optional: poll queue state every 6s to refresh list
+    // poll queue state every 6s to refresh list
     setInterval(() => loadAndRender(office, window), 6000);
   });
 

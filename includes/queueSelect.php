@@ -23,23 +23,38 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
 <body>
   <div class="wrap">
     <div class="box" role="group" aria-label="Window Control" id="boxRoot" data-office="<?php echo $office; ?>" data-window="<?php echo $window_no; ?>">
-      <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+      <div class="box-top">
         <div id="window" class="window">Window <?php echo $window_no; ?></div>
-        <div style="text-align:right">
-          <div style="font-size:13px;color:#6b7280">Signed in as</div>
-          <div style="font-weight:700"><?php echo $user_name; ?></div>
+        <div class="signed">
+          <div class="muted small">Signed in as</div>
+          <div class="strong"><?php echo $user_name; ?></div>
         </div>
       </div>
 
       <div id="number" class="number">Loading…</div>
       <div><i id="ongoingText"></i></div>
 
+      <div id="currentServices" class="service-chips"> <!-- services for current on-air queue --> </div>
+
       <div class="controls">
         <button id="finished" type="button" disabled>Finished</button>
         <button id="onBreak" type="button" data-break="false">Break</button>
         <button id="nextQueue" type="button">Call Next</button>
-        <button id="logoutBtn" type="button" style="background:#f3f4f6;color:#111;border-radius:8px;padding:8px 10px;border:1px solid rgba(11,18,48,0.04)">Logout</button>
+
+        <div class="right-controls">
+          <button id="attachBtn" class="btn-ghost" type="button">Attach file</button>
+          <button id="notifyBtn" class="btn-ghost" type="button">Notify</button>
+          <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
+        </div>
       </div>
+
+      <!-- hidden file input -->
+      <form id="attachForm" style="display:none" enctype="multipart/form-data" method="post" action="../backend/queueAttach.php">
+        <input type="file" id="attachmentInput" name="attachment" accept=".pdf,image/jpeg,image/png" />
+        <input type="hidden" name="queue_id" id="attachQueueId" value="" />
+      </form>
+
+      <div id="attachStatus" class="small muted" style="margin-top:8px;display:none"></div>
     </div>
 
     <div class="queue-box" aria-label="Queue List">
