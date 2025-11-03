@@ -1,4 +1,3 @@
-
 <?php
 header('Content-Type: application/json; charset=utf-8');
 include __DIR__ . '/../linya_db/config.php';
@@ -14,13 +13,13 @@ try {
         $response['offices'][] = $o;
     }
 
-    // build main query (map window_id -> window_no)
+    // build main query — use the window_id exactly as stored in finished_queues
     $sql = "SELECT f.finished_id,
                    f.original_queue_id,
                    f.office_id,
                    COALESCE(o.office_description, '') AS office_description,
                    f.window_id,
-                   COALESCE(ow.window_no, 0) AS window_no,
+                   f.window_id AS window_no, /* copy raw value from finished_queues */
                    f.processed_by,
                    f.created_at,
                    f.finished_at,
@@ -30,8 +29,7 @@ try {
                    f.customer_phone,
                    f.customer_email
             FROM finished_queues f
-            LEFT JOIN offices o ON f.office_id = o.office_id
-            LEFT JOIN office_windows ow ON f.window_id = ow.window_id";
+            LEFT JOIN offices o ON f.office_id = o.office_id";
     if ($officeFilter) $sql .= " WHERE f.office_id = " . intval($officeFilter);
     $sql .= " ORDER BY f.finished_at DESC, f.finished_id DESC LIMIT 2000";
 
