@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 29, 2025 at 09:33 PM
+-- Generation Time: Nov 03, 2025 at 04:44 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -104,6 +104,7 @@ CREATE TABLE `queues` (
   `queue_id` int(11) NOT NULL,
   `queue_code` varchar(32) NOT NULL,
   `office_id` int(11) NOT NULL,
+  `window_id` int(10) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `status` varchar(20) NOT NULL DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -112,23 +113,54 @@ CREATE TABLE `queues` (
 -- Dumping data for table `queues`
 --
 
-INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `created_at`, `status`) VALUES
-(1, 'ACC-001', 2, '2025-10-24 03:50:31', 'pending'),
-(2, 'REG-001', 1, '2025-10-24 03:51:09', 'pending'),
-(3, 'REG-002', 1, '2025-10-24 03:51:19', 'pending'),
-(4, 'ACC-002', 2, '2025-10-24 03:53:28', 'pending'),
-(5, 'ACC-003', 2, '2025-10-24 04:14:15', 'pending'),
-(6, 'ACC-004', 2, '2025-10-24 04:14:24', 'pending'),
-(7, 'ACC-005', 2, '2025-10-24 04:28:06', 'pending'),
-(8, 'ACC-006', 2, '2025-10-24 05:56:35', 'pending'),
-(9, 'REG-003', 1, '2025-10-24 13:30:42', 'pending'),
-(10, 'REG-004', 1, '2025-10-30 04:04:31', 'pending'),
-(11, 'REG-005', 1, '2025-10-30 04:07:37', 'pending'),
-(12, 'REG-006', 1, '2025-10-30 04:07:58', 'pending'),
-(13, 'REG-007', 1, '2025-10-30 04:08:09', 'pending'),
-(14, 'REG-008', 1, '2025-10-30 04:13:49', 'pending'),
-(15, 'REG-009', 1, '2025-10-30 04:14:18', 'pending'),
-(16, 'ACC-007', 2, '2025-10-30 04:29:09', 'pending');
+INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `window_id`, `created_at`, `status`) VALUES
+(1, 'ACC-001', 2, 4, '2025-10-24 03:50:31', 'finished'),
+(2, 'REG-001', 1, 1, '2025-10-24 03:51:09', 'finished'),
+(3, 'REG-002', 1, 1, '2025-10-24 03:51:19', 'finished'),
+(4, 'ACC-002', 2, 4, '2025-10-24 03:53:28', 'finished'),
+(5, 'ACC-003', 2, 4, '2025-10-24 04:14:15', 'finished'),
+(6, 'ACC-004', 2, 4, '2025-10-24 04:14:24', 'finished'),
+(7, 'ACC-005', 2, 4, '2025-10-24 04:28:06', 'finished'),
+(8, 'ACC-006', 2, 4, '2025-10-24 05:56:35', 'finished'),
+(9, 'REG-003', 1, 0, '2025-10-24 13:30:42', 'pending'),
+(10, 'REG-004', 1, 0, '2025-10-30 04:04:31', 'pending'),
+(11, 'REG-005', 1, 0, '2025-10-30 04:07:37', 'pending'),
+(12, 'REG-006', 1, 0, '2025-10-30 04:07:58', 'pending'),
+(13, 'REG-007', 1, 0, '2025-10-30 04:08:09', 'pending'),
+(14, 'REG-008', 1, 0, '2025-10-30 04:13:49', 'pending'),
+(15, 'REG-009', 1, 0, '2025-10-30 04:14:18', 'pending'),
+(16, 'ACC-007', 2, 4, '2025-10-30 04:29:09', 'finished'),
+(17, 'ACC-008', 2, 4, '2025-10-30 10:49:45', 'finished'),
+(18, 'REG-010', 1, 0, '2025-10-30 10:51:03', 'pending'),
+(19, 'ACC-009', 2, 4, '2025-10-30 10:51:14', 'finished'),
+(20, 'ACC-010', 2, 0, '2025-10-30 11:00:34', 'pending'),
+(21, 'ACC-011', 2, 0, '2025-10-30 11:01:28', 'pending'),
+(22, 'ACC-012', 2, 0, '2025-10-30 11:01:28', 'pending'),
+(23, 'ACC-013', 2, 0, '2025-10-30 11:01:35', 'pending'),
+(24, 'ACC-014', 2, 0, '2025-10-30 11:01:35', 'pending'),
+(25, 'ACC-015', 2, 0, '2025-10-30 11:05:55', 'pending'),
+(26, 'ACC-016', 2, 0, '2025-10-30 11:05:55', 'pending'),
+(27, 'ACC-017', 2, 0, '2025-10-30 11:06:04', 'pending'),
+(28, 'ACC-018', 2, 0, '2025-10-30 11:06:04', 'pending'),
+(29, 'ACC-019', 2, 0, '2025-10-30 11:08:26', 'pending'),
+(30, 'REG-011', 1, 0, '2025-10-30 11:10:34', 'pending'),
+(31, 'REG-012', 1, 0, '2025-10-30 11:13:12', 'pending'),
+(32, 'ACC-020', 2, 0, '2025-10-30 11:13:45', 'pending'),
+(33, 'ACC-021', 2, 0, '2025-10-30 11:13:52', 'pending'),
+(34, 'REG-013', 1, 0, '2025-10-30 14:35:39', 'pending'),
+(35, 'REG-014', 1, 0, '2025-10-30 14:35:52', 'pending'),
+(36, 'ACC-022', 2, 0, '2025-11-01 04:35:33', 'pending'),
+(37, 'ACC-023', 2, 0, '2025-11-01 06:22:42', 'pending'),
+(38, 'ACC-024', 2, 0, '2025-11-01 06:23:07', 'pending'),
+(39, 'ACC-025', 2, 0, '2025-11-01 06:23:14', 'pending'),
+(40, 'ACC-026', 2, 0, '2025-10-31 23:26:45', 'pending'),
+(41, 'REG-015', 1, 0, '2025-10-31 23:30:37', 'pending'),
+(42, 'ACC-027', 2, 0, '2025-10-31 23:33:16', 'pending'),
+(43, 'ACC-028', 2, 0, '2025-10-31 23:42:20', 'pending'),
+(44, 'ACC-029', 2, 0, '2025-11-01 00:31:39', 'pending'),
+(45, 'ACC-030', 2, 0, '2025-11-01 16:01:40', 'pending'),
+(46, 'REG-016', 1, 0, '2025-11-01 16:02:43', 'pending'),
+(47, 'ACC-031', 2, 0, '2025-11-01 16:15:22', 'pending');
 
 -- --------------------------------------------------------
 
@@ -146,8 +178,8 @@ CREATE TABLE `queue_counters` (
 --
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
-(1, 9),
-(2, 7);
+(1, 16),
+(2, 31);
 
 -- --------------------------------------------------------
 
@@ -193,7 +225,53 @@ INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`, `soft_copy`, `hard
 (23, 15, 4, 1, 1),
 (24, 15, 2, 0, 1),
 (25, 16, 11, 0, 1),
-(26, 16, 12, 0, 1);
+(26, 16, 12, 0, 1),
+(27, 17, 12, 0, 1),
+(28, 17, 11, 0, 1),
+(29, 18, 4, 0, 1),
+(30, 18, 3, 0, 1),
+(31, 19, 1, 0, 1),
+(32, 19, 10, 0, 1),
+(33, 19, 11, 0, 1),
+(34, 19, 12, 0, 1),
+(35, 20, 10, 0, 1),
+(36, 21, 10, 0, 1),
+(37, 22, 10, 0, 1),
+(38, 23, 10, 0, 1),
+(39, 24, 10, 0, 1),
+(40, 25, 10, 0, 1),
+(41, 26, 10, 0, 1),
+(42, 27, 10, 0, 1),
+(43, 28, 10, 0, 1),
+(44, 29, 10, 0, 1),
+(45, 30, 2, 0, 1),
+(46, 31, 2, 0, 1),
+(47, 32, 1, 0, 1),
+(48, 33, 10, 0, 1),
+(49, 34, 4, 0, 1),
+(50, 35, 4, 0, 1),
+(51, 36, 10, 0, 1),
+(52, 36, 11, 0, 1),
+(53, 36, 12, 0, 1),
+(54, 36, 1, 0, 1),
+(55, 37, 12, 0, 1),
+(56, 37, 10, 0, 1),
+(57, 38, 10, 0, 1),
+(58, 39, 12, 0, 1),
+(59, 40, 12, 1, 1),
+(60, 40, 10, 0, 1),
+(61, 41, 2, 1, 1),
+(62, 41, 3, 0, 1),
+(63, 42, 12, 0, 1),
+(64, 43, 10, 1, 1),
+(65, 44, 10, 1, 1),
+(66, 45, 10, 1, 1),
+(67, 45, 12, 1, 1),
+(68, 46, 4, 1, 1),
+(69, 46, 2, 1, 1),
+(70, 46, 3, 1, 1),
+(71, 47, 10, 0, 1),
+(72, 47, 12, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -272,7 +350,8 @@ ALTER TABLE `office_windows`
 ALTER TABLE `queues`
   ADD PRIMARY KEY (`queue_id`),
   ADD UNIQUE KEY `uq_queue_code` (`queue_code`),
-  ADD KEY `office_id` (`office_id`);
+  ADD KEY `office_id` (`office_id`),
+  ADD KEY `window_id` (`window_id`);
 
 --
 -- Indexes for table `queue_counters`
@@ -327,13 +406,13 @@ ALTER TABLE `office_windows`
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `roles`
