@@ -123,10 +123,19 @@
     const finishedBtn = $('finished');
     const nextBtn = $('nextQueue');
     const breakBtn = $('onBreak');
+    const logoutBtn = $('logoutBtn');
 
     finishedBtn.addEventListener('click', function(){ finishCurrent(window); });
     nextBtn.addEventListener('click', function(){ callNext(window, office); });
     breakBtn.addEventListener('click', function(){ toggleBreak(window); });
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function(){
+        fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
+          .then(()=> { window.location.href = 'login.php'; })
+          .catch(()=> { window.location.href = 'login.php'; });
+      });
+    }
   }
 
   function loadAndRender(office, window, suppressReload){
