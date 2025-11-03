@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 09:33 PM
+-- Generation Time: Nov 03, 2025 at 10:00 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -46,6 +46,28 @@ INSERT INTO `accounts` (`user_id`, `user_name`, `password`, `name`, `user_type`,
 (3, 'Astaff2', 'Astaff2', 'Jameson', 2, 2),
 (4, 'robert', 'robert', 'Robert', 2, 1),
 (5, 'badong', '1234', 'badong', 2, 2);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `finished_queues`
+--
+
+CREATE TABLE `finished_queues` (
+  `finished_id` int(11) NOT NULL,
+  `original_queue_id` int(11) DEFAULT NULL,
+  `queue_code` varchar(64) DEFAULT NULL,
+  `office_id` int(11) NOT NULL,
+  `window_id` int(11) DEFAULT 0,
+  `processed_by` varchar(100) DEFAULT NULL,
+  `finished_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL,
+  `status` varchar(20) DEFAULT 'finished',
+  `services` text DEFAULT NULL,
+  `customer_name` varchar(100) DEFAULT NULL,
+  `customer_phone` varchar(30) DEFAULT NULL,
+  `customer_email` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -136,7 +158,7 @@ INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `window_id`, `creat
 (17, 'ACC-008', 2, 4, '2025-10-30 10:49:45', 'finished', NULL, NULL, NULL),
 (18, 'REG-010', 1, 0, '2025-10-30 10:51:03', 'pending', NULL, NULL, NULL),
 (19, 'ACC-009', 2, 4, '2025-10-30 10:51:14', 'finished', NULL, NULL, NULL),
-(20, 'ACC-010', 2, 0, '2025-10-30 11:00:34', 'pending', NULL, NULL, NULL),
+(20, 'ACC-010', 2, 4, '2025-10-30 11:00:34', 'ongoing', NULL, NULL, NULL),
 (21, 'ACC-011', 2, 0, '2025-10-30 11:01:28', 'pending', NULL, NULL, NULL),
 (22, 'ACC-012', 2, 0, '2025-10-30 11:01:28', 'pending', NULL, NULL, NULL),
 (23, 'ACC-013', 2, 0, '2025-10-30 11:01:35', 'pending', NULL, NULL, NULL),
@@ -166,7 +188,12 @@ INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `window_id`, `creat
 (47, 'ACC-031', 2, 0, '2025-11-01 16:15:22', 'pending', NULL, NULL, NULL),
 (48, 'ACC-032', 2, 0, '2025-11-03 20:39:11', 'pending', 'John', '09915261467', 'ricksiv0107@gmail.com'),
 (49, 'ACC-033', 2, 0, '2025-11-03 20:45:15', 'pending', 'Jeremy', '09663811477', 'jeremy@email.com'),
-(50, 'ACC-034', 2, 0, '2025-11-03 21:30:02', 'pending', NULL, NULL, NULL);
+(50, 'ACC-034', 2, 0, '2025-11-03 21:30:02', 'pending', NULL, NULL, NULL),
+(51, 'ACC-035', 2, 0, '2025-11-03 21:37:36', 'pending', 'John', '09915261467', 'ricksiv0107@gmail.com'),
+(52, 'ACC-036', 2, 0, '2025-11-03 21:39:59', 'pending', 'Jeremy', '09663811477', 'jeremy@email.com'),
+(53, 'ACC-037', 2, 0, '2025-11-03 21:41:35', 'pending', 'badong', '09123456789', 'salvador.ricardo.bscs2022@gmail.com'),
+(54, 'ACC-038', 2, 0, '2025-11-03 21:46:26', 'pending', 'jobert', '09123455555', 'salvador.ricardo.bscs2022@gmail.com'),
+(55, 'REG-017', 1, 0, '2025-11-03 21:47:55', 'pending', 'John', '09915261467', 'ricksiv0107@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -184,8 +211,8 @@ CREATE TABLE `queue_counters` (
 --
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
-(1, 16),
-(2, 34);
+(1, 17),
+(2, 38);
 
 -- --------------------------------------------------------
 
@@ -283,7 +310,16 @@ INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`, `soft_copy`, `hard
 (75, 48, 1, 1, 1),
 (76, 49, 1, 1, 1),
 (77, 49, 11, 1, 1),
-(78, 50, 10, 0, 1);
+(78, 50, 10, 0, 1),
+(79, 51, 11, 1, 1),
+(80, 52, 11, 1, 1),
+(81, 53, 10, 1, 1),
+(82, 54, 10, 1, 1),
+(83, 54, 11, 1, 1),
+(84, 54, 1, 0, 1),
+(85, 54, 12, 0, 1),
+(86, 55, 2, 1, 1),
+(87, 55, 4, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -340,6 +376,14 @@ ALTER TABLE `accounts`
   ADD PRIMARY KEY (`user_id`),
   ADD KEY `user_type_and_role_id` (`user_type`),
   ADD KEY `office_and_offices_id` (`office`);
+
+--
+-- Indexes for table `finished_queues`
+--
+ALTER TABLE `finished_queues`
+  ADD PRIMARY KEY (`finished_id`),
+  ADD KEY `office_id` (`office_id`),
+  ADD KEY `original_queue_id` (`original_queue_id`);
 
 --
 -- Indexes for table `offices`
@@ -403,6 +447,12 @@ ALTER TABLE `accounts`
   MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT for table `finished_queues`
+--
+ALTER TABLE `finished_queues`
+  MODIFY `finished_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `offices`
 --
 ALTER TABLE `offices`
@@ -418,13 +468,13 @@ ALTER TABLE `office_windows`
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `roles`

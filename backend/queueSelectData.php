@@ -29,14 +29,109 @@ try {
         exit;
     }
 
+    // Modified finish action: archive finished queue into finished_queues, include services and visitor info,
+    // record which staff processed it and which window, then remove the original queue and its queue_services.
     if ($action === 'finish') {
-        $res = finishCurrentQueue($conn, $window);
-        if ($res) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to finish the current queue.']);
+        // get the current on-air queue for this window
+        $onAir = displayOnAir($conn, $window);
+        if (!$onAir || empty($onAir['queue_id'])) {
+            echo json_encode(['success' => false, 'message' => 'No active queue on this window to finish.']);
+            exit;
         }
-        exit;
+        $queue_id = intval($onAir['queue_id']);
+
+        // lock and fetch the queue row
+        $qSt = $conn->prepare("SELECT * FROM queues WHERE queue_id = ? FOR UPDATE");
+        $qSt->bind_param('i', $queue_id);
+        $qSt->execute();
+        $qRes = $qSt->get_result();
+        $queueRow = $qRes->fetch_assoc();
+        $qSt->close();
+
+        if (!$queueRow) {
+            echo json_encode(['success' => false, 'message' => 'Queue not found']);
+            exit;
+        }
+
+        // collect services for this queue
+        $sSt = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
+        $sSt->bind_param('i', $queue_id);
+        $sSt->execute();
+        $sRes = $sSt->get_result();
+        $servicesArr = [];
+        while ($r = $sRes->fetch_assoc()) {
+            $servicesArr[] = $r['service_description'] . ((isset($r['soft_copy']) && intval($r['soft_copy']) === 1) ? ' (PDF)' : '');
+        }
+        $sSt->close();
+        $servicesText = count($servicesArr) ? implode(', ', $servicesArr) : null;
+
+        // prepare archive insert (removed queue_code column)
+        $processed_by = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : null;
+        $finishedAt = date('Y-m-d H:i:s');
+
+        // transaction: insert into finished_queues, delete queue_services, delete queues
+        $conn->begin_transaction();
+        try {
+            $ins = $conn->prepare(
+                "INSERT INTO finished_queues 
+                    (original_queue_id, office_id, window_id, processed_by, finished_at, created_at, status, services, customer_name, customer_phone, customer_email)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE 
+                    processed_by = VALUES(processed_by),
+                    finished_at = VALUES(finished_at),
+                    status = VALUES(status),
+                    services = VALUES(services),
+                    customer_name = VALUES(customer_name),
+                    customer_phone = VALUES(customer_phone),
+                    customer_email = VALUES(customer_email)"
+            );
+            // types: 3 ints, then 8 strings = 11 params
+            $types = 'iiissssssss';
+            $office_id = intval($queueRow['office_id']);
+            $window_id = intval($queueRow['window_id']);
+            $created_at = $queueRow['created_at'] ?? null;
+            $status = 'finished';
+            $customer_name = $queueRow['customer_name'] ?? null;
+            $customer_phone = $queueRow['customer_phone'] ?? null;
+            $customer_email = $queueRow['customer_email'] ?? null;
+
+            $ins->bind_param($types,
+                $queue_id,
+                $office_id,
+                $window_id,
+                $processed_by,
+                $finishedAt,
+                $created_at,
+                $status,
+                $servicesText,
+                $customer_name,
+                $customer_phone,
+                $customer_email
+            );
+            $ins->execute();
+            $ins->close();
+
+            // remove queue services
+            $dqs = $conn->prepare("DELETE FROM queue_services WHERE queue_id = ?");
+            $dqs->bind_param('i', $queue_id);
+            $dqs->execute();
+            $dqs->close();
+
+            // remove the original queue row
+            $dq = $conn->prepare("DELETE FROM queues WHERE queue_id = ?");
+            $dq->bind_param('i', $queue_id);
+            $dq->execute();
+            $dq->close();
+
+            $conn->commit();
+            echo json_encode(['success' => true]);
+            exit;
+        } catch (Exception $e) {
+            $conn->rollback();
+            error_log('Archive finish error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to archive finished queue']);
+            exit;
+        }
     }
 
     if ($action === 'break') {
