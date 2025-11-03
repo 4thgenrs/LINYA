@@ -3,6 +3,9 @@
   const api = '../backend/queueSelectData.php';
   const attachApi = '../backend/queueAttach.php';
 
+  // track current on-air queue id for this window to prevent calling next while one is active
+  let currentOnAirId = null;
+
   function $(id){ return document.getElementById(id); }
   function qs(sel, root){ return (root||document).querySelector(sel); }
 
@@ -61,10 +64,11 @@
     attachStatus.style.display = 'none';
 
     if (onAir && onAir.queue_code) {
+      currentOnAirId = onAir.queue_id || null; // set current on-air id
       numberEl.textContent = onAir.queue_code;
       ongoingI.textContent = 'Ongoing';
       finishedBtn.disabled = false;
-      nextBtn.disabled = true;
+      nextBtn.disabled = true; // prevent next while on-air
       breakBtn.disabled = true;
 
       // show services as chips
@@ -80,6 +84,7 @@
       // set attach queue id
       attachQueue.value = onAir.queue_id;
     } else {
+      currentOnAirId = null; // no on-air
       numberEl.textContent = 'Waiting';
       ongoingI.textContent = '';
       finishedBtn.disabled = true;
@@ -92,6 +97,12 @@
 
   // public actions
   window.callNext = function(windowNumber, officeNumber){
+    // client-side guard: if there's an active queue on this window, block calling next
+    if (currentOnAirId) {
+      alert('Finish the current queue before calling the next one.');
+      return;
+    }
+
     disableButtons(true);
     postAction('next', officeNumber, windowNumber)
       .then(json => {

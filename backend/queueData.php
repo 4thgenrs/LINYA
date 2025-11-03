@@ -49,6 +49,20 @@ function getNextLine($conn, $office, $window) {
     $office = intval($office);
     $window = intval($window);
 
+    // Do not assign next if this window already has an ongoing queue
+    $chkStmt = $conn->prepare("SELECT queue_id FROM queues WHERE status='ongoing' AND window_id = ? LIMIT 1");
+    if ($chkStmt) {
+        $chkStmt->bind_param('i', $window);
+        $chkStmt->execute();
+        $chkRes = $chkStmt->get_result();
+        if ($chkRes && $chkRes->num_rows > 0) {
+            // there is already an active queue for this window — do not assign next
+            $chkStmt->close();
+            return null;
+        }
+        $chkStmt->close();
+    }
+
     // Select the next pending queue (by smallest queue_id)
     $sql_select = "SELECT queue_id, queue_code FROM queues WHERE status='pending' AND office_id = ? ORDER BY queue_id ASC LIMIT 1";
     $stmt = $conn->prepare($sql_select);
