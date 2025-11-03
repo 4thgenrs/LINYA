@@ -9,6 +9,84 @@
   function $(id){ return document.getElementById(id); }
   function qs(sel, root){ return (root||document).querySelector(sel); }
 
+  // simple confirm modal that returns a Promise<boolean>
+  function showConfirm(message, title = 'Confirm') {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(0,0,0,0.4)';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '9999';
+
+      const dialog = document.createElement('div');
+      dialog.style.width = '320px';
+      dialog.style.maxWidth = '92%';
+      dialog.style.background = '#fff';
+      dialog.style.borderRadius = '8px';
+      dialog.style.padding = '16px';
+      dialog.style.boxShadow = '0 6px 20px rgba(0,0,0,0.12)';
+      dialog.style.fontFamily = 'Inter, system-ui, sans-serif';
+
+      const t = document.createElement('div');
+      t.style.fontWeight = '700';
+      t.style.marginBottom = '8px';
+      t.textContent = title;
+
+      const m = document.createElement('div');
+      m.style.marginBottom = '14px';
+      m.style.color = '#111';
+      m.textContent = message;
+
+      const btnRow = document.createElement('div');
+      btnRow.style.display = 'flex';
+      btnRow.style.justifyContent = 'flex-end';
+      btnRow.style.gap = '8px';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.style.background = '#f3f4f6';
+      cancelBtn.style.color = '#111';
+      cancelBtn.style.border = '1px solid rgba(11,18,48,0.04)';
+      cancelBtn.style.padding = '8px 12px';
+      cancelBtn.style.borderRadius = '8px';
+
+      const okBtn = document.createElement('button');
+      okBtn.textContent = 'OK';
+      okBtn.style.background = 'var(--accent)';
+      okBtn.style.color = '#fff';
+      okBtn.style.padding = '8px 12px';
+      okBtn.style.borderRadius = '8px';
+
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(okBtn);
+      dialog.appendChild(t);
+      dialog.appendChild(m);
+      dialog.appendChild(btnRow);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      function clean(result) {
+        try { document.body.removeChild(overlay); } catch (e) {}
+        resolve(!!result);
+      }
+
+      cancelBtn.addEventListener('click', () => clean(false));
+      okBtn.addEventListener('click', () => clean(true));
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay) clean(false);
+      });
+      // keyboard
+      function onKey(e) {
+        if (e.key === 'Escape') { clean(false); }
+        if (e.key === 'Enter') { clean(true); }
+      }
+      window.addEventListener('keydown', onKey, { once: true });
+    });
+  }
+
   function fetchState(office, window) {
     return fetch(`${api}?action=state&office=${encodeURIComponent(office)}&window=${encodeURIComponent(window)}`, {credentials:'same-origin'})
       .then(r => r.json());
@@ -184,9 +262,39 @@
 
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function(){
-        fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
-          .then(()=> { window.location.href = 'login.php'; })
-          .catch(()=> { window.location.href = 'login.php'; });
+        showConfirm('Are you sure you want to log out?', 'Log out')
+          .then(confirmed => {
+            if (!confirmed) return;
+            disableButtons(true);
+            fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
+              .then(r => r.json())
+              .then(json => {
+                if (json && json.success) {
+                  // load the login form HTML and replace the current document without a full page refresh
+                  // this will execute scripts/styles referenced by the login page
+                  fetch('login.php', { credentials: 'same-origin' })
+                    .then(r => r.text())
+                    .then(html => {
+                      document.open();
+                      document.write(html);
+                      document.close();
+                    })
+                    .catch(err => {
+                      console.error('Failed to load login form', err);
+                      alert('Logged out but failed to load login form. Please navigate to the login page.');
+                    });
+                } else {
+                  console.error('Logout failed response', json);
+                  alert('Logout failed. Please try again.');
+                  disableButtons(false);
+                }
+              })
+              .catch(err => {
+                console.error('Logout failed', err);
+                alert('Logout failed. Please try again.');
+                disableButtons(false);
+              });
+          });
       });
     }
 
