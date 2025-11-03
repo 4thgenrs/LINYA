@@ -11,6 +11,11 @@ $office_id = isset($_POST['office_id']) ? intval($_POST['office_id']) : 0;
 $services = isset($_POST['services']) ? $_POST['services'] : [];
 $softs = isset($_POST['soft_copy']) ? $_POST['soft_copy'] : [];
 
+// new visitor fields
+$customer_name = isset($_POST['customer_name']) ? trim($_POST['customer_name']) : '';
+$customer_phone = isset($_POST['customer_phone']) ? trim($_POST['customer_phone']) : '';
+$customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
+
 if (!$office_id || !is_array($services) || empty($services)) {
     echo json_encode(['success'=>false, 'error'=>'Missing data']);
     exit;
@@ -61,10 +66,10 @@ try {
 
     $queue_code = $office_code . '-' . str_pad($last, 3, '0', STR_PAD_LEFT);
 
-    // insert into queues
+    // insert into queues including visitor info
     $now = date('Y-m-d H:i:s');
-    $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status) VALUES (?, ?, ?, 'pending')");
-    $qSt->bind_param("sis", $queue_code, $office_id, $now);
+    $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status, customer_name, customer_phone, customer_email) VALUES (?, ?, ?, 'pending', ?, ?, ?)");
+    $qSt->bind_param("sissss", $queue_code, $office_id, $now, $customer_name, $customer_phone, $customer_email);
     $qSt->execute();
     $queue_id = $qSt->insert_id;
     $qSt->close();

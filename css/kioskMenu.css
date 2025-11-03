@@ -221,6 +221,46 @@ body {
 .muted{ color:var(--muted); }
 .small{ font-size:13px; }
 
+/* visitor form styles */
+.visitor-screen {
+    display:block;
+    padding: 18px 12px 28px;
+}
+.vf-field { display:block; margin:12px 0; }
+.vf-label { font-weight:600; margin-bottom:6px; color:#0b1230; }
+.vf-field input {
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(11,18,48,0.06);
+    background: white;
+}
+
+/* hint */
+.vf-hint { font-size:13px; margin-top:6px; }
+
+/* modal overlay */
+.vf-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(11,18,48,0.36);
+    z-index: 9999;
+}
+.vf-modal-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    width: 340px;
+    box-shadow: 0 12px 30px rgba(11,18,48,0.18);
+}
+.vf-confirm-row { margin:8px 0; }
+
+/* ensure office grid hidden initially until visitor confirms (JS controls display) */
+#officeSection[style*="display:none"] { display: none !important; }
+
 /* responsive tweaks */
 @media (max-width:520px){
     .grid{ grid-template-columns: 1fr; }

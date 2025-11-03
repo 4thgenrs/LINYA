@@ -4,6 +4,79 @@ window.multiSelectMode = window.multiSelectMode || false;
 window.selectedServicesSet = window.selectedServicesSet || new Set();
 window.perServiceSoft = window.perServiceSoft || {}; // { id: 0|1 }
 
+// Add visitor form handling at top of file (keeps existing functions below working)
+window.visitorInfo = window.visitorInfo || { name: '', phone: '', email: '' };
+
+function isValidPhone(p) {
+    // allow only digits, must be 11 chars and start with 09
+    return typeof p === 'string' && /^\s*09\d{9}\s*$/.test(p);
+}
+
+function isValidEmail(e) {
+    if (!e) return false;
+    // simple email regex
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+function visitorSyncState() {
+    const nameEl = document.getElementById('visitorName');
+    const phoneEl = document.getElementById('visitorPhone');
+    const emailEl = document.getElementById('visitorEmail');
+    const proceedBtn = document.getElementById('visitorProceed');
+
+    const name = nameEl ? nameEl.value.trim() : '';
+    const phone = phoneEl ? phoneEl.value.trim() : '';
+    const email = emailEl ? emailEl.value.trim() : '';
+
+    const phoneOk = isValidPhone(phone);
+    const emailOk = email === '' ? true : isValidEmail(email); // allow empty email if desired; change to require by removing condition
+
+    // show inline hints
+    const phoneHint = document.getElementById('visitorPhoneHint');
+    if (phoneHint) phoneHint.style.display = phone === '' ? 'none' : (phoneOk ? 'none' : 'block');
+
+    const emailHint = document.getElementById('visitorEmailHint');
+    if (emailHint) emailHint.style.display = email === '' ? 'none' : (emailOk ? 'none' : 'block');
+
+    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk);
+}
+
+function openVisitorConfirm() {
+    const name = document.getElementById('visitorName').value.trim();
+    const phone = document.getElementById('visitorPhone').value.trim();
+    const email = document.getElementById('visitorEmail').value.trim();
+
+    document.getElementById('confirmName').textContent = name || '-';
+    document.getElementById('confirmPhone').textContent = phone || '-';
+    document.getElementById('confirmEmail').textContent = email || '-';
+
+    const modal = document.getElementById('visitorConfirmModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeVisitorConfirm() {
+    const modal = document.getElementById('visitorConfirmModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function acceptVisitorAndEnter() {
+    // store info
+    window.visitorInfo.name = document.getElementById('visitorName').value.trim();
+    window.visitorInfo.phone = document.getElementById('visitorPhone').value.trim();
+    window.visitorInfo.email = document.getElementById('visitorEmail').value.trim();
+
+    closeVisitorConfirm();
+
+    // show kiosk (officeSection) and hide visitor form
+    const visitor = document.getElementById('visitorForm');
+    const officeSection = document.getElementById('officeSection');
+    if (visitor) visitor.style.display = 'none';
+    if (officeSection) {
+        officeSection.style.display = 'block';
+        setTimeout(() => officeSection.classList.add('active'), 80);
+    }
+}
+
 function refreshUIForMode() {
     const serviceActions = document.getElementById('serviceActions');
     const toggleBtn = document.getElementById('multiSelectToggle');
@@ -205,6 +278,13 @@ function postQueue(services){
         form.append('soft_copy[]', window.perServiceSoft && window.perServiceSoft[sid] ? 1 : 0);
     });
 
+    // include visitor info if present
+    if (window.visitorInfo) {
+        form.append('customer_name', window.visitorInfo.name || '');
+        form.append('customer_phone', window.visitorInfo.phone || '');
+        form.append('customer_email', window.visitorInfo.email || '');
+    }
+
     fetch('../backend/queueInsert.php', { method: 'POST', body: form })
         .then(r => r.json())
         .then(json => {
@@ -260,6 +340,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ss = document.getElementById('serviceSection');
     if (ss) ss.style.display = 'none';
+
+    // visitor form initialisation
+    const visitorForm = document.getElementById('visitorForm');
+    if (visitorForm) {
+        // show visitor form first, hide office section
+        const officeSection = document.getElementById('officeSection');
+        if (officeSection) officeSection.style.display = 'none';
+        // attach input listeners
+        ['visitorName','visitorPhone','visitorEmail'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', visitorSyncState, {passive:true});
+        });
+
+        const proceedBtn = document.getElementById('visitorProceed');
+        if (proceedBtn) proceedBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openVisitorConfirm();
+        });
+
+        const cancelConfirm = document.getElementById('visitorCancel');
+        if (cancelConfirm) cancelConfirm.addEventListener('click', (e)=>{ e.preventDefault(); closeVisitorConfirm(); });
+
+        const confirmBtn = document.getElementById('visitorConfirm');
+        if (confirmBtn) confirmBtn.addEventListener('click', (e)=>{ e.preventDefault(); acceptVisitorAndEnter(); });
+
+        // initialize state
+        visitorSyncState();
+    }
 });
 
 // expose for inline office buttons
