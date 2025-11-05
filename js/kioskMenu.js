@@ -142,7 +142,11 @@ function loadServices(officeId, officeName) {
 
                         // if user toggled ON and service not selected yet, select it
                         if (softCb.checked && !(window.selectedServicesSet && window.selectedServicesSet.has(sid))) {
-                            // select visually and in state
+                            // If NOT in multi-select mode, selecting a soft copy should behave like a single selection:
+                            // clear other selections and select this one only.
+                            if (!window.multiSelectMode) {
+                                clearAllSelections();
+                            }
                             if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
                             window.selectedServicesSet.add(sid);
                             card.classList.add('selected');
@@ -166,14 +170,23 @@ function loadServices(officeId, officeName) {
                     if (window.multiSelectMode) {
                         toggleCardSelection(card, sid, hiddenCb, softCb);
                     } else {
-                        // single selection: select card and require Confirm
-                        clearAllSelections();
-                        window.selectedServicesSet.add(sid);
-                        card.classList.add('selected');
-                        if (hiddenCb) hiddenCb.checked = true;
+                        // single selection: toggle the single selection (allow deselect)
+                        if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
+                        if (window.selectedServicesSet.has(sid)) {
+                            // deselect current
+                            clearAllSelections();
+                            const serviceActions = document.getElementById('serviceActions');
+                            if (serviceActions) serviceActions.style.display = 'none';
+                        } else {
+                            // select this single card (clear others)
+                            clearAllSelections();
+                            window.selectedServicesSet.add(sid);
+                            card.classList.add('selected');
+                            if (hiddenCb) hiddenCb.checked = true;
+                            const serviceActions = document.getElementById('serviceActions');
+                            if (serviceActions) serviceActions.style.display = 'flex';
+                        }
                         // keep soft toggle state as-is (user can toggle after)
-                        const serviceActions = document.getElementById('serviceActions');
-                        if (serviceActions) serviceActions.style.display = 'flex';
                         refreshUIForMode();
                         updateSelectedCount();
                     }
