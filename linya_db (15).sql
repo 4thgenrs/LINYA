@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 10:50 PM
+-- Generation Time: Nov 05, 2025 at 08:06 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -81,7 +81,16 @@ INSERT INTO `finished_queues` (`finished_id`, `original_queue_id`, `office_id`, 
 (13, 36, 2, 4, 'badong', '2025-11-03 22:13:57', '2025-11-01 04:35:33', 'finished', 'Order of Payment, 1v1 with Sir Aldrin, Payment Failure, T.O.R', NULL, NULL, NULL),
 (14, 37, 2, 4, 'badong', '2025-11-03 22:17:15', '2025-11-01 06:22:42', 'finished', 'Payment Failure, Order of Payment', NULL, NULL, NULL),
 (15, 57, 2, 4, 'badong', '2025-11-03 22:29:37', '2025-11-03 22:29:01', 'finished', '1v1 with Sir Aldrin (PDF), T.O.R, Payment Failure', 'Jeremy', '09663811477', 'jeremy@email.com'),
-(16, 58, 2, 4, 'badong', '2025-11-03 22:29:39', '2025-11-03 22:29:17', 'finished', 'Payment Failure (PDF)', 'jobert', '09123455555', 'salvador.ricardo.bscs2022@gmail.com');
+(16, 58, 2, 4, 'badong', '2025-11-03 22:29:39', '2025-11-03 22:29:17', 'finished', 'Payment Failure (PDF)', 'jobert', '09123455555', 'salvador.ricardo.bscs2022@gmail.com'),
+(17, 60, 2, 4, 'badong', '2025-11-03 23:30:12', '2025-11-03 22:50:04', 'finished', '1v1 with Sir Aldrin, Order of Payment, Payment Failure, T.O.R', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(18, 61, 2, 4, 'badong', '2025-11-03 23:30:16', '2025-11-03 23:28:52', 'finished', 'Order of Payment', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(19, 62, 2, 4, 'badong', '2025-11-05 09:07:31', '2025-11-05 08:51:39', 'finished', 'Order of Payment', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(20, 63, 2, 1, 'Astaff1', '2025-11-05 09:07:34', '2025-11-05 08:52:23', 'finished', 'Payment Failure (PDF), 1v1 with Sir Aldrin (PDF), Order of Payment (PDF), T.O.R (PDF)', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(21, 64, 2, 4, 'badong', '2025-11-05 13:02:42', '2025-11-05 08:52:58', 'finished', '1v1 with Sir Aldrin', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(22, 66, 2, 4, 'badong', '2025-11-05 13:09:50', '2025-11-05 13:02:15', 'finished', 'Order of Payment (PDF)', 'Camille Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com'),
+(23, 67, 2, 4, 'badong', '2025-11-05 13:11:23', '2025-11-05 13:10:32', 'finished', 'Order of Payment (PDF)', 'Lawrence', '09474492247', 'bitancurjohnlawrence.bsit@gmail.com'),
+(24, 68, 2, 4, 'badong', '2025-11-05 13:12:33', '2025-11-05 13:12:13', 'finished', 'Payment Failure (PDF)', 'John Lexter Balladares', '09276164084', 'armenta.johnlexter.bscs2022@gmail.com'),
+(25, 69, 2, 4, 'badong', '2025-11-05 19:57:11', '2025-11-05 19:56:38', 'finished', 'Order of Payment (PDF)', 'Camille Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -155,7 +164,8 @@ CREATE TABLE `queues` (
 INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `window_id`, `created_at`, `status`, `customer_name`, `customer_phone`, `customer_email`) VALUES
 (56, 'REG-001', 1, 0, '2025-11-03 22:28:41', 'pending', 'John', '09915261467', 'ricksiv0107@gmail.com'),
 (59, 'REG-002', 1, 0, '2025-11-03 22:49:47', 'pending', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(60, 'ACC-003', 2, 0, '2025-11-03 22:50:04', 'pending', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com');
+(65, 'ACC-008', 2, 1, '2025-11-05 09:05:56', 'ongoing', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
+(70, 'ACC-013', 2, 4, '2025-11-05 19:57:39', 'ongoing', 'Jojo B.', '09123455555', 'salvador.ricardo.bscs2022@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -174,7 +184,7 @@ CREATE TABLE `queue_counters` (
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
 (1, 2),
-(2, 3);
+(2, 13);
 
 -- --------------------------------------------------------
 
@@ -199,10 +209,11 @@ INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`, `soft_copy`, `hard
 (2, 56, 2, 0, 1),
 (3, 56, 3, 1, 1),
 (8, 59, 4, 1, 1),
-(9, 60, 11, 0, 1),
-(10, 60, 10, 0, 1),
-(11, 60, 12, 0, 1),
-(12, 60, 1, 0, 1);
+(20, 65, 1, 1, 1),
+(21, 65, 11, 1, 1),
+(22, 65, 12, 1, 1),
+(23, 65, 10, 1, 1),
+(28, 70, 1, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -333,7 +344,7 @@ ALTER TABLE `accounts`
 -- AUTO_INCREMENT for table `finished_queues`
 --
 ALTER TABLE `finished_queues`
-  MODIFY `finished_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `finished_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `offices`
@@ -351,13 +362,13 @@ ALTER TABLE `office_windows`
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `roles`
