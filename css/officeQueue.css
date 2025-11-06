@@ -1,0 +1,32 @@
+:root{--bg:#f6f8fb;--card:#fff;--accent:#2563eb;--muted:#6b7280;--chip:#eef6ff}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#111}
+#root{max-width:1100px;margin:18px auto;padding:16px}
+
+.oq-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.oq-title{font-size:20px;font-weight:700;color:var(--accent)}
+.oq-sub{color:var(--muted);font-size:13px}
+
+.oq-main{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.oq-windows{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.window-card{background:var(--card);border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);display:flex;flex-direction:column;gap:8px;min-height:100px}
+.window-top{display:flex;justify-content:space-between;align-items:center}
+.window-no{font-weight:800;color:var(--accent);font-size:20px}
+.window-staff{color:var(--muted);font-size:13px}
+.queue-code{font-size:24px;font-weight:900}
+.queue-name{color:var(--muted);font-weight:700}
+.svc-chip{display:inline-block;background:var(--chip);padding:6px 8px;border-radius:999px;font-size:12px;margin-right:6px;margin-top:6px;color:#0b1230;font-weight:700}
+.svc-chip small.soft-badge{margin-left:8px;background:#111;color:#fff;padding:2px 6px;border-radius:999px;font-size:10px;font-weight:800}
+
+.pending-list{display:flex;flex-direction:column;gap:10px}
+.pending-item{background:var(--card);padding:10px;border-radius:8px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 18px rgba(15,23,42,0.04)}
+.pending-code{font-weight:800;color:var(--accent)}
+.pending-empty{color:var(--muted);padding:12px;text-align:center}
+
+.oq-select { padding:6px 8px; border-radius:6px; border:1px solid #e6e9ef; background:#fff; font-size:14px }
+.oq-select-label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; text-align:right; margin-right:6px }
+
+@media (max-width:860px){
+  .oq-main{grid-template-columns:1fr}
+  .oq-pending{order:2}
+}
