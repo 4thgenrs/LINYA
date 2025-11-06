@@ -53,7 +53,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 try {
-    if (!isset($_POST['queue_id']) || empty($_FILES['attachment'])) {
+    // accept either single 'attachment' or multiple 'attachments[]'
+    if (!isset($_POST['queue_id']) || (empty($_FILES['attachment']) && empty($_FILES['attachments']))) {
         echo json_encode(['success' => false, 'error' => 'Missing queue_id or attachment']);
         exit;
     }
@@ -84,20 +85,49 @@ try {
     }
 
     // validate uploaded file
-    $file = $_FILES['attachment'];
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'error' => 'File upload error: ' . $file['error']]);
-        exit;
+    // Accept either single 'attachment' or multiple 'attachments[]'
+    $files = [];
+    if (isset($_FILES['attachments'])) {
+        // normalize multiple files
+        $af = $_FILES['attachments'];
+        for ($i = 0; $i < count($af['name']); $i++) {
+            $files[] = [
+                'name' => $af['name'][$i],
+                'type' => $af['type'][$i],
+                'tmp_name' => $af['tmp_name'][$i],
+                'error' => $af['error'][$i],
+                'size' => $af['size'][$i],
+            ];
+        }
+    } elseif (isset($_FILES['attachment'])) {
+        $f = $_FILES['attachment'];
+        $files[] = $f;
     }
-    // optional: file size / type checks
-    $maxBytes = 10 * 1024 * 1024; // 10 MB
-    if ($file['size'] > $maxBytes) {
-        echo json_encode(['success' => false, 'error' => 'File too large (max 10 MB)']);
+
+    if (empty($files)) {
+        echo json_encode(['success' => false, 'error' => 'No files uploaded']);
         exit;
     }
 
-    $tmpPath = $file['tmp_name'];  
-    $origName = basename($file['name']);
+    $maxBytes = 10 * 1024 * 1024; // 10 MB per file
+    $allowedExt = ['pdf','jpg','jpeg','png','gif','webp','bmp'];
+    $attachmentsForResponse = [];
+    foreach ($files as $file) {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'error' => 'File upload error: ' . $file['error']]);
+            exit;
+        }
+        if ($file['size'] > $maxBytes) {
+            echo json_encode(['success' => false, 'error' => 'File too large: ' . $file['name']]);
+            exit;
+        }
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExt, true)) {
+            echo json_encode(['success' => false, 'error' => 'File type not allowed: ' . $file['name']]);
+            exit;
+        }
+        $attachmentsForResponse[] = basename($file['name']);
+    }
 
     // SMTP configuration
     $smtpHost = 'smtp.gmail.com';
@@ -150,16 +180,18 @@ try {
         $mail->Subject = $subject;
         $mail->Body = $body;
         $mail->AltBody = $body;
-        // attach the uploaded file directly from tmp path
-        $mail->addAttachment($tmpPath, $origName);
+        // attach all uploaded files
+        foreach ($files as $file) {
+            $mail->addAttachment($file['tmp_name'], $file['name']);
+        }
 
         // send
         if (!$mail->send()) {
             throw new Exception('Mail send failed: ' . $mail->ErrorInfo);
         }
 
-        // success
-        echo json_encode(['success' => true, 'file' => $origName]);
+        // success - return list of attached filenames
+        echo json_encode(['success' => true, 'files' => $attachmentsForResponse]);
         exit;
     } catch (Exception $e) {
         // mail error

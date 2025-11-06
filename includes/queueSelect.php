@@ -50,9 +50,30 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
 
       <!-- hidden file input -->
       <form id="attachForm" style="display:none" enctype="multipart/form-data" method="post" action="../backend/queueAttach.php">
-        <input type="file" id="attachmentInput" name="attachment" accept=".pdf,image/jpeg,image/png" />
+        <!-- allow multiple files and broader image types; name as array so backend can handle multiple -->
+        <input type="file" id="attachmentInput" name="attachments[]" accept=".pdf,image/*" multiple />
         <input type="hidden" name="queue_id" id="attachQueueId" value="" />
       </form>
+
+      <!-- Attachment preview modal -->
+      <div id="attachModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)">
+        <div style="width:92%;max-width:720px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <strong>Attachments Preview</strong>
+            <button id="attachCloseBtn" class="btn-ghost" type="button">Back</button>
+          </div>
+          <div style="font-size:13px;color:#666;margin-bottom:8px">
+            Allowed file types: PDF and images (jpg, jpeg, png, gif, webp, bmp). Max size per file: 10 MB.
+          </div>
+          <div id="attachPreviewList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding:6px;border:1px solid #f0f0f0;border-radius:6px;margin-bottom:12px"></div>
+          <div style="display:flex;justify-content:flex-end;gap:8px">
+            <button id="attachAddBtn" class="btn-ghost" type="button">Add file</button>
+            <button id="attachSendBtn" type="button">Send</button>
+            <button id="attachCancelBtn" class="btn-ghost" type="button">Cancel</button>
+          </div>
+          <div id="attachModalStatus" style="margin-top:8px;color:#666;font-size:13px"></div>
+        </div>
+      </div>
 
       <div id="attachStatus" class="small muted" style="margin-top:8px;display:none"></div>
     </div>

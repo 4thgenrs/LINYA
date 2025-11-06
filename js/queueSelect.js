@@ -318,25 +318,153 @@
         attachInput.click();
       });
 
+      // modal elements
+      const attachModal = document.getElementById('attachModal');
+      const attachPreviewList = document.getElementById('attachPreviewList');
+      const attachCloseBtn = document.getElementById('attachCloseBtn');
+      const attachSendBtn = document.getElementById('attachSendBtn');
+      const attachCancelBtn = document.getElementById('attachCancelBtn');
+      const attachAddBtn = document.getElementById('attachAddBtn');
+      const attachModalStatus = document.getElementById('attachModalStatus');
+
+      function showAttachModal() {
+        attachPreviewList.innerHTML = '';
+        attachModalStatus.textContent = '';
+        const files = Array.from(attachInput.files || []);
+        if (!files.length) {
+          attachModalStatus.textContent = 'No files selected.';
+        }
+        files.forEach(f => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.justifyContent = 'space-between';
+          row.style.padding = '6px';
+          row.style.borderBottom = '1px solid #f3f3f3';
+          const left = document.createElement('div');
+          left.style.display = 'flex';
+          left.style.alignItems = 'center';
+          left.style.gap = '10px';
+          const info = document.createElement('div');
+          info.innerHTML = `<strong style="font-size:13px">${f.name}</strong><div style="font-size:12px;color:#666">${(f.size/1024/1024).toFixed(2)} MB • ${f.type || 'unknown'}</div>`;
+          left.appendChild(info);
+          // thumbnail for images
+          if (f.type && f.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.style.width = '64px';
+            img.style.height = '48px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '6px';
+            const reader = new FileReader();
+            reader.onload = e => { img.src = e.target.result; };
+            reader.readAsDataURL(f);
+            left.insertBefore(img, info);
+          }
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'btn-ghost';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', () => {
+            // remove file from FileList by rebuilding list (cannot modify FileList directly)
+            const newFiles = Array.from(attachInput.files).filter(x => x !== f);
+            const dt = new DataTransfer();
+            newFiles.forEach(nf => dt.items.add(nf));
+            attachInput.files = dt.files;
+            showAttachModal();
+          });
+          row.appendChild(left);
+          row.appendChild(removeBtn);
+          attachPreviewList.appendChild(row);
+        });
+
+        attachModal.style.display = 'flex';
+        attachModal.setAttribute('aria-hidden', 'false');
+      }
+
+      // Add extra files: open ephemeral file picker, validate and merge into attachInput.files
+      if (attachAddBtn) {
+        attachAddBtn.addEventListener('click', () => {
+          const tmp = document.createElement('input');
+          tmp.type = 'file';
+          tmp.accept = '.pdf,image/*';
+          tmp.multiple = true;
+          tmp.style.display = 'none';
+          document.body.appendChild(tmp);
+          tmp.addEventListener('change', () => {
+            const newFiles = Array.from(tmp.files || []);
+            const maxBytes = 10 * 1024 * 1024;
+            const allowedExt = ['pdf','jpg','jpeg','png','gif','webp','bmp'];
+            for (const f of newFiles) {
+              if (f.size > maxBytes) {
+                attachModalStatus.textContent = `File too large: ${f.name} (max 10 MB each).`;
+                document.body.removeChild(tmp);
+                return;
+              }
+              const ext = (f.name.split('.').pop() || '').toLowerCase();
+              if (!allowedExt.includes(ext)) {
+                attachModalStatus.textContent = `File type not allowed: ${f.name}`;
+                document.body.removeChild(tmp);
+                return;
+              }
+            }
+            // merge files into existing FileList
+            const dt = new DataTransfer();
+            Array.from(attachInput.files || []).forEach(f => dt.items.add(f));
+            newFiles.forEach(f => dt.items.add(f));
+            attachInput.files = dt.files;
+            // refresh preview
+            showAttachModal();
+            document.body.removeChild(tmp);
+          });
+          tmp.click();
+        });
+      }
+
       attachInput.addEventListener('change', () => {
-        const file = attachInput.files[0];
-        if (!file) return;
-        if (file.size > 10 * 1024 * 1024) {
+        // validate sizes client-side before preview
+        const maxBytes = 10 * 1024 * 1024;
+        const files = Array.from(attachInput.files || []);
+        const invalid = files.find(f => f.size > maxBytes);
+        if (invalid) {
           attachStatus.style.display = 'block';
-          attachStatus.textContent = 'File too large (max 10 MB).';
+          attachStatus.textContent = `File too large: ${invalid.name} (max 10 MB each).`;
           return;
         }
-        attachStatus.style.display = 'block';
-        attachStatus.textContent = 'Uploading...';
+        // show modal preview
+        showAttachModal();
+      });
 
-        const form = new FormData();
+      // Back / Cancel both dismiss; Back keeps input intact, Cancel clears selection
+      attachCloseBtn.addEventListener('click', () => {
+        attachModal.style.display = 'none';
+        attachModal.setAttribute('aria-hidden', 'true');
+      });
+      attachCancelBtn.addEventListener('click', () => {
+        attachInput.value = '';
+        attachModal.style.display = 'none';
+        attachModal.setAttribute('aria-hidden', 'true');
+        attachStatus.style.display = 'none';
+      });
+
+      attachSendBtn.addEventListener('click', () => {
+        const files = Array.from(attachInput.files || []);
+        if (!files.length) {
+          attachModalStatus.textContent = 'No files to send.';
+          return;
+        }
         const qid = $('attachQueueId').value;
         if (!qid) {
-          attachStatus.textContent = 'No active queue to attach to.';
+          attachModalStatus.textContent = 'No active queue to attach to.';
           return;
         }
+        attachSendBtn.disabled = true;
+        attachModalStatus.textContent = 'Sending...';
+
+        const form = new FormData();
         form.append('queue_id', qid);
-        form.append('attachment', file);
+        files.forEach((f, idx) => {
+          // append as attachments[] so backend receives an array
+          form.append('attachments[]', f, f.name);
+        });
 
         fetch(attachApi, {
           method: 'POST',
@@ -346,14 +474,25 @@
         .then(r => r.json())
         .then(json => {
           if (json && json.success) {
-            attachStatus.textContent = 'Uploaded: ' + (json.file || 'attached');
+            attachModalStatus.textContent = 'Sent: ' + (json.files ? json.files.join(', ') : 'attached');
+            attachStatus.style.display = 'block';
+            attachStatus.textContent = 'Sent: ' + (json.files ? json.files.join(', ') : 'attached');
+            // clear input and close modal after short delay
+            setTimeout(() => {
+              attachInput.value = '';
+              attachModal.style.display = 'none';
+              attachModal.setAttribute('aria-hidden', 'true');
+            }, 900);
           } else {
-            attachStatus.textContent = 'Upload failed: ' + (json && json.error ? json.error : 'unknown');
+            attachModalStatus.textContent = 'Send failed: ' + (json && json.error ? json.error : 'unknown');
           }
         })
         .catch(err => {
           console.error(err);
-          attachStatus.textContent = 'Upload error';
+          attachModalStatus.textContent = 'Send error';
+        })
+        .finally(() => {
+          attachSendBtn.disabled = false;
         });
       });
     }
