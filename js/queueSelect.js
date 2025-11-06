@@ -121,6 +121,13 @@
           const span = document.createElement('span');
           span.className = 'svc-chip';
           span.textContent = s.service_description;
+          if (s.soft_copy && (s.soft_copy === 1 || s.soft_copy === true)) {
+            const badge = document.createElement('small');
+            badge.className = 'soft-badge';
+            badge.textContent = 'PDF';
+            badge.title = 'Soft copy available';
+            span.appendChild(badge);
+          }
           svcWrap.appendChild(span);
         });
         d.appendChild(svcWrap);
@@ -156,6 +163,13 @@
           const chip = document.createElement('span');
           chip.className = 'svc-chip large';
           chip.textContent = s.service_description;
+          if (s.soft_copy && (s.soft_copy === 1 || s.soft_copy === true)) {
+            const badge = document.createElement('small');
+            badge.className = 'soft-badge';
+            badge.textContent = 'PDF';
+            badge.title = 'Soft copy available';
+            chip.appendChild(badge);
+          }
           svcContainer.appendChild(chip);
         });
       }
@@ -328,18 +342,19 @@
           method: 'POST',
           credentials: 'same-origin',
           body: form
-        }).then(r => r.json())
-          .then(json => {
-            if (json && json.success) {
-              attachStatus.textContent = 'Uploaded: ' + (json.file || 'attached');
-            } else {
-              attachStatus.textContent = 'Upload failed: ' + (json && json.error ? json.error : 'unknown');
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            attachStatus.textContent = 'Upload error';
-          });
+        })
+        .then(r => r.json())
+        .then(json => {
+          if (json && json.success) {
+            attachStatus.textContent = 'Uploaded: ' + (json.file || 'attached');
+          } else {
+            attachStatus.textContent = 'Upload failed: ' + (json && json.error ? json.error : 'unknown');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          attachStatus.textContent = 'Upload error';
+        });
       });
     }
 

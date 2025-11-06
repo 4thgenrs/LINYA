@@ -149,6 +149,50 @@ try {
     $queue_list = getOfficeQueue($conn, $office);
     $on_air = displayOnAir($conn, $window);
 
+    // attach services (with soft_copy flag) for each queue item and on-air
+    $svcStmt = $conn->prepare(
+        "SELECT s.service_description, qs.soft_copy 
+         FROM queue_services qs 
+         JOIN services s ON qs.service_id = s.service_id 
+         WHERE qs.queue_id = ?"
+    );
+    if ($svcStmt) {
+        foreach ($queue_list as &$q) {
+            $services = [];
+            $id = intval($q['queue_id'] ?? 0);
+            if ($id > 0) {
+                $svcStmt->bind_param('i', $id);
+                $svcStmt->execute();
+                $res = $svcStmt->get_result();
+                while ($r = $res->fetch_assoc()) {
+                    $services[] = [
+                        'service_description' => $r['service_description'],
+                        'soft_copy' => (isset($r['soft_copy']) && intval($r['soft_copy']) === 1) ? 1 : 0
+                    ];
+                }
+            }
+            $q['services'] = $services;
+        }
+        // on-air
+        if ($on_air && !empty($on_air['queue_id'])) {
+            $services = [];
+            $oid = intval($on_air['queue_id']);
+            if ($oid > 0) {
+                $svcStmt->bind_param('i', $oid);
+                $svcStmt->execute();
+                $res = $svcStmt->get_result();
+                while ($r = $res->fetch_assoc()) {
+                    $services[] = [
+                        'service_description' => $r['service_description'],
+                        'soft_copy' => (isset($r['soft_copy']) && intval($r['soft_copy']) === 1) ? 1 : 0
+                    ];
+                }
+            }
+            $on_air['services'] = $services;
+        }
+        $svcStmt->close();
+    }
+
     echo json_encode([
         'success' => true,
         'data' => [
