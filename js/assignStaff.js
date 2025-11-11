@@ -53,18 +53,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (parseInt(w.enabled,10) === 0) tr.classList.add('row-disabled');
         tr.innerHTML = `
           <td>${w.office_description}</td>
-          <td>
-            <input class="window-no-input" type="number" value="${w.window_no}" min="1" style="width:80px" data-window="${w.window_id}" ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''} />
-            <button class="save-window-btn action-btn" data-window="${w.window_id}">Save</button>
-          </td>
-          <td>
-            <select class="assign-select small-select" data-window="${w.window_id}" ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''}></select>
-          </td>
-          <td>${parseInt(w.enabled,10) === 1 ? 'Enabled' : 'Disabled'}</td>
-          <td>
-            <button class="toggle-btn action-btn ${parseInt(w.enabled,10) === 1 ? 'enable-true' : 'enable-false'}" data-window="${w.window_id}" data-enabled="${w.enabled}">${parseInt(w.enabled,10) === 1 ? 'Disable' : 'Enable'}</button>
-            <button class="delete-btn action-btn" data-window="${w.window_id}">Delete</button>
-          </td>
+            <td>
+              <input class="window-no-input form-control d-inline-block text-center" type="number" value="${w.window_no}" min="1"
+                    style="width:80px" data-window="${w.window_id}" 
+                    ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''} />
+              <button class="btn btn-sm btn-success save-window-btn action-btn ms-1" data-window="${w.window_id}">
+                <i class="fa-solid fa-check me-1"></i>
+              </button>
+            </td>
+
+            <td>
+              <select class="assign-select form-select form-select-sm small-select" 
+                      data-window="${w.window_id}" 
+                      ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''}></select>
+            </td>
+
+            <td>${parseInt(w.enabled,10) === 1 ? 'Enabled' : 'Disabled'}</td>
+
+            <td>
+              <button class="btn btn-sm ${parseInt(w.enabled,10) === 1 ? 'btn-warning' : 'btn-success'} toggle-btn action-btn me-1"
+                      data-window="${w.window_id}" data-enabled="${w.enabled}">
+                <i class="fa-solid ${parseInt(w.enabled,10) === 1 ? 'fa-ban' : 'fa-check'} me-1"></i>
+                ${parseInt(w.enabled,10) === 1 ? 'Disable' : 'Enable'}
+              </button>
+
+              <button class="btn btn-sm btn-danger delete-btn action-btn" data-window="${w.window_id}">
+                <i class="fa-solid fa-trash me-1"></i>
+              </button>
+            </td>
         `;
         windowsTableBody.appendChild(tr);
 

@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       confirmBtn.addEventListener('click', () => {
-        window.location.href = `${origin}${base}/includes/kioskMenu.php`;
+        window.location.href = `${origin}${base}/includes/?page=kioskMenu`;
       });
 
       printBtn.addEventListener('click', () => {

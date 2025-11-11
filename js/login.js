@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(json => {
         if (json && json.success) {
           // redirect to queue page
-          window.location.href = 'queueSelect.php';
+          window.location.href = '?page=queueSelect';
         } else {
           showError(json && json.error ? json.error : 'Login failed');
           submit.disabled = false;

@@ -11,7 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = intval($_POST['update_id']);
         if ($id > 0 && $desc !== '' && $officeId > 0) {
             updateService($conn, $id, $desc, $officeId);
-            header("Location: services.php");
+            // redirect back to the includes page since this script is intended to be called directly
+            header("Location: ../includes/?page=services");
             exit;
         }
     }
@@ -19,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ADD service
     if ($desc !== '' && $officeId > 0 && empty($_POST['update_id'])) {
         addService($conn, $desc, $officeId);
-        header("Location: services.php");
+        // redirect back to the includes page since this script is intended to be called directly
+        header("Location: ../includes/?page=services");
         exit;
     }
 
@@ -27,12 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete_id'])) {
         $id = intval($_POST['delete_id']);
         deleteService($conn, $id);
-        header("Location: services.php");
+        // redirect back to the includes page since this script is intended to be called directly
+        header("Location: ../includes/?page=services");
         exit;
     }
 }
-
-
 
 function getServiceData($conn) {
     $data = [];

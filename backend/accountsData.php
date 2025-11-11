@@ -21,8 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $role_id > 0 &&
             $office_id > 0
         ) {
-            updateAccount($conn, $user_id, $account_username, $account_password, $account_name, $role_id, $office_id);
-            header("Location: accounts.php");
+                updateAccount($conn, $user_id, $account_username, $account_password, $account_name, $role_id, $office_id);
+                // redirect back to the includes page (correct query parameter)
+                header("Location: ../includes/?page=accounts");
             exit;
         }
     }
@@ -37,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $office_id > 0
         ) {
             addAccount($conn, $account_username, $account_password, $account_name, $role_id, $office_id);
-            header("Location: accounts.php");
+            // redirect back to the includes page (correct query parameter)
+            header("Location: ../includes/?page=accounts");
             exit;
         }
     }
@@ -47,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delete_id = intval($_POST['delete_id']);
         if ($delete_id > 0) {
             deleteAccount($conn, $delete_id);
-            header("Location: accounts.php");
+            // redirect back to the includes page (correct query parameter)
+            header("Location: ../includes/?page=accounts");
             exit;
         }
     }
