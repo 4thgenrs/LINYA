@@ -1,0 +1,121 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../linya_db/config.php'; // provides $conn
+
+$office = isset($_GET['office']) ? intval($_GET['office']) : 1;
+
+try {
+    // --- get offices for the selector ---
+    $offices = [];
+    $oStmt = $conn->prepare("SELECT office_id, office_description FROM offices ORDER BY office_description ASC");
+    if ($oStmt) {
+        $oStmt->execute();
+        $oRes = $oStmt->get_result();
+        while ($o = $oRes->fetch_assoc()) {
+            $offices[] = ['office_id' => intval($o['office_id']), 'office_description' => $o['office_description']];
+        }
+        $oStmt->close();
+    }
+
+    // fetch enabled windows for this office
+    $wStmt = $conn->prepare("SELECT window_id, window_no, assigned_staff_id, enabled FROM office_windows WHERE office_id = ? AND enabled = 1 ORDER BY window_no ASC");
+    if (!$wStmt) throw new Exception('Failed to prepare windows statement');
+    $wStmt->bind_param('i', $office);
+    $wStmt->execute();
+    $wRes = $wStmt->get_result();
+    $windows = [];
+    while ($w = $wRes->fetch_assoc()) {
+        $windows[] = $w;
+    }
+    $wStmt->close();
+
+    // prepare services stmt (reused)
+    $svcStmt = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
+    if (!$svcStmt) throw new Exception('Failed to prepare services statement');
+
+    // for each window find ongoing queue and attach services
+    // Note: some code paths may store queues.window_id as either the office_windows.window_id (PK)
+    // or as the window_no. Query both to be robust.
+    $qStmt = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status FROM queues WHERE (window_id = ? OR window_id = ?) AND status = 'ongoing' LIMIT 1");
+    if (!$qStmt) throw new Exception('Failed to prepare queue statement');
+
+    $resultWindows = [];
+    foreach ($windows as $w) {
+        $window_id = intval($w['window_id']);
+        $window_no = intval($w['window_no']);
+        // bind both values: lookup by window_id OR window_no
+        $qStmt->bind_param('ii', $window_id, $window_no);
+        $qStmt->execute();
+        $qRes = $qStmt->get_result();
+        $current = $qRes ? $qRes->fetch_assoc() : null;
+
+        if ($current) {
+            // fetch services
+            $services = [];
+            $qid = intval($current['queue_id']);
+            $svcStmt->bind_param('i', $qid);
+            $svcStmt->execute();
+            $sRes = $svcStmt->get_result();
+            while ($s = $sRes->fetch_assoc()) {
+                $services[] = [
+                    'service_description' => $s['service_description'],
+                    'soft_copy' => (isset($s['soft_copy']) && intval($s['soft_copy']) === 1) ? 1 : 0
+                ];
+            }
+            $current['services'] = $services;
+        }
+
+        $resultWindows[] = [
+            'window_id' => $window_id,
+            'window_no' => intval($w['window_no']),
+            'assigned_staff_id' => $w['assigned_staff_id'] ? intval($w['assigned_staff_id']) : null,
+            'enabled' => intval($w['enabled']) === 1 ? 1 : 0,
+            'current_queue' => $current
+        ];
+    }
+    $qStmt->close();
+    $svcStmt->close();
+
+    // pending queues for this office (include services)
+    $pending = [];
+    $pStmt = $conn->prepare("SELECT queue_id, queue_code, customer_name FROM queues WHERE office_id = ? AND status = 'pending' ORDER BY created_at ASC");
+    if ($pStmt) {
+        $pStmt->bind_param('i', $office);
+        $pStmt->execute();
+        $pRes = $pStmt->get_result();
+        while ($pq = $pRes->fetch_assoc()) {
+            $services = [];
+            $pid = intval($pq['queue_id']);
+            $svcStmt2 = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
+            if ($svcStmt2) {
+                $svcStmt2->bind_param('i', $pid);
+                $svcStmt2->execute();
+                $sr = $svcStmt2->get_result();
+                while ($s = $sr->fetch_assoc()) {
+                    $services[] = [
+                        'service_description' => $s['service_description'],
+                        'soft_copy' => (isset($s['soft_copy']) && intval($s['soft_copy']) === 1) ? 1 : 0
+                    ];
+                }
+                $svcStmt2->close();
+            }
+            $pq['services'] = $services;
+            $pending[] = $pq;
+        }
+        $pStmt->close();
+    }
+
+    echo json_encode([
+        'success' => true,
+        'office' => $office,
+        'offices' => $offices,          // <-- added
+        'windows' => $resultWindows,
+        'pending' => $pending
+    ]);
+    exit;
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    exit;
+}
+?>

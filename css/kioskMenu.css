@@ -1,0 +1,270 @@
+:root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --muted:#7c8593;
+    --accent:#0f62fe; /* modern blue */
+    --success:#22c55e;
+    --danger:#ef4444;
+    --glass: rgba(15,98,254,0.06);
+    --radius:14px;
+    --shadow: 0 6px 18px rgba(12,18,29,0.06);
+    --card-padding:16px;
+}
+
+*{box-sizing:border-box}
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 28px;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    height: 100vh;
+}
+
+/* container */
+.kiosk-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 28px;
+    overflow: hidden;
+}
+
+/* headings */
+.title {
+    margin: 0;
+    font-size: 20px;
+    color: #0b1230;
+    font-weight: 600;
+}
+
+/* layout */
+.header-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.controls-row {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:18px;
+}
+
+/* grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+/* minimal office buttons */
+.office-btn {
+    background: var(--card);
+    color: #0b1230;
+    border: 1px solid rgba(11,18,48,0.06);
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: none;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.office-btn:hover{ transform: translateY(-4px); box-shadow: 0 8px 20px rgba(11,18,48,0.06); }
+
+/* service card */
+.cards .service-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: var(--card-padding);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    justify-content:space-between;
+    border: 1px solid rgba(11,18,48,0.04);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    cursor: pointer;
+}
+.cards .service-card:hover { transform: translateY(-6px); box-shadow: 0 10px 24px rgba(11,18,48,0.06); border-color: rgba(15,98,254,0.06); }
+
+.service-main{ display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
+.service-title{
+    font-size:16px;
+    color:#0b1230;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+/* hidden checkbox used for selection state (kept for accessibility) */
+.service-checkbox{ display:none; }
+
+/* selection state */
+.service-card.selected{
+    border-color: rgba(34,197,94,0.14);
+    box-shadow: 0 12px 30px rgba(34,197,94,0.06);
+}
+.service-card.selected .service-title{ color: var(--success); }
+
+/* per-service controls (toggle + label) */
+.service-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-left:12px;
+}
+
+.soft-label{
+    font-size:13px;
+    color:var(--muted);
+}
+
+/* modern toggle switch */
+.switch{
+    position:relative;
+    display:inline-block;
+    width:44px;
+    height:26px;
+}
+.switch input{ display:none; }
+.slider{
+    position:absolute;
+    inset:0;
+    border-radius:999px;
+    background: rgba(11,18,48,0.06);
+    transition: all .18s ease;
+    box-shadow: inset 0 0 0 1px rgba(11,18,48,0.02);
+}
+.slider:before{
+    content:'';
+    position:absolute;
+    left:4px;
+    top:4px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:white;
+    box-shadow: 0 2px 6px rgba(11,18,48,0.08);
+    transition: all .18s ease;
+}
+.switch input:checked + .slider{
+    background: linear-gradient(90deg, var(--accent), #2aa7ff);
+}
+.switch input:checked + .slider:before{
+    transform: translateX(18px);
+}
+
+/* make disabled soft toggle visually distinct */
+.switch input:disabled + .slider{
+    background: rgba(11,18,48,0.04);
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+.switch input:disabled + .slider:before{
+    background: #f5f7fa;
+    box-shadow: none;
+}
+
+/* ensure label doesn't appear interactive when disabled */
+.service-soft-label[aria-disabled="true"], .switch[disabled] {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+/* buttons */
+.primary-btn{
+    background: linear-gradient(90deg,var(--accent), #2aa7ff);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight:600;
+    cursor:pointer;
+}
+.secondary-btn{
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(15,98,254,0.08);
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor:pointer;
+}
+.ghost-btn{
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor:pointer;
+}
+
+/* actions bar */
+.service-actions{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+/* helper text */
+.muted{ color:var(--muted); }
+.small{ font-size:13px; }
+
+/* visitor form styles */
+.visitor-screen {
+    display:block;
+    padding: 18px 12px 28px;
+}
+.vf-field { display:block; margin:12px 0; }
+.vf-label { font-weight:600; margin-bottom:6px; color:#0b1230; }
+.vf-field input {
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(11,18,48,0.06);
+    background: white;
+}
+
+/* hint */
+.vf-hint { font-size:13px; margin-top:6px; }
+
+/* modal overlay */
+.vf-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(11,18,48,0.36);
+    z-index: 9999;
+}
+.vf-modal-card {
+    background: #fff;
+    padding: 18px;
+    border-radius: 12px;
+    width: 340px;
+    box-shadow: 0 12px 30px rgba(11,18,48,0.18);
+}
+.vf-confirm-row { margin:8px 0; }
+
+/* ensure office grid hidden initially until visitor confirms (JS controls display) */
+#officeSection[style*="display:none"] { display: none !important; }
+
+/* responsive tweaks */
+@media (max-width:520px){
+    .grid{ grid-template-columns: 1fr; }
+    .service-controls{ gap:6px; }
+}
+
+
