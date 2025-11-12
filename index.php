@@ -267,50 +267,52 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   </footer>
 
   <!-- Login Modal -->
-  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content p-4" style="border-radius: 20px;">
-        <div class="text-center mb-3">
-          <i class="fa-solid fa-user-lock fa-3x text-success mb-2"></i>
-          <h5 class="modal-title fw-bold" id="loginModalLabel">Login to LINYA</h5>
-        </div>
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4" style="border-radius: 20px;">
+      <div class="text-center mb-3">
+        <i class="fa-solid fa-user-lock fa-3x text-success mb-2"></i>
+        <h5 class="modal-title fw-bold" id="loginModalLabel">Login to LINYA</h5>
+      </div>
 
-        <div class="modal-body">
-          <form id="loginForm" action="includes/index.php" method="POST" class="text-center">
-            <div class="mb-3 text-start">
-              <label for="username" class="form-label fw-semibold">Username</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                <input type="text" class="form-control" id="username" name="user_name" placeholder="Enter username" required>
-              </div>
+      <div class="modal-body">
+        <form id="loginForm" class="text-center">
+          <div class="mb-3 text-start">
+            <label for="username" class="form-label fw-semibold">Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+              <input type="text" class="form-control" id="username" name="user_name" placeholder="Enter username" required>
             </div>
+          </div>
 
-            <div class="mb-3 text-start">
-              <label for="password" class="form-label fw-semibold">Password</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
-              </div>
+          <div class="mb-3 text-start">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
             </div>
+          </div>
 
-            <div id="error" class="text-danger mb-2" style="display:none"></div>
+          <div id="error" class="text-danger mb-2" style="display:none"></div>
 
-            <button id="submitBtn" type="submit" class="btn btn-success w-100 rounded-pill py-2 mt-2">Login</button>
-          </form>
-        </div>
+          <button id="submitBtn" type="submit" class="btn btn-success w-100 rounded-pill py-2 mt-2">Login</button>
+        </form>
+      </div>
 
-        <div class="modal-footer border-0 justify-content-center">
-          <small>Don’t have an account? <a href="#" class="text-success">Sign up</a></small>
-        </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <small>Don’t have an account? <a href="#" class="text-success">Sign up</a></small>
       </div>
     </div>
   </div>
+</div>
 
   <!-- JS -->
   <script src="../js/login.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+
     AOS.init({ duration: 1000, once: true });
   </script>
 </body>
