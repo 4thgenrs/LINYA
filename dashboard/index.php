@@ -1,4 +1,5 @@
 <?php 
+session_start();
 $allowed_pages = [
   'assignStaff',
   'accounts',
@@ -62,7 +63,7 @@ if (isset($_GET['debug']) && $_GET['debug'] == '1') {
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <style>
+<style>
 body {
   background-color: #f8f9fa;
   margin: 0;
@@ -293,7 +294,7 @@ html, body {
                 </li>
 
                 <li>
-                <a href="../linya/index.php" class="nav-link text-secondary d-flex align-items-center">
+                <a class="nav-link text-secondary d-flex align-items-center" id="logoutBtn">
                     <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
                 </a>
                 </li>
@@ -329,7 +330,7 @@ html, body {
   <!-- Bootstrap JS + Icons -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.js"></script>
-
+  <script src="../js/logout.js"></script>
   <script>
   // Sidebar Toggle for Mobile
   const sidebar = document.getElementById('sidebar');

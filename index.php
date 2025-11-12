@@ -1,8 +1,9 @@
 <?php
 session_start();
 if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
-    header('Location: queueSelect.php');
-    exit;
+  // Redirect to the dashboard. Use an absolute path to avoid relative path issues.
+  header('Location: /LINYA/dashboard/');
+  exit;
 }
 ?>
 <!DOCTYPE html>
@@ -307,7 +308,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
 </div>
 
   <!-- JS -->
-  <script src="../js/login.js"></script>
+  <script src="js/login.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

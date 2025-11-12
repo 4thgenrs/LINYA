@@ -1,9 +1,8 @@
 <?php
-session_start();
-// require login
+
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_SESSION['user_type']) !== 2) {
-  header('Location: login.php');
-  exit;
+    header('Location: LINYA/index.php');
+    exit;
 }
 
 // session-provided office/window (fallback to query params)
@@ -94,7 +93,7 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
               <h4 class="text-success mb-0">Window <?= $window_no ?></h4>
               <div class="text-end">
                 <div class="text-muted small">Signed in as</div>
-                <strong><?= $user_name ?></strong>
+                <strong><?= $_SESSION['user_name'] ?></strong>
               </div>
             </div>
           <div id="number" class="number mb-2">Loading…</div>

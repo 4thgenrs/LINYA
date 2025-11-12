@@ -19,12 +19,25 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    fetch('../backend/loginData.php', {
+    // Simple absolute path to the backend endpoint. Keep this minimal.
+    fetch('/LINYA/backend/loginData.php', {
       method: 'POST',
       body: data,
       credentials: 'same-origin'
     })
-      .then(r => r.json())
+      .then(async (r) => {
+        // Always read the body as text first (can't read body twice).
+        const bodyText = await r.text();
+        if (!r.ok) {
+          throw new Error('HTTP ' + r.status + ': ' + bodyText);
+        }
+        // Try to parse JSON from the text
+        try {
+          return JSON.parse(bodyText);
+        } catch (e) {
+          throw new Error('Invalid JSON response: ' + bodyText);
+        }
+      })
       .then(json => {
         submit.disabled = false;
 
@@ -38,18 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
           Swal.fire({
             icon: 'success',
             title: 'Login Successful!',
-            text: 'Redirecting to queue page...',
+            text: 'Redirecting to dashboard...',
             timer: 1500,
             showConfirmButton: false
           }).then(() => {
-            window.location.href = '?page=queueSelect';
+            // Redirect to the admin dashboard root
+            window.location.href = '/LINYA/dashboard/';
           });
         } else {
           showError(json && json.error ? json.error : 'Login failed');
         }
       })
-      .catch(() => {
-        showError('Server error');
+      .catch((err) => {
+        // Show backend error message to help debugging (local dev only)
+        showError(err && err.message ? err.message : 'Server error');
         submit.disabled = false;
       });
   });

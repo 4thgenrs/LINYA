@@ -1,7 +1,7 @@
-
 <?php
 session_start();
 header('Content-Type: application/json; charset=utf-8');
+// Correct path to the database config (one level up from backend)
 require_once __DIR__ . '/../linya_db/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
