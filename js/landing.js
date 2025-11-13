@@ -31,17 +31,38 @@ document.addEventListener('DOMContentLoaded', () => {
       // chart
       chart.innerHTML = '';
       const days = json.queues_per_day || [];
-      let max = 1;
-      days.forEach(r => { if (r.cnt > max) max = r.cnt; });
-      days.forEach(r => {
-        const h = Math.round((r.cnt / max) * 100);
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = (h === 0 ? 6 : (h + 20)) + '%';
-        bar.title = `${r.d}: ${r.cnt}`;
-        bar.innerHTML = `<div style="font-size:11px;margin-bottom:6px">${r.cnt}</div><div style="font-size:11px;transform:rotate(-90deg);display:none">${r.d}</div>`;
-        chart.appendChild(bar);
-      });
+      if (!days.length) {
+        chart.innerHTML = '<div class="muted">No data</div>';
+      } else {
+        // compute max
+        let max = Math.max(1, ...days.map(r => Number(r.cnt || 0)));
+        // compute available pixel height based on container
+        const containerHeight = Math.max(120, (chart.clientHeight || 220) - 20);
+
+        days.forEach(r => {
+          const cnt = Number(r.cnt || 0);
+          const barPx = Math.round((cnt / max) * containerHeight);
+          const col = document.createElement('div');
+          col.className = 'chart-col';
+          const bar = document.createElement('div');
+          bar.className = 'chart-bar';
+          bar.style.height = (barPx === 0 ? 6 : barPx) + 'px';
+          // show count inside bar (hide if zero)
+          const val = document.createElement('div');
+          val.className = 'bar-val';
+          val.textContent = cnt > 0 ? String(cnt) : '';
+          bar.appendChild(val);
+
+          const label = document.createElement('div');
+          label.className = 'bar-label';
+          // show MM-DD for readability
+          label.textContent = (r.d && r.d.length >= 7) ? r.d.slice(5) : r.d;
+
+          col.appendChild(bar);
+          col.appendChild(label);
+          chart.appendChild(col);
+        });
+      }
 
       // top services
       topServices.innerHTML = '';
