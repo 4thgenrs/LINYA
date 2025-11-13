@@ -58,14 +58,10 @@
 
   function render(state) {
     if (!state || !state.success) return;
-    // populate offices selector if provided
-    if (state.offices && state.offices.length) {
-      populateOffices(state.offices);
-    }
-
-    // windows
+    // windows — filter out disabled windows
     windowsContainer.innerHTML = '';
-    state.windows.forEach(w => {
+    const visible = (state.windows || []).filter(w => parseInt(w.enabled, 10) === 1);
+    visible.forEach(w => {
       const card = document.createElement('div');
       card.className = 'window-card';
       const top = document.createElement('div');
@@ -103,7 +99,7 @@
       windowsContainer.appendChild(card);
     });
 
-    // pending (unchanged)
+    // pending
     pendingList.innerHTML = '';
     if (!state.pending || !state.pending.length) {
       const e = document.createElement('div');

@@ -63,8 +63,8 @@
       officePending.innerHTML = '';
       return;
     }
-    // windows
-    const windows = data.windows || [];
+    // filter out disabled windows
+    const windows = (data.windows || []).filter(w => parseInt(w.enabled, 10) === 1);
     const wrap = document.createElement('div');
     wrap.className = 'office-windows';
     windows.forEach(w => {
