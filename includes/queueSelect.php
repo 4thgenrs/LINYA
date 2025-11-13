@@ -44,7 +44,6 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
         <div class="right-controls">
           <button id="attachBtn" class="btn-ghost" type="button">Attach file</button>
           <button id="notifyBtn" class="btn-ghost" type="button">Notify</button>
-          <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
         </div>
       </div>
 

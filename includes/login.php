@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
-    header('Location: queueSelect.php');
+    header('Location: dashboard.php');
     exit;
 }
 ?>

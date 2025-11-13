@@ -23,8 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }).then(r => r.json())
       .then(json => {
         if (json && json.success) {
-          // redirect to queue page
-          window.location.href = 'queueSelect.php';
+          // redirect to dashboard on successful staff login (use explicit includes path)
+          // ensures we land on includes/dashboard.php instead of a wrong relative target
+          window.location.href = '/LINYA/includes/dashboard.php';
         } else {
           showError(json && json.error ? json.error : 'Login failed');
           submit.disabled = false;
