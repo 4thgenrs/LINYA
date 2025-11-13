@@ -6,8 +6,22 @@ include('../linya_db/config.php');
 $accounts = getAccountsData($conn);
 $offices = getOfficeData($conn);
 $roles = getRolesData($conn);
-?>
 
+// server-side messages (from redirect)
+$message = '';
+if (isset($_GET['error'])) {
+    $err = $_GET['error'];
+    if ($err === 'duplicate_username') $message = 'Username already exists. Please choose another.';
+    if ($err === 'duplicate_name') $message = 'Name already exists. Please choose another.';
+    if ($err === 'missing_fields') $message = 'Please fill all required fields.';
+}
+if (isset($_GET['success'])) {
+    $s = $_GET['success'];
+    if ($s === 'added') $message = 'Account added successfully.';
+    if ($s === 'updated') $message = 'Account updated successfully.';
+    if ($s === 'deleted') $message = 'Account deleted.';
+}
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,25 +31,53 @@ $roles = getRolesData($conn);
 <body>
     <h2>Accounts List</h2>
 
+    <?php if ($message): ?>
+      <div id="serverMessage" style="max-width:800px;margin:8px auto;padding:10px;background:#fff9c4;border:1px solid #ffe58a;border-radius:6px;text-align:center;">
+        <?php echo htmlspecialchars($message); ?>
+      </div>
+    <?php endif; ?>
+
     <form id="accountsForm" method="POST">
         <input type="hidden" name="user_id" id="user_id" value="">
-        <input type="text" name="account_username" id="account_username" placeholder="Enter username" required>
-        <input type="text" name="account_password" id="account_password" placeholder="Enter password" required>
-        <input type="text" name="account_name" id="account_name" placeholder="Enter name" required>
-         <select name="role_id" id="role_id" required>
-        <option value="">Select User Type</option>
-        <?php foreach ($roles as $r) { ?>
-            <option value="<?php echo $r['role_id']; ?>"><?php echo $r['role_name']; ?></option>
-        <?php } ?>
-        </select>
-         <select name="office_id" id="office_id" required>
-        <option value="">Select Office</option>
-        <?php foreach ($offices as $o) { ?>
-            <option value="<?php echo $o['office_id']; ?>"><?php echo $o['office_description']; ?></option>
-        <?php } ?>
-        </select>   
-        <input type="submit" name="add_office" id="submitBtn" value="Add Account"> 
+        <div style="max-width:800px;margin:12px auto;display:flex;gap:8px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+                <input type="text" name="account_username" id="account_username" placeholder="Enter username" required>
+                <div id="usernameFeedback" style="color:#b00020;font-size:13px;display:none;margin-top:4px"></div>
+            </div>
+
+            <div style="flex:1;min-width:200px">
+                <input type="text" name="account_password" id="account_password" placeholder="Enter password" required>
+            </div>
+
+            <div style="flex:1;min-width:200px">
+                <input type="text" name="account_name" id="account_name" placeholder="Enter name" required>
+                <div id="nameFeedback" style="color:#b00020;font-size:13px;display:none;margin-top:4px"></div>
+            </div>
+
+            <div style="min-width:160px">
+                <select name="role_id" id="role_id" required>
+                  <option value="">Select User Type</option>
+                  <?php foreach ($roles as $r) { ?>
+                    <option value="<?php echo $r['role_id']; ?>"><?php echo $r['role_name']; ?></option>
+                  <?php } ?>
+                </select>
+            </div>
+
+            <div style="min-width:160px">
+                <select name="office_id" id="office_id" required>
+                  <option value="">Select Office</option>
+                  <?php foreach ($offices as $o) { ?>
+                    <option value="<?php echo $o['office_id']; ?>"><?php echo $o['office_description']; ?></option>
+                  <?php } ?>
+                </select>
+            </div>
+
+            <div style="min-width:160px;align-self:end">
+                <input type="submit" name="add_office" id="submitBtn" value="Add Account">
+            </div>
+        </div>
     </form>
+
     <table>
         <thead>
             <tr>
