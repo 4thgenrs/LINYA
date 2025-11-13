@@ -21,129 +21,29 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
 
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      scroll-behavior: smooth;
-      background: url('university.png') no-repeat center center fixed;
-      background-size: cover;
-    }
-    /* Navbar */
-    .navbar {
-      background: #1b5e20;
-      backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
-    }
-    .navbar-brand {
-      font-weight: 700;
-      color: #fff !important;
-      letter-spacing: 1px;
-    }
-    .nav-link {
-      color: #fff !important;
-      margin: 0 8px;
-      font-weight: 500;
-      transition: 0.3s;
-    }
-    .nav-link:hover {
-      color: #1b5e20 !important;
-    }
-
-    /* Hero Section */
-    .hero {
-      color: #000;
-      text-align: center;
-      padding: 120px 20px;
-    }
-    .hero h1 {
-      font-size: 3rem;
-      font-weight: 700;
-    }
-    
-    .hero p {
-      max-width: 700px;
-      margin: 20px auto 30px;
-      font-size: 1.1rem;
-      color: #000;
-    }
-    .hero .btn-primary {
-      border-radius: 30px;
-      padding: 10px 30px;
-      font-weight: 600;
-    }
-
-    /* Features */
-    .features {
-      background: #fff;
-      padding: 80px 20px;
-    }
-    .feature-box {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      padding: 30px 25px;
-      text-align: center;
-      transition: all 0.3s ease;
-    }
-    .feature-box:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 25px rgba(0,0,0,0.1);
-    }
-    .feature-box i {
-      color: #1b5e20;
-      font-size: 2.5rem;
-      margin-bottom: 15px;
-    }
-
-    /* About */
-    .about {
-      padding: 60px;
-    }
-    .about h2 {
-      font-weight: 1000;
-    }
-    .about p {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      color: #000;
-    }
-
-    /* Contact */
-    .contact {
-      background: #fff;
-      padding: 80px 20px;
-    }
-    .contact .form-control {
-      border-radius: 10px;
-    }
-    .contact button {
-      border-radius: 10px;
-      padding: 10px 25px;
-    }
-
-    /* Footer */
-    footer {
-      background: #1b5e20;
-      color: #fff;
-      text-align: center;
-      padding: 15px;
-    }
-
-    /* Modal */
-    .modal-content {
-      border-radius: 15px;
-    }
-    .btn-submit {
-      background-color: #1b5e20;
-      border: none;
-      color: #fff;
-      width: 100%;
-      border-radius: 8px;
-      padding: 10px;
-      font-weight: 500;
-    }
-    .btn-submit:hover {
-      background-color: #1b5e20;
-    }
+    body {font-family: 'Poppins', sans-serif; scroll-behavior: smooth; background: url('university.png') no-repeat center center fixed; background-size: cover;}
+    .navbar { background: #1b5e20; backdrop-filter: blur(6px); transition: all 0.3s ease;}
+    .navbar-brand { font-weight: 700; color: #fff !important; letter-spacing: 1px;}
+    .nav-link { color: #fff !important; margin: 0 8px; font-weight: 500; transition: 0.3s;}
+    .nav-link:hover { color: #1b5e20 !important;}
+    .hero { color: #000;text-align: center;padding: 120px 20px;}
+    .hero h1 {font-size: 3rem;font-weight: 700;}
+    .hero p {max-width: 700px;margin: 20px auto 30px;font-size: 1.1rem;color: #000;}
+    .hero .btn-primary {border-radius: 30px;padding: 10px 30px;font-weight: 600;}
+    .features {background: #fff;padding: 80px 20px;}
+    .feature-box {background: #fff;border-radius: 15px;box-shadow: 0 4px 20px rgba(0,0,0,0.05);padding: 30px 25px;text-align: center;transition: all 0.3s ease;}
+    .feature-box:hover {transform: translateY(-5px);box-shadow: 0 6px 25px rgba(0,0,0,0.1);}
+    .feature-box i {color: #1b5e20;font-size: 2.5rem;margin-bottom: 15px;}
+    .about {padding: 60px;}
+    .about h2 {font-weight: 1000;}
+    .about p {font-size: 1.05rem;line-height: 1.6;color: #000;}
+    .contact {background: #fff;padding: 80px 20px;}
+    .contact .form-control {border-radius: 10px;}
+    .contact button {border-radius: 10px;padding: 10px 25px;}
+    footer {background: #1b5e20;color: #fff;text-align: center;padding: 15px;}
+    .modal-content {border-radius: 15px;}
+    .btn-submit {background-color: #1b5e20;border: none;color: #fff;width: 100%;border-radius: 8px;padding: 10px;font-weight: 500;}
+    .btn-submit:hover {background-color: #1b5e20;}
   </style>
 </head>
 <body>
