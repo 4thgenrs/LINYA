@@ -8,6 +8,34 @@
     $row = $result->fetch_assoc();
     $activeQueueCount = intval($row['count'] ?? 0);
   }
+ // Count transactions per user
+    $serviceCounts = [];
+    $result2 = $conn->query("SELECT processed_by, COUNT(*) as total FROM finished_queues GROUP BY processed_by");
+    if ($result2) {
+        while ($row = $result2->fetch_assoc()) {
+            $serviceCounts[$row['processed_by']] = intval($row['total']);
+        }
+    }
+
+    // Total services (sum of all processed_by)
+    $totalServices = array_sum($serviceCounts);
+
+    $loggedUser = $_SESSION['user_name'] ?? ''; // adjust based on your session setup
+      $completedToday = 0;
+
+      if ($loggedUser) {
+          $today = date('Y-m-d'); // current date
+          $stmt = $conn->prepare("SELECT COUNT(*) as total FROM finished_queues WHERE processed_by = ? AND DATE(finished_at) = ?");
+          $stmt->bind_param("ss", $loggedUser, $today);
+          $stmt->execute();
+          $result = $stmt->get_result();
+          if ($result) {
+              $row = $result->fetch_assoc();
+              $completedToday = intval($row['total'] ?? 0);
+          }
+          $stmt->close();
+      }
+
   ?>
   <title>Dashboard</title>
 
@@ -58,34 +86,29 @@
 
     <!-- Stats Row -->
     <div class="row g-3 mb-4">
-      <div class="col-md-3 col-sm-6">
+      <div class="col-md-4 col-sm-6">
         <div class="card-stat p-3">
           <i class="fa-solid fa-user-clock"></i>
           <div class="stat-number"><?php echo $activeQueueCount; ?></div>
           <div>Active in Queue</div>
         </div>
       </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card-stat p-3">
-          <i class="fa-solid fa-check-circle"></i>
-          <div class="stat-number">43</div>
-          <div>Completed Today</div>
+        <div class="col-md-4 col-sm-6">
+          <div class="card-stat p-3">
+            <i class="fa-solid fa-check-circle"></i>
+            <div class="stat-number"><?php echo $completedToday; ?></div>
+            <div>Completed Today</div>
+          </div>
         </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card-stat p-3">
-          <i class="fa-solid fa-clock"></i>
-          <div class="stat-number">12 min</div>
-          <div>Avg Wait Time</div>
+      <div class="col-md-4 col-sm-6">
+      <div class="card-stat p-3">
+        <i class="fa-solid fa-briefcase"></i>
+        <div class="stat-number">
+          <?php echo $totalServices; ?>
         </div>
+        <div>Total Services</div>
       </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card-stat p-3">
-          <i class="fa-solid fa-briefcase"></i>
-          <div class="stat-number">47</div>
-          <div>Total Services</div>
-        </div>
-      </div>
+    </div>
     </div>
 
     <!-- Quick Actions -->

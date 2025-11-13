@@ -79,6 +79,16 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
     border:1px solid #ccc;;
     display:flex;flex-direction:column;
 }
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    padding: 15px 0;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+  }
+
   </style>
 </head>
 <body>
@@ -157,18 +167,18 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
   </main>
 
   <footer class="text-center mt-4">
-    <div class="d-flex justify-content-center gap-2" role="group">
-      <button id="finished" type="button" class="btn btn-success btn-lg" disabled>
-        <i class="fa-solid fa-check"></i> Finished
-      </button>
-      <button id="onBreak" type="button" class="btn btn-warning btn-lg" data-break="false">
-        <i class="fa-solid fa-mug-hot"></i> Break
-      </button>
-      <button id="nextQueue" type="button" class="btn btn-success btn-lg">
-        <i class="fa-solid fa-phone"></i> Call Next
-      </button>
-    </div>
-  </footer>
+  <div class="d-flex justify-content-center gap-2" role="group">
+    <button id="finished" type="button" class="btn btn-success btn-lg" disabled>
+      <i class="fa-solid fa-check"></i> Finished
+    </button>
+    <button id="onBreak" type="button" class="btn btn-warning btn-lg" data-break="false">
+      <i class="fa-solid fa-mug-hot"></i> Break
+    </button>
+    <button id="nextQueue" type="button" class="btn btn-success btn-lg">
+      <i class="fa-solid fa-phone"></i> Call Next
+    </button>
+  </div>
+</footer>
 
   </div>
 

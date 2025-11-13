@@ -41,7 +41,7 @@ $roles = getRolesData($conn);
 </head>
 
 <body>
-<div class="container-fluid py-4">
+<div class="container-fluid">
     <div class="row mb-3">
         <div class="col">
             <h3 class="fw-bold mb-0"><i class="fa-solid fa-users me-2"></i>User Management</h3>

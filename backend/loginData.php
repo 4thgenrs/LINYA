@@ -29,13 +29,11 @@ if (!$userRow) {
     echo json_encode(['success'=>false,'error'=>'Invalid credentials']);
     exit;
 }
-
-// Check role: staff expected to be user_type == 2
-if (intval($userRow['user_type']) !== 2) {
-    echo json_encode(['success'=>false,'error'=>'Only staff accounts can access this area']);
+// Check role: allow user_type 1 or 2
+if (!in_array(intval($userRow['user_type']), [1, 2])) { 
+    echo json_encode(['success' => false, 'error' => 'Only staff or user_type1 accounts can access this area']);
     exit;
 }
-
 // find assigned window (if any)
 $window_id = 0;
 $window_no = 0;
