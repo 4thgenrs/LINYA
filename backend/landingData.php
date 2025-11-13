@@ -1,4 +1,3 @@
-
 <?php
 header('Content-Type: application/json; charset=utf-8');
 session_start();
@@ -38,32 +37,70 @@ try {
     $r = $conn->query("SELECT COUNT(*) AS c FROM finished_queues");
     $totals['total_finished_queues'] = $r ? intval($r->fetch_assoc()['c']) : 0;
 
-    // top 5 services by finished_queues via original_queue_id -> queue_services
-    $sql = "SELECT s.service_description, COUNT(*) AS cnt
-            FROM finished_queues fq
-            JOIN queue_services qs ON qs.queue_id = fq.original_queue_id
-            JOIN services s ON qs.service_id = s.service_id
-            GROUP BY s.service_id
-            ORDER BY cnt DESC
-            LIMIT 5";
-    $top = [];
+    // TOP 5 SERVICES based on finished_queues.services (services stored as comma-separated descriptions)
+    $serviceCounts = [];
+    $sql = "SELECT services FROM finished_queues WHERE services IS NOT NULL AND TRIM(services) != ''";
     if ($res = $conn->query($sql)) {
-        while ($row = $res->fetch_assoc()) $top[] = $row;
+        while ($row = $res->fetch_assoc()) {
+            $svcText = $row['services'];
+            // explode by comma
+            $parts = preg_split('/,/', $svcText);
+            foreach ($parts as $p) {
+                $s = trim($p);
+                if ($s === '') continue;
+                // remove parenthetical notes like "(PDF)" or other parentheses
+                $s = preg_replace('/\s*\([^)]*\)/', '', $s);
+                $s = trim($s);
+                if ($s === '') continue;
+                // normalize spacing and case (keep original case for display, but count case-insensitive)
+                $key = mb_strtolower($s, 'UTF-8');
+                if (!isset($serviceCounts[$key])) $serviceCounts[$key] = ['label' => $s, 'count' => 0];
+                $serviceCounts[$key]['count'] += 1;
+            }
+        }
+        $res->close();
+    }
+    // sort and take top 5
+    usort($serviceCounts, function($a,$b){ return $b['count'] <=> $a['count']; });
+    $top = array_slice($serviceCounts, 0, 5);
+    // normalize output
+    $top_services = [];
+    foreach ($top as $t) {
+        $top_services[] = ['service_description' => $t['label'], 'cnt' => $t['count']];
     }
 
-    // queues per day (last 14 days) from queues.created_at
+    // QUEUES PER DAY using finished_queues.finished_at (last 14 days)
     $days = [];
-    $sql = "SELECT DATE(created_at) AS d, COUNT(*) AS cnt FROM queues GROUP BY DATE(created_at) ORDER BY d DESC LIMIT 14";
-    if ($res = $conn->query($sql)) {
-        while ($row = $res->fetch_assoc()) $days[] = $row;
+    $daysMap = [];
+    // initialize last 14 days (including today)
+    $period = 14;
+    for ($i = $period - 1; $i >= 0; $i--) {
+        $d = date('Y-m-d', strtotime("-{$i} days"));
+        $daysMap[$d] = 0;
     }
-    // ensure order ascending for chart
-    $days = array_reverse($days);
+    // fetch counts grouped by date
+    $stmt = $conn->prepare("SELECT DATE(finished_at) AS d, COUNT(*) AS cnt FROM finished_queues WHERE finished_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) GROUP BY DATE(finished_at)");
+    if ($stmt) {
+        $stmt->bind_param('i', $period);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $d = $row['d'];
+            $cnt = intval($row['cnt']);
+            if (isset($daysMap[$d])) $daysMap[$d] = $cnt;
+        }
+        $stmt->close();
+    }
+    // convert to array of objects in ascending date order
+    foreach ($daysMap as $d => $cnt) {
+        $days[] = ['d' => $d, 'cnt' => $cnt];
+    }
 
-    echo json_encode(['success'=>true,'totals'=>$totals,'top_services'=>$top,'queues_per_day'=>$days], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success'=>true,'totals'=>$totals,'top_services'=>$top_services,'queues_per_day'=>$days], JSON_UNESCAPED_UNICODE);
     exit;
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success'=>false,'error'=>$e->getMessage()]);
     exit;
 }
+?>

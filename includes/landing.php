@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_SESSION['user_type']) !== 1) {
@@ -27,12 +26,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
 
     <section class="land-main">
       <div class="chart-panel">
-        <h3>Queues per Day (last 14 days)</h3>
+        <h3>Finished Queues per Day (last 14 days)</h3>
         <div id="chartBars" class="chart-bars"></div>
       </div>
 
       <div class="top-services">
-        <h3>Top 5 Services</h3>
+        <h3>Top 5 Services (from finished queues)</h3>
         <ul id="topServices"></ul>
       </div>
     </section>
