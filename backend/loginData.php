@@ -54,13 +54,17 @@ if ($user_type === 2) {
     $wstmt->close();
 }
 
-// set session
+// regenerate session id to prevent fixation and set session vars
+session_regenerate_id(true);
 $_SESSION['user_id'] = intval($userRow['user_id']);
 $_SESSION['user_name'] = $userRow['user_name'];
 $_SESSION['user_type'] = $user_type;
 $_SESSION['office_id'] = $office_id;
 $_SESSION['window_id'] = $window_id;
 $_SESSION['window_no'] = $window_no;
+// track last login time to remember the active session
+$_SESSION['last_login'] = time();
+$_SESSION['last_active'] = time();
 
 echo json_encode([
     'success'=>true,
