@@ -1,4 +1,3 @@
-
 <?php
 header('Content-Type: application/json; charset=utf-8');
 session_start();
@@ -19,11 +18,15 @@ $response = [
     'user' => [
         'user_id' => $user_id,
         'name' => $user_name,
-        'office' => $office
+        'office' => $office,
+        'office_description' => null,
+        'office_code' => null
     ],
     'activity' => [],
     'office' => [
         'office_id' => $office,
+        'office_description' => null,
+        'office_code' => null,
         'windows' => [],
         'pending' => []
     ]
@@ -40,6 +43,23 @@ try {
             $response['activity'][] = $r;
         }
         $stmt->close();
+    }
+
+    // load office description/code for the staff's office (if any)
+    if ($office > 0) {
+        $ostmt = $conn->prepare("SELECT office_description, office_code FROM offices WHERE office_id = ? LIMIT 1");
+        if ($ostmt) {
+            $ostmt->bind_param('i', $office);
+            $ostmt->execute();
+            $ores = $ostmt->get_result();
+            if ($orow = $ores->fetch_assoc()) {
+                $response['user']['office_description'] = $orow['office_description'];
+                $response['user']['office_code'] = $orow['office_code'];
+                $response['office']['office_description'] = $orow['office_description'];
+                $response['office']['office_code'] = $orow['office_code'];
+            }
+            $ostmt->close();
+        }
     }
 
     // Office windows and ongoing queues (only for staff's office)
