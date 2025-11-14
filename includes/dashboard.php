@@ -20,7 +20,7 @@ $window_no = isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : 0;
 <body>
   <header class="dash-header">
     <div class="brand-container">
-      <img src="/LATESTLINYA/resources/ucc.png" alt="UCC Logo" class="brand-logo">
+      <img src="/LINYA/resources/ucc.png" alt="UCC Logo" class="brand-logo">
       <div class="brand">LINYA — Staff Dashboard</div>
     </div>
     <nav class="dash-nav" role="navigation">

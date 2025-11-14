@@ -38,7 +38,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
       <!-- <div class="small muted foot">Only staff accounts can access the queue window.</div> -->
 </form>
     <div class="imageContainer">
-      <img src="/LATESTLINYA/resources/ucc.png" alt="University Logo" class="image">
+      <img src="/LINYA/resources/ucc.png" alt="University Logo" class="image">
     </div>
   </main>
 
