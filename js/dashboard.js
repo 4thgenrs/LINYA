@@ -13,7 +13,6 @@
   const officeQueueContainer = document.getElementById('officeQueueContainer');
   const officePending = document.getElementById('officePending');
   const windowFrame = document.getElementById('windowFrame');
-  const assignedOfficeEl = document.getElementById('assignedOffice');
 
   function setView(name) {
     Object.keys(views).forEach(k => {
@@ -64,8 +63,8 @@
       officePending.innerHTML = '';
       return;
     }
-    // filter out disabled windows
-    const windows = (data.windows || []).filter(w => parseInt(w.enabled, 10) === 1);
+    // windows
+    const windows = data.windows || [];
     const wrap = document.createElement('div');
     wrap.className = 'office-windows';
     windows.forEach(w => {
@@ -127,19 +126,6 @@
     if (!json.success) return;
     renderActivity(json.activity || []);
     renderOffice(json.office || {});
-
-    // update assigned office in header (use API data first, fallback to session)
-    try {
-      let officeName = (json.office && json.office.office_description) ? json.office.office_description : (json.user && json.user.office_description ? json.user.office_description : window.__LINYA_SESSION.office_description || '');
-      let officeCode = (json.office && json.office.office_code) ? json.office.office_code : (json.user && json.user.office_code ? json.user.office_code : window.__LINYA_SESSION.office_code || '');
-      if (assignedOfficeEl) {
-        assignedOfficeEl.textContent = officeName ? (officeName + (officeCode ? ' ('+officeCode+')' : '')) : '—';
-      }
-      // also update browser title to include office
-      if (officeName) {
-        document.title = 'Dashboard — LINYA' + ' — ' + officeName;
-      }
-    } catch (e) { /* ignore */ }
   }
 
   // logout centralized
@@ -166,4 +152,4 @@
     // ensure iframe uses session assigned office/window if needed
     // queueSelect.php will use session values for office/window so no params required
   });
-})();  
+})();

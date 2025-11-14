@@ -55,16 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // --- DELETE should be handled first so missing form fields don't block it ---
-    if (isset($_POST['delete_id'])) {
-        $delete_id = intval($_POST['delete_id']);
-        if ($delete_id > 0) {
-            deleteAccount($conn, $delete_id);
-            header("Location: accounts.php?success=deleted");
-            exit;
-        }
-    }
-
     // Get and sanitize form inputs
     $user_id = intval($_POST['user_id'] ?? 0);
     $account_username = trim($_POST['account_username'] ?? '');
@@ -150,6 +140,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         addAccount($conn, $account_username, $account_password, $account_name, $role_id, $office_id);
         header("Location: accounts.php?success=added");
         exit;
+    }
+
+    // ✅ DELETE account
+    if (isset($_POST['delete_id'])) {
+        $delete_id = intval($_POST['delete_id']);
+        if ($delete_id > 0) {
+            deleteAccount($conn, $delete_id);
+            header("Location: accounts.php?success=deleted");
+            exit;
+        }
     }
 }
 

@@ -1,8 +1,5 @@
-<?php include '../linya_db/config.php';
 
-
-
-?>
+<?php include '../linya_db/config.php'; ?>
 <!doctype html>
 <html lang="en">
 <head>
