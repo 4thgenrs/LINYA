@@ -13,8 +13,10 @@ $office = isset($_REQUEST['office']) ? intval($_REQUEST['office']) : 0;
 // if a staff session exists prefer session's office/window
 if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
     $office = isset($_SESSION['office_id']) ? intval($_SESSION['office_id']) : $office;
-    // prefer window_no if provided, otherwise window_id
-    $window = isset($_SESSION['window_no']) && intval($_SESSION['window_no']) > 0 ? intval($_SESSION['window_no']) : (isset($_SESSION['window_id']) ? intval($_SESSION['window_id']) : $window);
+    // prefer the resolved PK first (window_id), then fall back to window_no (legacy)
+    $window = (isset($_SESSION['window_id']) && intval($_SESSION['window_id']) > 0)
+        ? intval($_SESSION['window_id'])
+        : (isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : $window);
     // note: getNextLine expects a numeric window id/identifier; queueData functions use $window as passed
 }
 

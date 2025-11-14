@@ -231,11 +231,70 @@ if ($method === 'POST') {
     if ($action === 'delete_window') {
         $windowId = intval($_POST['window_id'] ?? 0);
         if (!$windowId) { http_response_code(400); echo json_encode(['success'=>false,'error'=>'Missing window']); exit; }
+
+        // --- get window info first (office_id, window_no, assigned_staff_id) ---
+        $stmt = $conn->prepare("SELECT office_id, window_no, assigned_staff_id FROM office_windows WHERE window_id = ?");
+        $stmt->bind_param("i", $windowId);
+        $stmt->execute();
+        $info = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$info) { http_response_code(404); echo json_encode(['success'=>false,'error'=>'Window not found']); exit; }
+        $officeId = intval($info['office_id']);
+        $windowNo = intval($info['window_no']);
+        $assignedStaff = isset($info['assigned_staff_id']) ? intval($info['assigned_staff_id']) : null;
+
+        // 1) Clear any queues that reference this window (exact PK) or legacy stored window_no
+        //    Reset them back to pending and remove window assignment.
+        $u = $conn->prepare("UPDATE queues SET window_id = 0, status = 'pending' WHERE window_id = ? OR window_id = ?");
+        if ($u) {
+            $u->bind_param("ii", $windowId, $windowNo);
+            $u->execute();
+            $u->close();
+        }
+
+        // NOTE: do NOT modify finished_queues here — keep historical finished queue records intact.
+
+        // 2) Remove any session files that reference this window (file-based sessions)
+        try {
+            $handler = ini_get('session.save_handler');
+            if (strtolower($handler) === 'files') {
+                $savePath = ini_get('session.save_path') ?: sys_get_temp_dir();
+                if (preg_match('#^\\d+;(.+)$#', $savePath, $m)) $savePath = $m[1];
+                $savePath = rtrim($savePath, "/\\");
+
+                if (is_dir($savePath)) {
+                    $dh = opendir($savePath);
+                    if ($dh) {
+                        while (($file = readdir($dh)) !== false) {
+                            if (strpos($file, 'sess_') !== 0) continue;
+                            $full = $savePath . DIRECTORY_SEPARATOR . $file;
+                            if (!is_file($full) || !is_readable($full)) continue;
+                            $data = file_get_contents($full);
+                            if ($data === false) continue;
+
+                            // quick check: serialized session may contain "window_id|i:4;" or "window_no|i:4;"
+                            $needle1 = 'window_id|i:' . $windowId . ';';
+                            $needle2 = 'window_no|i:' . $windowNo . ';';
+                            if (strpos($data, $needle1) !== false || strpos($data, $needle2) !== false) {
+                                // remove session file to clear that user's session
+                                @unlink($full);
+                            }
+                        }
+                        closedir($dh);
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            // non-fatal: ignore session cleanup errors
+        }
+
+        // 3) Finally delete the window row
         $stmt = $conn->prepare("DELETE FROM office_windows WHERE window_id = ?");
         $stmt->bind_param("i",$windowId);
         $stmt->execute();
         $ok = $stmt->affected_rows > 0;
         $stmt->close();
+
         echo json_encode(['success'=>$ok]);
         exit;
     }

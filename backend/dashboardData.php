@@ -79,18 +79,38 @@ try {
 
         // prepare service stmt
         $svcStmt = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
-        $qStmt = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status FROM queues WHERE (window_id = ? OR window_id = ?) AND status = 'ongoing' LIMIT 1");
+        // prefer an exact PK match first, fallback to matching by window_no but only within same office
+        $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status = 'ongoing' LIMIT 1");
+        $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status = 'ongoing' LIMIT 1");
 
         foreach ($windows as $w) {
             $window_id = intval($w['window_id']);
             $window_no = intval($w['window_no']);
             $current = null;
-            if ($qStmt) {
-                $qStmt->bind_param('ii', $window_id, $window_no);
-                $qStmt->execute();
-                $qres = $qStmt->get_result();
-                $current = $qres ? $qres->fetch_assoc() : null;
+
+            // 1) exact PK match
+            if ($qExact) {
+                $qExact->bind_param('i', $window_id);
+                $qExact->execute();
+                $qres = $qExact->get_result();
+                if ($qres) {
+                    $current = $qres->fetch_assoc() ?: null;
+                    $qres->free();
+                }
             }
+
+            // 2) fallback: legacy rows where queues.window_id stored window_no but ensure same office
+            if (!$current && $qFallback && $window_no > 0) {
+                $qFallback->bind_param('ii', $window_no, $office);
+                $qFallback->execute();
+                $qres2 = $qFallback->get_result();
+                if ($qres2) {
+                    $tmp = $qres2->fetch_assoc() ?: null;
+                    if ($tmp) $current = $tmp;
+                    $qres2->free();
+                }
+            }
+
             if ($current && $svcStmt) {
                 $services = [];
                 $qid = intval($current['queue_id']);
@@ -102,6 +122,7 @@ try {
                 }
                 $current['services'] = $services;
             }
+
             $response['office']['windows'][] = [
                 'window_id'=>$window_id,
                 'window_no'=>intval($w['window_no']),
@@ -110,7 +131,8 @@ try {
                 'current_queue'=>$current
             ];
         }
-        if ($qStmt) $qStmt->close();
+        if ($qExact) $qExact->close();
+        if ($qFallback) $qFallback->close();
         if ($svcStmt) $svcStmt->close();
 
         // pending queues for this office

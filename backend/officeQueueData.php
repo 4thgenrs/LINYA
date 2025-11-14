@@ -33,21 +33,39 @@ try {
     $svcStmt = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
     if (!$svcStmt) throw new Exception('Failed to prepare services statement');
 
-    // for each window find ongoing queue and attach services
-    // Note: some code paths may store queues.window_id as either the office_windows.window_id (PK)
-    // or as the window_no. Query both to be robust.
-    $qStmt = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status FROM queues WHERE (window_id = ? OR window_id = ?) AND status = 'ongoing' LIMIT 1");
-    if (!$qStmt) throw new Exception('Failed to prepare queue statement');
+    // --- improved queue lookup: exact by PK, fallback by window_no + office (prevents cross-office matches) ---
+    $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status = 'ongoing' LIMIT 1");
+    if (!$qExact) throw new Exception('Failed to prepare exact queue statement');
+    $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status = 'ongoing' LIMIT 1");
+    if (!$qFallback) throw new Exception('Failed to prepare fallback queue statement');
 
     $resultWindows = [];
     foreach ($windows as $w) {
         $window_id = intval($w['window_id']);
         $window_no = intval($w['window_no']);
-        // bind both values: lookup by window_id OR window_no
-        $qStmt->bind_param('ii', $window_id, $window_no);
-        $qStmt->execute();
-        $qRes = $qStmt->get_result();
-        $current = $qRes ? $qRes->fetch_assoc() : null;
+        $current = null;
+
+        // 1) exact match using the PK window_id
+        $qExact->bind_param('i', $window_id);
+        $qExact->execute();
+        $qRes = $qExact->get_result();
+        if ($qRes) {
+            $current = $qRes->fetch_assoc() ?: null;
+            $qRes->free();
+        }
+
+        // 2) fallback: legacy rows where queues.window_id was stored as window_no,
+        //    only accept if it belongs to the same office (prevents cross-office leaks)
+        if (!$current && $window_no > 0) {
+            $qFallback->bind_param('ii', $window_no, $office);
+            $qFallback->execute();
+            $qRes2 = $qFallback->get_result();
+            if ($qRes2) {
+                $tmp = $qRes2->fetch_assoc() ?: null;
+                if ($tmp) $current = $tmp;
+                $qRes2->free();
+            }
+        }
 
         if ($current) {
             // fetch services
@@ -62,6 +80,7 @@ try {
                     'soft_copy' => (isset($s['soft_copy']) && intval($s['soft_copy']) === 1) ? 1 : 0
                 ];
             }
+            if ($sRes) $sRes->free();
             $current['services'] = $services;
         }
 
@@ -73,7 +92,9 @@ try {
             'current_queue' => $current
         ];
     }
-    $qStmt->close();
+
+    $qExact->close();
+    $qFallback->close();
     $svcStmt->close();
 
     // pending queues for this office (include services)
