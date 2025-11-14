@@ -2,6 +2,9 @@
 include('../backend/servicesData.php');
 include('../linya_db/config.php');
 
+
+
+
 $services = getServiceData($conn);
 $offices = getOfficeData($conn);
 ?>

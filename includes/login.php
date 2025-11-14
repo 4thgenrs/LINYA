@@ -1,8 +1,28 @@
 <?php
 session_start();
-if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
-    header('Location: dashboard.php');
-    exit;
+
+// If a session already exists, redirect to the appropriate dashboard
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
+    $type = intval($_SESSION['user_type']);
+    if ($type === 1) {
+        header('Location: adminDashboard.php');
+        exit;
+    } elseif ($type === 2) {
+        header('Location: dashboard.php');
+        exit;
+    } else {
+        // unknown type — clear session and show login
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+        session_start();
+    }
 }
 ?>
 <!doctype html>
@@ -17,7 +37,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   <main class="login-wrap">
     <form id="loginForm" class="login-card" autocomplete="off">
       <h1 class="brand">LINYA</h1>
-      <!-- <p class="hint">Staff login — enter credentials (case sensitive).</p> -->
+      <p class="hint">Staff login — enter credentials (case sensitive).</p>
 
       <label class="field">
         <span class="label">Username</span>
@@ -35,11 +55,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
         <button id="submitBtn" type="submit" class="btn primary">Sign in</button>
       </div>
 
-      <!-- <div class="small muted foot">Only staff accounts can access the queue window.</div> -->
-</form>
-    <div class="imageContainer">
-      <img src="/LINYA/resources/ucc.png" alt="University Logo" class="image">
-    </div>
+      <div class="small muted foot">Only staff accounts can access the queue window.</div>
+    </form>
   </main>
 
   <script src="../js/login.js"></script>

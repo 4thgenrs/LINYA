@@ -1,4 +1,4 @@
-// Modernized kiosk menu JS (per-service soft toggle + checkbox UI)
+// Modernized kiosk menu JS (per-service soft toggle + minimal UI)
 
 window.multiSelectMode = window.multiSelectMode || false;
 window.selectedServicesSet = window.selectedServicesSet || new Set();
@@ -29,7 +29,7 @@ function visitorSyncState() {
     const email = emailEl ? emailEl.value.trim() : '';
 
     const phoneOk = isValidPhone(phone);
-    const emailOk = email === '' ? true : isValidEmail(email);
+    const emailOk = email === '' ? true : isValidEmail(email); // allow empty email if desired; change to require by removing condition
 
     // show inline hints
     const phoneHint = document.getElementById('visitorPhoneHint');
@@ -73,21 +73,24 @@ function acceptVisitorAndEnter() {
     if (visitor) visitor.style.display = 'none';
     if (officeSection) {
         officeSection.style.display = 'block';
-        officeSection.classList.add('active');
+        setTimeout(() => officeSection.classList.add('active'), 80);
     }
 }
 
 function refreshUIForMode() {
+    const serviceActions = document.getElementById('serviceActions');
     const toggleBtn = document.getElementById('multiSelectToggle');
 
     if (window.multiSelectMode) {
         document.body.classList.add('multi-select-mode');
+        if (serviceActions) serviceActions.style.display = 'flex';
         if (toggleBtn) toggleBtn.textContent = 'Cancel';
-        // Checkboxes are completely removed - no display logic needed
+        document.querySelectorAll('.service-checkbox').forEach(cb => cb.style.display = '');
     } else {
         document.body.classList.remove('multi-select-mode');
+        if (serviceActions) serviceActions.style.display = (window.selectedServicesSet && window.selectedServicesSet.size > 0) ? 'flex' : 'none';
         if (toggleBtn) toggleBtn.textContent = 'Select multiple';
-        // Checkboxes are completely removed - no display logic needed
+        document.querySelectorAll('.service-checkbox').forEach(cb => cb.style.display = 'none');
     }
 
     const confirmBtn = document.getElementById('confirmBtn');
@@ -109,115 +112,102 @@ function loadServices(officeId, officeName) {
     refreshUIForMode();
 
     fetch(`../backend/kioskMenuData.php?office_id=${encodeURIComponent(officeId)}`)
-    .then(r => r.text())
-    .then(html => {
-        serviceGrid.innerHTML = html;
+        .then(r => r.text())
+        .then(html => {
+            serviceGrid.innerHTML = html;
 
-        // Ensure PDF checkboxes are created if missing from backend
-        serviceGrid.querySelectorAll('.service-card').forEach(card => {
-            const sid = card.getAttribute('data-service-id');
-            let serviceControls = card.querySelector('.service-controls');
-            
-            // Create service-controls if missing
-            if (!serviceControls) {
-                serviceControls = document.createElement('div');
-                serviceControls.className = 'service-controls';
-                card.appendChild(serviceControls);
-            }
-            
-            // Create PDF checkbox if missing
-            let softCb = card.querySelector('.pdf-checkbox');
-            if (!softCb) {
-                serviceControls.innerHTML = `
-                    <span class="soft-label">PDF</span>
-                    <input type="checkbox" class="pdf-checkbox" id="pdf-${sid}">
-                    <input type="checkbox" class="service-checkbox" value="${sid}" style="display:none;">
-                `;
-                softCb = card.querySelector('.pdf-checkbox');
-            }
+            // wire events for cards
+            serviceGrid.querySelectorAll('.service-card').forEach(card => {
+                const sid = card.getAttribute('data-service-id');
+                const softCb = card.querySelector('.service-soft-checkbox');
+                const hiddenCb = card.querySelector('.service-checkbox');
 
-            const hiddenCb = card.querySelector('.service-checkbox');
+                // initialize per-service soft default (0 = hard)
+                window.perServiceSoft[sid] = (softCb && softCb.checked) ? 1 : 0;
 
-            // initialize per-service soft default (0 = hard)
-            window.perServiceSoft[sid] = (softCb && softCb.checked) ? 1 : 0;
+                // ensure soft toggle is clickable and does not bubble to card click
+                if (softCb) {
+                    // remove disabling — allow click; clicking will auto-select the card if needed
+                    softCb.disabled = false;
 
-            // ensure soft toggle is clickable and does not bubble to card click
-            if (softCb) {
-                // remove disabling — allow click; clicking will auto-select the card if needed
-                softCb.disabled = false;
+                    // stop clicks on the switch from triggering the card click
+                    softCb.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                    }, {passive: true});
 
-                // stop clicks on the checkbox from triggering the card click
-                softCb.addEventListener('click', (ev) => {
-                    ev.stopPropagation();
-                }, {passive: true});
+                    // handle change: update perServiceSoft and auto-select on toggle ON
+                    softCb.addEventListener('change', (e) => {
+                        // update mapping
+                        window.perServiceSoft[sid] = softCb.checked ? 1 : 0;
 
-                // handle change: update perServiceSoft and auto-select on toggle ON
-                softCb.addEventListener('change', (e) => {
-                    // update mapping
-                    window.perServiceSoft[sid] = softCb.checked ? 1 : 0;
-
-                    // if user toggled ON and service not selected yet, select it
-                    if (softCb.checked && !(window.selectedServicesSet && window.selectedServicesSet.has(sid))) {
-                        // If NOT in multi-select mode, selecting a soft copy should behave like a single selection:
-                        // clear other selections and select this one only.
-                        if (!window.multiSelectMode) {
-                            clearAllSelections();
+                        // if user toggled ON and service not selected yet, select it
+                        if (softCb.checked && !(window.selectedServicesSet && window.selectedServicesSet.has(sid))) {
+                            // If NOT in multi-select mode, selecting a soft copy should behave like a single selection:
+                            // clear other selections and select this one only.
+                            if (!window.multiSelectMode) {
+                                clearAllSelections();
+                            }
+                            if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
+                            window.selectedServicesSet.add(sid);
+                            card.classList.add('selected');
+                            if (hiddenCb) hiddenCb.checked = true;
+                            // ensure actions and confirm state reflect selection
+                            const serviceActions = document.getElementById('serviceActions');
+                            if (serviceActions) serviceActions.style.display = 'flex';
+                            refreshUIForMode();
+                            updateSelectedCount();
                         }
+                    });
+                }
+
+                // card click handles selection (ignore clicks inside controls area)
+                card.addEventListener('click', (e) => {
+                    // if click happened inside the controls area (switch/label), do nothing here
+                    if (e.target.closest('.service-controls') || e.target.closest('.service-soft-checkbox') || e.target.closest('label.switch')) {
+                        return;
+                    }
+
+                    if (window.multiSelectMode) {
+                        toggleCardSelection(card, sid, hiddenCb, softCb);
+                    } else {
+                        // single selection: toggle the single selection (allow deselect)
                         if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
-                        window.selectedServicesSet.add(sid);
-                        card.classList.add('selected');
-                        if (hiddenCb) hiddenCb.checked = true;
-                        // service actions is always visible now
+                        if (window.selectedServicesSet.has(sid)) {
+                            // deselect current
+                            clearAllSelections();
+                            const serviceActions = document.getElementById('serviceActions');
+                            if (serviceActions) serviceActions.style.display = 'none';
+                        } else {
+                            // select this single card (clear others)
+                            clearAllSelections();
+                            window.selectedServicesSet.add(sid);
+                            card.classList.add('selected');
+                            if (hiddenCb) hiddenCb.checked = true;
+                            const serviceActions = document.getElementById('serviceActions');
+                            if (serviceActions) serviceActions.style.display = 'flex';
+                        }
+                        // keep soft toggle state as-is (user can toggle after)
                         refreshUIForMode();
                         updateSelectedCount();
                     }
                 });
-            }
-
-            // card click handles selection (ignore clicks inside controls area)
-            card.addEventListener('click', (e) => {
-                // if click happened inside the controls area (checkbox/label), do nothing here
-                if (e.target.closest('.service-controls') || e.target.closest('.pdf-checkbox') || e.target.closest('label')) {
-                    return;
-                }
-
-                if (window.multiSelectMode) {
-                    toggleCardSelection(card, sid, hiddenCb, softCb);
-                } else {
-                    // single selection: toggle the single selection (allow deselect)
-                    if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
-                    if (window.selectedServicesSet.has(sid)) {
-                        // deselect current
-                        clearAllSelections();
-                    } else {
-                        // select this single card (clear others)
-                        clearAllSelections();
-                        window.selectedServicesSet.add(sid);
-                        card.classList.add('selected');
-                        if (hiddenCb) hiddenCb.checked = true;
-                    }
-                    // keep soft toggle state as-is (user can toggle after)
-                    refreshUIForMode();
-                    updateSelectedCount();
-                }
             });
+
+            // transition to services view
+            if (officeSection) officeSection.classList.remove("active");
+            setTimeout(() => {
+                if (officeSection) officeSection.style.display = "none";
+                if (serviceSection) serviceSection.style.display = "block";
+                setTimeout(() => serviceSection && serviceSection.classList.add("active"), 80);
+            }, 260);
+
+            refreshUIForMode();
+            updateSelectedCount();
+        })
+        .catch(err => {
+            console.error(err);
+            serviceGrid.innerHTML = "<p class='muted'>Error loading services</p>";
         });
-
-        // transition to services view
-        if (officeSection) officeSection.classList.remove("active");
-        setTimeout(() => {
-            if (officeSection) officeSection.style.display = "none";
-            if (serviceSection) serviceSection.style.display = "block";
-            setTimeout(() => serviceSection && serviceSection.classList.add("active"), 80);
-        }, 260);
-
-        refreshUIForMode();
-        updateSelectedCount();
-    })
-    .catch(err => {
-        console.error(err);
-        serviceGrid.innerHTML = "<p class='muted'>Error loading services</p>";
-    });
 
     function toggleCardSelection(card, sid, hiddenCb, softCb){
         if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
@@ -225,7 +215,7 @@ function loadServices(officeId, officeName) {
             window.selectedServicesSet.delete(sid);
             card.classList.remove('selected');
             if (hiddenCb) hiddenCb.checked = false;
-            // when deselected, clear soft toggle mapping but keep the user's checkbox visual state (optional)
+            // when deselected, clear soft toggle mapping but keep the user's switch visual state (optional)
             if (softCb) { softCb.checked = false; window.perServiceSoft[sid] = 0; }
         } else {
             window.selectedServicesSet.add(sid);
@@ -243,7 +233,7 @@ function loadServices(officeId, officeName) {
         grid.querySelectorAll('.service-card.selected').forEach(c => c.classList.remove('selected'));
         grid.querySelectorAll('.service-checkbox').forEach(cb => cb.checked = false);
         // clear soft toggle visuals and mapping
-        grid.querySelectorAll('.pdf-checkbox').forEach(s => { s.checked = false; });
+        grid.querySelectorAll('.service-soft-checkbox').forEach(s => { s.checked = false; });
         window.selectedServicesSet && window.selectedServicesSet.clear();
         window.perServiceSoft = {};
     }
@@ -263,13 +253,14 @@ function toggleMultiSelect(){
         // clear any multi selections on exit
         window.selectedServicesSet && window.selectedServicesSet.clear();
         document.querySelectorAll('.service-card.selected').forEach(c => c.classList.remove('selected'));
-        // Checkboxes removed - no need to manipulate display
-        document.querySelectorAll('.service-checkbox').forEach(cb => { cb.checked = false; });
+        document.querySelectorAll('.service-checkbox').forEach(cb => { cb.checked = false; cb.style.display = 'none'; });
         // keep soft toggles visible and reset them to unchecked for clarity
-        document.querySelectorAll('.pdf-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.service-soft-checkbox').forEach(cb => cb.checked = false);
         document.getElementById('selectedCount').textContent = '0 selected';
         const confirmBtn = document.getElementById('confirmBtn');
         if (confirmBtn) confirmBtn.disabled = true;
+    } else {
+        document.querySelectorAll('.service-checkbox').forEach(cb => cb.style.display = '');
     }
     refreshUIForMode();
 }
@@ -329,15 +320,12 @@ function goBack(){
     const serviceSection = document.getElementById("serviceSection");
     const serviceGrid = document.getElementById("serviceGrid");
 
-    // IMMEDIATE transition - NO DELAYS
-    if (serviceSection) {
-        serviceSection.classList.remove("active");
-        serviceSection.style.display = "none";
-    }
-    if (officeSection) {
-        officeSection.style.display = "block";
-        officeSection.classList.add("active");
-    }
+    serviceSection && serviceSection.classList.remove("active");
+    setTimeout(() => {
+        serviceSection && (serviceSection.style.display = "none");
+        officeSection && (officeSection.style.display = "block");
+        setTimeout(() => officeSection && officeSection.classList.add("active"), 80);
+    }, 260);
 
     window.selectedServicesSet && window.selectedServicesSet.clear();
     window.perServiceSoft = {};
@@ -347,12 +335,10 @@ function goBack(){
     if (serviceGrid) {
         serviceGrid.innerHTML = '';
     }
-    
+    const actions = document.getElementById('serviceActions');
+    if (actions) actions.style.display = 'none';
     const selectedCount = document.getElementById('selectedCount');
     if (selectedCount) selectedCount.textContent = '0 selected';
-    
-    const confirmBtn = document.getElementById('confirmBtn');
-    if (confirmBtn) confirmBtn.disabled = true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
