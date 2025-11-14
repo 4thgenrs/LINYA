@@ -26,7 +26,7 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
       <div class="box-top">
         <div id="window" class="window">Window <?php echo $window_no; ?></div>
         <div class="signed">
-          <div class="muted small">Signed in as</div>
+          <div class="muted small">Signed in as:</div>
           <div class="strong"><?php echo $user_name; ?></div>
         </div>
       </div>
@@ -37,9 +37,11 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
       <div id="currentServices" class="service-chips"> <!-- services for current on-air queue --> </div>
 
       <div class="controls">
-        <button id="finished" type="button" disabled>Finished</button>
-        <button id="onBreak" type="button" data-break="false">Break</button>
-        <button id="nextQueue" type="button">Call Next</button>
+        <div class="left-controls">
+          <button id="finished" type="button" disabled>Finished</button>
+          <button id="onBreak" type="button" data-break="false">Break</button>
+          <button id="nextQueue" type="button">Call Next</button>
+        </div>
 
         <div class="right-controls">
           <button id="attachBtn" class="btn-ghost" type="button">Attach file</button>

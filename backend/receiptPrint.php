@@ -61,7 +61,7 @@ $qs->close();
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
 // Adjust the base path if your app isn't at /LINYA; this uses /LINYA as the application root
-$liveUrl = $scheme . '://' . $host . "/LINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
+$liveUrl = $scheme . '://' . $host . "/LATESTLINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
 
 // Prepare QR image (Google Charts) and save to temp file
 $chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";

@@ -17,7 +17,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   <main class="login-wrap">
     <form id="loginForm" class="login-card" autocomplete="off">
       <h1 class="brand">LINYA</h1>
-      <p class="hint">Staff login — enter credentials (case sensitive).</p>
+      <!-- <p class="hint">Staff login — enter credentials (case sensitive).</p> -->
 
       <label class="field">
         <span class="label">Username</span>
@@ -35,8 +35,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
         <button id="submitBtn" type="submit" class="btn primary">Sign in</button>
       </div>
 
-      <div class="small muted foot">Only staff accounts can access the queue window.</div>
-    </form>
+      <!-- <div class="small muted foot">Only staff accounts can access the queue window.</div> -->
+</form>
+    <div class="imageContainer">
+      <img src="/LATESTLINYA/resources/ucc.png" alt="University Logo" class="image">
+    </div>
   </main>
 
   <script src="../js/login.js"></script>

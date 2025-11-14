@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 // require staff login
@@ -20,7 +19,10 @@ $window_no = isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : 0;
 </head>
 <body>
   <header class="dash-header">
-    <div class="brand">LINYA — Staff Dashboard</div>
+    <div class="brand-container">
+      <img src="/LATESTLINYA/resources/ucc.png" alt="UCC Logo" class="brand-logo">
+      <div class="brand">LINYA — Staff Dashboard</div>
+    </div>
     <nav class="dash-nav" role="navigation">
       <button data-view="activity" class="nav-btn active">My Activity</button>
       <button data-view="window" class="nav-btn">Window Control</button>
