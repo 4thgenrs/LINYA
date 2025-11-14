@@ -3,6 +3,13 @@ include('../backend/accountsData.php');
 include('../backend/servicesData.php');
 include('../linya_db/config.php');
 
+session_start();
+// require login
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_SESSION['user_type']) !== 2) {
+    header('Location: login.php');
+    exit;
+}
+
 $accounts = getAccountsData($conn);
 $offices = getOfficeData($conn);
 $roles = getRolesData($conn);

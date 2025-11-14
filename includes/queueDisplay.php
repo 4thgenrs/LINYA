@@ -1,6 +1,11 @@
 <?php
 session_start();
 include '../backend/queueDisplayData.php';
+// require login
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_SESSION['user_type']) !== 2) {
+    header('Location: login.php');
+    exit;
+}
 ?>
 <!doctype html>
 <html lang="en">
