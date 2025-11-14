@@ -10,7 +10,8 @@ if (!isset($conn)) {
 if (isset($_GET['office_id'])) {
     $officeId = intval($_GET['office_id']);
 
-    $stmt = $conn->prepare("SELECT * FROM services WHERE office = ? ORDER BY service_description ASC");
+    // changed SQL: only services with enabled = 1
+    $stmt = $conn->prepare("SELECT * FROM services WHERE office = ? AND enabled = 1 ORDER BY service_description ASC");
     if (!$stmt) {
         echo "<p>DB prepare error: " . htmlspecialchars($conn->error) . "</p>";
         exit;
