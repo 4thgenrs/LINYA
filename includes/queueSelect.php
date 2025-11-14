@@ -139,12 +139,11 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
               <button id="nextQueue" type="button" class="btn btn-primary"><i class="fa-solid fa-forward me-1"></i>Call Next</button>
             </div>
 
-            <div class="right-controls">
-              <button id="attachBtn" class="btn-ghost" type="button"><i class="fa-solid fa-paperclip me-1"></i>Attach</button>
-              <button id="notifyBtn" class="btn-ghost" type="button"><i class="fa-solid fa-bell me-1"></i>Notify</button>
-              <!-- <button id="logoutBtn" class="btn-ghost" type="button"><i class="fa-solid fa-sign-out-alt me-1"></i>Logout</button> -->
-            </div>
-          </div>
+        <div class="right-controls">
+          <button id="attachBtn" class="btn-ghost" type="button">Attach file</button>
+          <button id="notifyBtn" class="btn-ghost" type="button">Notify</button>
+        </div>
+      </div>
 
           <form id="attachForm" style="display:none" enctype="multipart/form-data" method="post" action="../backend/queueAttach.php">
             <input type="file" id="attachmentInput" name="attachments[]" accept=".pdf,image/*" multiple />

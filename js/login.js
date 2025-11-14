@@ -11,8 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     submit.disabled = true;
 
     const data = new FormData(form);
-
-    // Simple validation
     if (!data.get('user_name') || !data.get('password')) {
       showError('Please enter username and password');
       submit.disabled = false;
@@ -24,18 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
       method: 'POST',
       body: data,
       credentials: 'same-origin'
-    })
-      .then(async (r) => {
-        // Always read the body as text first (can't read body twice).
-        const bodyText = await r.text();
-        if (!r.ok) {
-          throw new Error('HTTP ' + r.status + ': ' + bodyText);
-        }
-        // Try to parse JSON from the text
-        try {
-          return JSON.parse(bodyText);
-        } catch (e) {
-          throw new Error('Invalid JSON response: ' + bodyText);
+    }).then(r => r.json())
+      .then(json => {
+        if (json && json.success) {
+          const type = (json.user && json.user.user_type) ? parseInt(json.user.user_type,10) : 0;
+          if (type === 1) {
+            // admin -> admin dashboard
+            window.location.href = '/LINYA/includes/adminDashboard.php';
+          } else if (type === 2) {
+            // staff -> staff dashboard
+            window.location.href = '/LINYA/includes/dashboard.php';
+          } else {
+            window.location.href = '/LINYA/';
+          }
+        } else {
+          showError(json && json.error ? json.error : 'Login failed');
+          submit.disabled = false;
         }
       })
       .then(json => {

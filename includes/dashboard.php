@@ -1,145 +1,84 @@
-  <?php
-  include('../linya_db/config.php');
-  
-  // Count active queues (status = 'pending' or 'ongoing')
-  $activeQueueCount = 0;
-  $result = $conn->query("SELECT COUNT(*) as count FROM queues WHERE status IN ('pending', 'ongoing')");
-  if ($result) {
-    $row = $result->fetch_assoc();
-    $activeQueueCount = intval($row['count'] ?? 0);
-  }
- // Count transactions per user
-    $serviceCounts = [];
-    $result2 = $conn->query("SELECT processed_by, COUNT(*) as total FROM finished_queues GROUP BY processed_by");
-    if ($result2) {
-        while ($row = $result2->fetch_assoc()) {
-            $serviceCounts[$row['processed_by']] = intval($row['total']);
+<?php
+session_start();
+// require staff login
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_SESSION['user_type']) !== 2) {
+    header('Location: login.php');
+    exit;
+}
+$userName = htmlspecialchars($_SESSION['user_name']);
+$office = isset($_SESSION['office_id']) ? intval($_SESSION['office_id']) : 0;
+$window_no = isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : 0;
+
+// load office description/code for display in header
+$office_description = null;
+$office_code = null;
+require_once __DIR__ . '/../linya_db/config.php';
+if ($office > 0 && isset($conn)) {
+    $ostmt = $conn->prepare("SELECT office_description, office_code FROM offices WHERE office_id = ? LIMIT 1");
+    if ($ostmt) {
+        $ostmt->bind_param('i', $office);
+        $ostmt->execute();
+        $ores = $ostmt->get_result();
+        if ($row = $ores->fetch_assoc()) {
+            $office_description = $row['office_description'];
+            $office_code = $row['office_code'];
         }
+        $ostmt->close();
     }
-
-    // Total services (sum of all processed_by)
-    $totalServices = array_sum($serviceCounts);
-
-    $loggedUser = $_SESSION['user_name'] ?? ''; // adjust based on your session setup
-      $completedToday = 0;
-
-      if ($loggedUser) {
-          $today = date('Y-m-d'); // current date
-          $stmt = $conn->prepare("SELECT COUNT(*) as total FROM finished_queues WHERE processed_by = ? AND DATE(finished_at) = ?");
-          $stmt->bind_param("ss", $loggedUser, $today);
-          $stmt->execute();
-          $result = $stmt->get_result();
-          if ($result) {
-              $row = $result->fetch_assoc();
-              $completedToday = intval($row['total'] ?? 0);
-          }
-          $stmt->close();
-      }
-
-  ?>
-  <title>Dashboard</title>
-
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <style>
-    .card-stat {
-      border: 1px solid #e5e5e5;
-      border-radius: 10px;
-      text-align: center;
-      background: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
-    .card-stat i {
-      font-size: 1.8rem;
-      color: #198754;
-      margin-bottom: 8px;
-    }
-
-    .stat-number {
-      font-size: 1.4rem;
-      font-weight: 600;
-    }
-
-    .quick-card {
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .btn-success {
-      border-radius: 8px;
-    }
-
-    h4, h5 {
-      font-weight: 600;
-    }
-  </style>
+}
+?>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard — LINYA<?php echo $office_description ? ' — '.htmlspecialchars($office_description) : ''; ?></title>
+  <link rel="stylesheet" href="../css/dashboard.css" />
 </head>
-
 <body>
-
-  <div class="container-fluid">
-    <h4 class="fw-bold mb-3">Dashboard</h4>
-
-    <!-- Stats Row -->
-    <div class="row g-3 mb-4">
-      <div class="col-md-4 col-sm-6">
-        <div class="card-stat p-3">
-          <i class="fa-solid fa-user-clock"></i>
-          <div class="stat-number"><?php echo $activeQueueCount; ?></div>
-          <div>Active in Queue</div>
-        </div>
-      </div>
-        <div class="col-md-4 col-sm-6">
-          <div class="card-stat p-3">
-            <i class="fa-solid fa-check-circle"></i>
-            <div class="stat-number"><?php echo $completedToday; ?></div>
-            <div>Completed Today</div>
-          </div>
-        </div>
-      <div class="col-md-4 col-sm-6">
-      <div class="card-stat p-3">
-        <i class="fa-solid fa-briefcase"></i>
-        <div class="stat-number">
-          <?php echo $totalServices; ?>
-        </div>
-        <div>Total Services</div>
-      </div>
+  <header class="dash-header">
+    <div class="brand">LINYA — Staff Dashboard</div>
+    <nav class="dash-nav" role="navigation">
+      <button data-view="activity" class="nav-btn active">My Activity</button>
+      <button data-view="window" class="nav-btn">Window Control</button>
+      <button data-view="office" class="nav-btn">Live Office Queue</button>
+    </nav>
+    <div class="dash-right">
+      <div class="small muted">Signed in as <strong><?php echo $userName; ?></strong></div>
+      <div class="small muted">Office: <strong id="assignedOffice"><?php echo $office_description ? htmlspecialchars($office_description.' ('.$office_code.')') : '—'; ?></strong></div>
+      <button id="logoutBtn" class="btn-ghost">Logout</button>
     </div>
-    </div>
+  </header>
 
-    <!-- Quick Actions -->
-    <h5 class="fw-bold mb-3">Quick Actions</h5>
-    <div class="row g-3">
-      <div class="col-md-4">
-        <div class="card quick-card p-3">
-          <h6 class="fw-semibold">View Live Queue</h6>
-          <p class="text-muted mb-3">Manage current queue for Registrar services.</p>
-          <button class="btn btn-success btn-sm">View Queue</button>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card quick-card p-3">
-          <h6 class="fw-semibold">Reports & Analytics</h6>
-          <p class="text-muted mb-3">View detailed reports and analytics for Registrar services.</p>
-          <button class="btn btn-success btn-sm">View Reports</button>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card quick-card p-3">
-          <h6 class="fw-semibold">Settings</h6>
-          <p class="text-muted mb-3">Configure Registrar services and courses.</p>
-          <button class="btn btn-success btn-sm">View Settings</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <main class="dash-main">
+    <section id="view-activity" class="dash-view">
+      <h2>My Activity</h2>
+      <div id="activityContainer" class="activity-wrap">Loading…</div>
+    </section>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <section id="view-window" class="dash-view" style="display:none">
+      <h2>Window Control</h2>
+      <!-- open the full window control page in an iframe so staff tools remain available -->
+      <iframe id="windowFrame" src="../includes/queueSelect.php" title="Window Control" frameborder="0"></iframe>
+    </section>
 
+    <section id="view-office" class="dash-view" style="display:none">
+      <h2>Live Office Queue</h2>
+      <div id="officeQueueContainer">Loading…</div>
+      <h3>Pending</h3>
+      <div id="officePending">Loading…</div>
+    </section>
+  </main>
+
+  <script>
+    // expose initial session values to the dashboard script (safe small read-only)
+    window.__LINYA_SESSION = {
+      office: <?php echo json_encode($office); ?>,
+      window_no: <?php echo json_encode($window_no); ?>,
+      office_description: <?php echo json_encode($office_description); ?>,
+      office_code: <?php echo json_encode($office_code); ?>
+    };
+  </script>
+  <script src="../js/dashboard.js" defer></script>
 </body>
 </html>

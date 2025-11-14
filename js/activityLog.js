@@ -100,6 +100,4 @@
   endDate.addEventListener('change', load);
 
   document.addEventListener('DOMContentLoaded', () => { updateFilterInputs(); load(); });
-  }
-
-)();
+})();

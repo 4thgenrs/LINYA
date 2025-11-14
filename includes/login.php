@@ -1,8 +1,28 @@
 <!-- <?php
 session_start();
-if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
-    header('Location: queueSelect.php');
-    exit;
+
+// If a session already exists, redirect to the appropriate dashboard
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
+    $type = intval($_SESSION['user_type']);
+    if ($type === 1) {
+        header('Location: adminDashboard.php');
+        exit;
+    } elseif ($type === 2) {
+        header('Location: dashboard.php');
+        exit;
+    } else {
+        // unknown type — clear session and show login
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+        session_start();
+    }
 }
 ?>
 <!doctype html>

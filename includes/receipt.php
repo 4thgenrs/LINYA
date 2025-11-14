@@ -1,4 +1,9 @@
-<?php include '../linya_db/config.php'; ?>
+<?php include '../linya_db/config.php';
+
+session_start();
+
+
+?>
 <!doctype html>
 <html lang="en">
 <head>

@@ -1,5 +1,9 @@
-<?php include '../linya_db/config.php'; ?>
-<!DOCTYPE html>
+<?php include '../linya_db/config.php';
+
+
+
+?>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
