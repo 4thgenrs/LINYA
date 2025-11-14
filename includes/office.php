@@ -1,37 +1,41 @@
 <?php
-include('../backend/officeData.php');
-include('../linya_db/config.php');
-
-
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_office'])) {
-        $code = trim($_POST['office_code']);
-        $desc = trim($_POST['office_description']);
-        if ($code !== '' && $desc !== '') {
-            addOffice($conn, $code, $desc);
-        }
-    }
-
-    if (isset($_POST['update_office'])) {
-        $id = intval($_POST['office_id']);
-        $code = trim($_POST['office_code']);
-        $desc = trim($_POST['office_description']);
-        if ($id > 0 && $code !== '' && $desc !== '') {
-            updateOffice($conn, $id, $code, $desc);
-        }
-    }
-
-    if (isset($_POST['delete_office'])) {
-        $id = intval($_POST['office_id']);
-        if ($id > 0) {
-            deleteOffice($conn, $id);
-        }
-    }
-}
+include_once('../backend/officeData.php'); // backend handles POST and includes config itself
 
 // Fetch data
 $offices = getOfficeData($conn);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // existing add/update handlers...
+    // TOGGLE enable/disable (replaces delete)
+    if (isset($_POST['toggle_office'])) {
+        $id = intval($_POST['office_id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $current = 1;
+                if ($res && $row = $res->fetch_assoc()) {
+                    $current = intval($row['enabled']);
+                }
+                $stmt->close();
+
+                $new = $current ? 0 : 1;
+                $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
+                if ($u) {
+                    $u->bind_param("ii", $new, $id);
+                    $u->execute();
+                    $u->close();
+                }
+            }
+        }
+    }
+
+    // redirect to avoid resubmission
+    header("Location: office.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -60,6 +64,7 @@ $offices = getOfficeData($conn);
                 <th>#</th>
                 <th>Office Code</th>
                 <th>Office Description</th>
+                <th>Status</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -71,21 +76,23 @@ $offices = getOfficeData($conn);
                         data-id="<?php echo $office['office_id']; ?>" 
                         data-code="<?php echo htmlspecialchars($office['office_code']); ?>"
                         data-description="<?php echo htmlspecialchars($office['office_description']); ?>"
+                        data-enabled="<?php echo intval($office['enabled']); ?>"
                     >
                         <td><?php echo $counter++; ?></td>
                         <td><?php echo htmlspecialchars($office['office_code']); ?></td>
                         <td><?php echo htmlspecialchars($office['office_description']); ?></td>
+                        <td><?php echo intval($office['enabled']) ? 1 : 0; ?></td>
                         <td>
                             <button type="button" class="editBtn">Edit</button>
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
-                                <input type="submit" name="delete_office" value="Delete" onclick="return confirm('Are you sure you want to delete this office?');">
+                                <input type="submit" name="toggle_office" value="<?php echo intval($office['enabled']) ? 'Disable' : 'Enable'; ?>" onclick="return confirm('Are you sure?');">
                             </form>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             <?php else : ?>
-                <tr><td colspan="4">No data found</td></tr>
+                <tr><td colspan="5">No data found</td></tr>
             <?php endif; ?>
         </tbody>
     </table>

@@ -58,7 +58,8 @@
             <h1 class="title">Select an Office</h1>
             <div class="grid" id="officeGrid">
                 <?php
-                $sql = "SELECT * FROM offices";
+                // changed SQL: only show offices with enabled = 1
+                $sql = "SELECT * FROM offices WHERE enabled = 1 ORDER BY office_description ASC";
                 $result = $conn->query($sql);
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {

@@ -38,6 +38,7 @@ $offices = getOfficeData($conn);
         <th>#</th>
         <th>Service Description</th>
         <th>Office</th>
+        <th>Status</th>
         <th>Action</th>
     </tr>
     <?php if (!empty($services)) {
@@ -46,23 +47,25 @@ $offices = getOfficeData($conn);
             <tr 
                 data-id="<?php echo $row['service_id']; ?>"
                 data-description="<?php echo htmlspecialchars($row['service_description']); ?>"
-                data-office="<?php echo $row['office_description']; ?>" 
+                data-office="<?php echo intval($row['office']); ?>"
+                data-enabled="<?php echo intval($row['enabled']); ?>"
             >
                 <td><?php echo $counter++; ?></td>
                 <td><?php echo $row['service_description']; ?></td>
                 <td><?php echo $row['office_description']; ?></td>
+                <td><?php echo intval($row['enabled']) ? 1 : 0; ?></td>
                 <td>
                     <button type="button" class="editBtn">Edit</button>
                     
                     <form method="POST" style="display:inline;">
-                        <input type="hidden" name="delete_id" value="<?php echo $row['service_id']; ?>">
-                        <input type="submit" value="Delete" onclick="return confirm('Are you sure you want to delete this service?');">
+                        <input type="hidden" name="service_id" value="<?php echo $row['service_id']; ?>">
+                        <input type="submit" name="toggle_service" value="<?php echo intval($row['enabled']) ? 'Disable' : 'Enable'; ?>" onclick="return confirm('Are you sure?');">
                     </form>
                 </td>
             </tr>
     <?php }
     } else { ?>
-        <tr><td colspan="4">No data found</td></tr>
+        <tr><td colspan="5">No data found</td></tr>
     <?php } ?>
 </table>
 

@@ -18,9 +18,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateOffice($conn, $id, $code, $desc);
     }
 
-    if (isset($_POST['delete_office'])) {
-        $id = intval($_POST['office_id']);
-        deleteOffice($conn, $id);
+    // TOGGLE enable/disable (replaces delete)
+    if (isset($_POST['toggle_office'])) {
+        $id = intval($_POST['office_id'] ?? 0);
+        if ($id > 0) {
+            // get current value
+            $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $current = 1;
+                if ($res && $row = $res->fetch_assoc()) {
+                    $current = intval($row['enabled']);
+                }
+                $stmt->close();
+
+                $new = $current ? 0 : 1;
+                $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
+                if ($u) {
+                    $u->bind_param("ii", $new, $id);
+                    $u->execute();
+                    $u->close();
+                }
+            }
+        }
     }
 
     // 🔁 Redirect to prevent form resubmission
@@ -38,7 +60,8 @@ $offices = getOfficeData($conn);
 
 function getOfficeData($conn) {
     $data = [];
-    $sql = "SELECT office_id, office_code, office_description FROM offices ORDER BY office_id ASC";
+    // Note: ensure offices table has 'enabled' column (see provided ALTER TABLE)
+    $sql = "SELECT office_id, office_code, office_description, enabled FROM offices ORDER BY office_id ASC";
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {

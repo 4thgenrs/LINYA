@@ -23,10 +23,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // DELETE service
-    if (isset($_POST['delete_id'])) {
-        $id = intval($_POST['delete_id']);
-        deleteService($conn, $id);
+    // TOGGLE enable/disable (replaces delete)
+    if (isset($_POST['toggle_service'])) {
+        $id = intval($_POST['service_id'] ?? 0);
+        if ($id > 0) {
+            // get current enabled
+            $stmt = $conn->prepare("SELECT enabled FROM services WHERE service_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $current = 1;
+                if ($res && $row = $res->fetch_assoc()) {
+                    $current = intval($row['enabled']);
+                }
+                $stmt->close();
+
+                $new = $current ? 0 : 1;
+                $u = $conn->prepare("UPDATE services SET enabled = ? WHERE service_id = ?");
+                if ($u) {
+                    $u->bind_param("ii", $new, $id);
+                    $u->execute();
+                    $u->close();
+                }
+            }
+        }
         header("Location: services.php");
         exit;
     }
@@ -36,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function getServiceData($conn) {
     $data = [];
-    $sql = "SELECT S.service_id, S.service_description, O.office_description FROM services S INNER JOIN offices O ON S.office = O.office_id";
+    // Note: ensure services table has 'enabled' column (see provided ALTER TABLE)
+    $sql = "SELECT S.service_id, S.service_description, S.office, S.enabled, O.office_description FROM services S INNER JOIN offices O ON S.office = O.office_id";
     $result = $conn->query($sql);
 
     if ($result && $result->num_rows > 0) {
