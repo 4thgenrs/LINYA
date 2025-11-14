@@ -65,3 +65,74 @@
 
   document.addEventListener('DOMContentLoaded', load);
 })();
+
+// Modal & Report generation helpers
+(function(){
+  const openBtn = document.getElementById('openReportBtn');
+  const modal = document.getElementById('reportModal');
+  const closeBtn = document.getElementById('closeReportBtn');
+  const officeSelect = document.getElementById('officeFilter');
+  const modalOffice = document.getElementById('r_office');
+  const modalStaff = document.getElementById('r_staff');
+  const reportForm = document.getElementById('reportForm');
+
+  function showModal(){
+    // clone office options into modal office select
+    modalOffice.innerHTML = '';
+    Array.from(officeSelect.options).forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.textContent;
+      modalOffice.appendChild(o);
+    });
+    // load staff list for current office
+    loadStaffList(modalOffice.value);
+    modal.style.display = 'flex';
+  }
+
+  function hideModal(){
+    modal.style.display = 'none';
+  }
+
+  async function loadStaffList(officeId){
+    modalStaff.innerHTML = '<option value="">Any</option>';
+    try {
+      const url = '../backend/staffList.php' + (officeId && parseInt(officeId)>0 ? '?office_id=' + encodeURIComponent(officeId) : '');
+      const res = await fetch(url, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Failed');
+      const json = await res.json();
+      if (Array.isArray(json) && json.length) {
+        json.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.name || s.user_name || '';
+          opt.textContent = s.name || s.user_name || '';
+          modalStaff.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.error('staff load', e);
+    }
+  }
+
+  openBtn && openBtn.addEventListener('click', showModal);
+  closeBtn && closeBtn.addEventListener('click', hideModal);
+  modalOffice && modalOffice.addEventListener('change', e => loadStaffList(e.target.value));
+
+  // Close modal on background click
+  modal && modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hideModal();
+  });
+
+  // Optional: validate date range before submit
+  reportForm && reportForm.addEventListener('submit', function(e){
+    const s = document.getElementById('r_start').value;
+    const en = document.getElementById('r_end').value;
+    if (s && en && s > en) {
+      e.preventDefault();
+      alert('Start date must be earlier than end date');
+      return false;
+    }
+    // allow form to submit (target _blank opens in new tab)
+  });
+
+})();
