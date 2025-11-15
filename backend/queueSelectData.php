@@ -13,8 +13,10 @@ $office = isset($_REQUEST['office']) ? intval($_REQUEST['office']) : 0;
 // if a staff session exists prefer session's office/window
 if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
     $office = isset($_SESSION['office_id']) ? intval($_SESSION['office_id']) : $office;
-    // prefer window_no if provided, otherwise window_id
-    $window = isset($_SESSION['window_no']) && intval($_SESSION['window_no']) > 0 ? intval($_SESSION['window_no']) : (isset($_SESSION['window_id']) ? intval($_SESSION['window_id']) : $window);
+    // prefer the resolved PK first (window_id), then fall back to window_no (legacy)
+    $window = (isset($_SESSION['window_id']) && intval($_SESSION['window_id']) > 0)
+        ? intval($_SESSION['window_id'])
+        : (isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : $window);
     // note: getNextLine expects a numeric window id/identifier; queueData functions use $window as passed
 }
 
@@ -69,6 +71,46 @@ try {
         $processed_by = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : null;
         $finishedAt = date('Y-m-d H:i:s');
 
+        // --- RESOLVE the actual window NUMBER that processed this queue ---
+        // prefer session window_no; if only session.window_id (PK) exist, resolve to its window_no;
+        // otherwise try to resolve from the queue row's window_id (legacy PK), else fallback to raw value.
+        $window_no_to_store = 0;
+        if (isset($_SESSION['window_no']) && intval($_SESSION['window_no']) > 0) {
+            $window_no_to_store = intval($_SESSION['window_no']);
+        } elseif (isset($_SESSION['window_id']) && intval($_SESSION['window_id']) > 0) {
+            $tmpWid = intval($_SESSION['window_id']);
+            $wr = $conn->prepare("SELECT window_no FROM office_windows WHERE window_id = ? LIMIT 1");
+            if ($wr) {
+                $wr->bind_param('i', $tmpWid);
+                $wr->execute();
+                $wres = $wr->get_result();
+                if ($wres && ($rw = $wres->fetch_assoc())) {
+                    $window_no_to_store = intval($rw['window_no']);
+                }
+                $wr->close();
+            }
+        } else {
+            // try resolving queueRow.window_id as PK -> window_no
+            $maybe = intval($queueRow['window_id'] ?? 0);
+            if ($maybe > 0) {
+                $wr = $conn->prepare("SELECT window_no FROM office_windows WHERE window_id = ? LIMIT 1");
+                if ($wr) {
+                    $wr->bind_param('i', $maybe);
+                    $wr->execute();
+                    $wres = $wr->get_result();
+                    if ($wres && ($rw = $wres->fetch_assoc())) {
+                        $window_no_to_store = intval($rw['window_no']);
+                    }
+                    $wr->close();
+                }
+            }
+        }
+        // final fallback: use whatever numeric was in queue row
+        if ($window_no_to_store <= 0) {
+            $window_no_to_store = intval($queueRow['window_id'] ?? 0);
+        }
+        // --- end resolve ---
+
         // transaction: insert into finished_queues, delete queue_services, delete queues
         $conn->begin_transaction();
         try {
@@ -88,7 +130,7 @@ try {
             // types: 3 ints, then 8 strings = 11 params
             $types = 'iiissssssss';
             $office_id = intval($queueRow['office_id']);
-            $window_id = intval($queueRow['window_id']);
+            $window_id = $window_no_to_store; // store the resolved window NUMBER here
             $created_at = $queueRow['created_at'] ?? null;
             $status = 'finished';
             $customer_name = $queueRow['customer_name'] ?? null;

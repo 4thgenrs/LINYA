@@ -6,10 +6,31 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
     exit;
 }
 
+require_once __DIR__ . '/../linya_db/config.php';
+
 // session-provided office/window (fallback to query params)
 $office = isset($_SESSION['office_id']) ? intval($_SESSION['office_id']) : (isset($_GET['office']) ? intval($_GET['office']) : 1);
 $window_no = isset($_SESSION['window_no']) ? intval($_SESSION['window_no']) : (isset($_GET['window']) ? intval($_GET['window']) : 1);
 $user_name = htmlspecialchars($_SESSION['user_name']);
+
+// Resolve the real window_id (PK) for this office + window_no to avoid ambiguity between offices with same window_no
+$window_id = 0;
+if (isset($conn)) {
+    $rs = $conn->prepare("SELECT window_id FROM office_windows WHERE office_id = ? AND window_no = ? LIMIT 1");
+    if ($rs) {
+        $rs->bind_param('ii', $office, $window_no);
+        $rs->execute();
+        $rres = $rs->get_result();
+        if ($rres && ($rw = $rres->fetch_assoc())) {
+            $window_id = intval($rw['window_id']);
+            // persist resolved PK in session for later API calls
+            $_SESSION['window_id'] = $window_id;
+        }
+        $rs->close();
+    }
+}
+// Fallback: if resolution failed keep using window_no (legacy), but prefer PK when available
+$window_attr = $window_id > 0 ? $window_id : $window_no;
 ?>
 
 <!doctype html>
@@ -22,7 +43,10 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
 </head>
 <body>
   <div class="wrap">
-    <div class="box" role="group" aria-label="Window Control" id="boxRoot" data-office="<?php echo $office; ?>" data-window="<?php echo $window_no; ?>">
+    <div class="box" role="group" aria-label="Window Control" id="boxRoot"
+         data-office="<?php echo $office; ?>"
+         data-window="<?php echo $window_attr; ?>"
+         data-window-no="<?php echo $window_no; ?>">
       <div class="box-top">
         <div id="window" class="window">Window <?php echo $window_no; ?></div>
         <div class="signed">
