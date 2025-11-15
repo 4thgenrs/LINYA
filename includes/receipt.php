@@ -66,6 +66,15 @@ session_start();
     </section>
   </main>
 
+  <?php
+    // Expose whether the current visitor was logged-in via face recognition
+    if (isset($_SESSION['client']) && is_array($_SESSION['client'])) {
+        $client_js = json_encode($_SESSION['client']);
+        echo "<script>window.FACE_LOGGED = true; window.__CLIENT_SESSION = $client_js;</script>\n";
+    } else {
+        echo "<script>window.FACE_LOGGED = false; window.__CLIENT_SESSION = null;</script>\n";
+    }
+  ?>
   <script src="../js/receipt.js"></script>
 </body>
 </html>

@@ -431,6 +431,28 @@ ALTER TABLE `queue_services`
 --
 ALTER TABLE `services`
   ADD CONSTRAINT `service_office_id` FOREIGN KEY (`office`) REFERENCES `offices` (`office_id`);
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `clients`
+--
+
+CREATE TABLE `clients` (
+  `client_id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `safe_name` varchar(150) NOT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `face_data` LONGBLOB DEFAULT NULL,
+  `face_path` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`client_id`),
+  KEY `idx_safe_name` (`safe_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Note: `face_data` stores the raw encoding blob (e.g. numpy .npy bytes) when available.
+-- `face_path` may contain the server path where the face files are stored for debugging.
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

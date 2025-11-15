@@ -121,7 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       confirmBtn.addEventListener('click', () => {
-        window.location.href = `${origin}${base}/includes/kioskMenu.php`;
+        if (window.FACE_LOGGED) {
+          // destroy server-side face session then go to face login
+          fetch('../backend/face_logout.php', { method: 'POST' }).catch(()=>{}).finally(()=>{
+            window.location.href = `${origin}${base}/faceapp_php/login.php`;
+          });
+        } else {
+          window.location.href = `${origin}${base}/includes/kioskMenu.php`;
+        }
       });
 
       printBtn.addEventListener('click', () => {
