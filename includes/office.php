@@ -4,38 +4,38 @@ include_once('../backend/officeData.php'); // backend handles POST and includes 
 // Fetch data
 $offices = getOfficeData($conn);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // existing add/update handlers...
-    // TOGGLE enable/disable (replaces delete)
-    if (isset($_POST['toggle_office'])) {
-        $id = intval($_POST['office_id'] ?? 0);
-        if ($id > 0) {
-            $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
-            if ($stmt) {
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $current = 1;
-                if ($res && $row = $res->fetch_assoc()) {
-                    $current = intval($row['enabled']);
-                }
-                $stmt->close();
+// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+//     // existing add/update handlers...
+//     // TOGGLE enable/disable (replaces delete)
+//     if (isset($_POST['toggle_office'])) {
+//         $id = intval($_POST['office_id'] ?? 0);
+//         if ($id > 0) {
+//             $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
+//             if ($stmt) {
+//                 $stmt->bind_param("i", $id);
+//                 $stmt->execute();
+//                 $res = $stmt->get_result();
+//                 $current = 1;
+//                 if ($res && $row = $res->fetch_assoc()) {
+//                     $current = intval($row['enabled']);
+//                 }
+//                 $stmt->close();
 
-                $new = $current ? 0 : 1;
-                $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
-                if ($u) {
-                    $u->bind_param("ii", $new, $id);
-                    $u->execute();
-                    $u->close();
-                }
-            }
-        }
-    }
+//                 $new = $current ? 0 : 1;
+//                 $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
+//                 if ($u) {
+//                     $u->bind_param("ii", $new, $id);
+//                     $u->execute();
+//                     $u->close();
+//                 }
+//             }
+//         }
+//     }
 
-    // redirect to avoid resubmission
-    header("Location: office.php");
-    exit;
-}
+//     // redirect to avoid resubmission
+//     header("Location: office.php");
+//     exit;
+// }
 ?>
 
 <!DOCTYPE html>
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?php echo $counter++; ?></td>
                         <td><?php echo htmlspecialchars($office['office_code']); ?></td>
                         <td><?php echo htmlspecialchars($office['office_description']); ?></td>
-                        <td><?php echo intval($office['enabled']) ? 1 : 0; ?></td>
+                        <td><?php echo intval($office['enabled']) ? "Active" : "Inactive"; ?></td>
                         <td>
                             <button type="button" class="editBtn">Edit</button>
                             <form method="POST" style="display:inline;">
