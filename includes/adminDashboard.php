@@ -21,6 +21,7 @@ $userName = htmlspecialchars($_SESSION['user_name']);
     <nav class="adm-nav">
       <button data-module="landing" class="adm-btn active">Home</button>
       <button data-module="accounts" class="adm-btn">Accounts</button>
+      <button data-module="adminClients" class="adm-btn">Face Clients</button>
       <button data-module="assignStaff" class="adm-btn">Assign Staff</button>
       <button data-module="finishedQueue" class="adm-btn">Finished Queues</button>
       <button data-module="office" class="adm-btn">Offices</button>
