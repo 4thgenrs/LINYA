@@ -44,9 +44,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+//Delete Office
+    if (isset($_POST['delete_office'])) {
+        $id = intval($_POST['office_id'] ?? 0);
+        if ($id > 0) {
+            //Delete Services first
+            $serviceStmt = $conn->prepare("DELETE FROM services WHERE office = ?");
+            if ($serviceStmt) {
+                $serviceStmt->bind_param("i", $id);
+                $serviceStmt->execute();
+                $serviceStmt->close();
+            }
 
-    // 🔁 Redirect to prevent form resubmission
-    header("Location: office.php");
+            //Delete Office latter
+            $officeStmt = $conn->prepare("DELETE FROM offices WHERE office_id = ?");
+            if ($officeStmt) {
+                $officeStmt->bind_param("i", $id);
+                $officeStmt->execute();
+                $officeStmt->close();
+            }
+        }
+    }
     exit;
 }
 

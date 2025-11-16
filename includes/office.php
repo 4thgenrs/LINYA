@@ -88,6 +88,10 @@ $offices = getOfficeData($conn);
                                 <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
                                 <input type="submit" name="toggle_office" value="<?php echo intval($office['enabled']) ? 'Disable' : 'Enable'; ?>" onclick="return confirm('Are you sure?');">
                             </form>
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
+                                <input type="submit" name="delete_office" value="Delete" onclick="return confirm('Are you sure?');">
+                            </form>
                         </td>
                     </tr>
                 <?php endforeach; ?>
