@@ -63,7 +63,7 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
             if ($id > 0) {
                 //check for active queues before deleting
                 $checkStmt = $conn->prepare("SELECT COUNT(*) AS active_count FROM queues WHERE office_id = ?");
-                if ($checkStmt) {           
+                if ($checkStmt) {
                     $checkStmt->bind_param("i", $id);
                     $checkStmt->execute();
                     $checkRes = $checkStmt->get_result();
@@ -71,7 +71,7 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                         if (intval($row['active_count']) > 0) {
                             // There are active queues, do not delete
                             $checkStmt->close();
-                            header("Location: office.php?error=active_queues");
+                            header("Location: ../includes/office.php?error=active_queues");
                             exit;
                         }
                     }
@@ -86,25 +86,49 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                     $serviceStmt->close();
                 }
 
-                //Unassign Office from Accounts
-                $accountStmt = $conn->prepare("UPDATE accounts SET office = ? WHERE office = ?");
+                // Unassign Office from Accounts (set office to NULL)
+                $accountStmt = $conn->prepare("UPDATE accounts SET office = NULL WHERE office = ?");
                 if ($accountStmt) {
-                    $accountStmt->bind_param("ii", $null, $id);
+                    $accountStmt->bind_param("i", $id);
                     $accountStmt->execute();
                     $accountStmt->close();
                 }
 
-                //Unassign Office from Accounts
-                $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = ? WHERE office_id = ?");
-                if ($finishedQueueStmt) {
-                    $finishedQueueStmt->bind_param("ii",$null, $id);
-                    $finishedQueueStmt->execute();
-                    $finishedQueueStmt->close();
+                // Clear finished_queues.office_id entries that belong to this office.
+                // finished_queues.office_id now stores office name text in newer schema; resolve the name first.
+                $officeName = null;
+                $rsn = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                if ($rsn) {
+                    $rsn->bind_param('i', $id);
+                    $rsn->execute();
+                    $rr = $rsn->get_result();
+                    if ($rr && ($rwr = $rr->fetch_assoc())) {
+                        $officeName = $rwr['office_description'];
+                    }
+                    $rsn->close();
+                }
+                if ($officeName !== null) {
+                    $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = NULL WHERE office_id = ?");
+                    if ($finishedQueueStmt) {
+                        $finishedQueueStmt->bind_param("s", $officeName);
+                        $finishedQueueStmt->execute();
+                        $finishedQueueStmt->close();
+                    }
+                } else {
+                    // fallback: clear numeric matches (legacy rows)
+                    $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = NULL WHERE office_id = ?");
+                    if ($finishedQueueStmt) {
+                        $idStr = (string)$id;
+                        $finishedQueueStmt->bind_param("s", $idStr);
+                        $finishedQueueStmt->execute();
+                        $finishedQueueStmt->close();
+                    }
                 }
 
-                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = ? WHERE office_id = ?");
+                // Unassign office_id in office_windows (set to NULL)
+                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = NULL WHERE office_id = ?");
                 if ($officeWindowStmt) {
-                    $officeWindowStmt->bind_param("ii", $null, $id);
+                    $officeWindowStmt->bind_param("i", $id);
                     $officeWindowStmt->execute();
                     $officeWindowStmt->close();
                 }
