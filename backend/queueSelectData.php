@@ -127,9 +127,39 @@ try {
                     customer_phone = VALUES(customer_phone),
                     customer_email = VALUES(customer_email)"
             );
-            // types: 3 ints, then 8 strings = 11 params
-            $types = 'iiissssssss';
-            $office_id = intval($queueRow['office_id']);
+            // We now store office name (text) in finished_queues.office_id.
+            // Resolve office name from session or from queue row's office_id (if numeric), otherwise cast to string.
+            $office_name_to_store = null;
+            if (isset($_SESSION['office_id']) && intval($_SESSION['office_id']) > 0) {
+                $tmp = intval($_SESSION['office_id']);
+                $sr = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                if ($sr) {
+                    $sr->bind_param('i', $tmp);
+                    $sr->execute();
+                    $res = $sr->get_result();
+                    if ($res && ($rw = $res->fetch_assoc())) $office_name_to_store = $rw['office_description'];
+                    $sr->close();
+                }
+            }
+            if (!$office_name_to_store) {
+                $maybe = $queueRow['office_id'] ?? null;
+                if (is_numeric($maybe) && intval($maybe) > 0) {
+                    $sr = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                    if ($sr) {
+                        $mi = intval($maybe);
+                        $sr->bind_param('i', $mi);
+                        $sr->execute();
+                        $res = $sr->get_result();
+                        if ($res && ($rw = $res->fetch_assoc())) $office_name_to_store = $rw['office_description'];
+                        $sr->close();
+                    }
+                }
+            }
+            if (!$office_name_to_store) {
+                // fallback: use whatever is in queueRow.office_id as string (could already be name)
+                $office_name_to_store = (string)($queueRow['office_id'] ?? '');
+            }
+
             $window_id = $window_no_to_store; // store the resolved window NUMBER here
             $created_at = $queueRow['created_at'] ?? null;
             $status = 'finished';
@@ -137,9 +167,12 @@ try {
             $customer_phone = $queueRow['customer_phone'] ?? null;
             $customer_email = $queueRow['customer_email'] ?? null;
 
+            // types: original_queue_id (int), office_id (string), window_id (int), then 8 strings
+            $types = 'isissssssss';
+
             $ins->bind_param($types,
                 $queue_id,
-                $office_id,
+                $office_name_to_store,
                 $window_id,
                 $processed_by,
                 $finishedAt,
