@@ -160,6 +160,24 @@ try {
         }
     }
 
+    // Determine if the current staff user is assigned to a window (for allowing window control)
+    $response['user']['assigned_window_id'] = null;
+    $response['user']['assigned_window_no'] = null;
+    $response['user']['assigned_office_id'] = null;
+    $aw = $conn->prepare("SELECT window_id, office_id, window_no FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+    if ($aw) {
+        $aw->bind_param('i', $user_id);
+        $aw->execute();
+        $awr = $aw->get_result();
+        if ($awr && ($ar = $awr->fetch_assoc())) {
+            $response['user']['assigned_window_id'] = intval($ar['window_id']);
+            $response['user']['assigned_window_no'] = intval($ar['window_no']);
+            $response['user']['assigned_office_id'] = intval($ar['office_id']);
+        }
+        $aw->close();
+    }
+    $response['user']['can_control'] = !empty($response['user']['assigned_window_id']);
+
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
     exit;
 } catch (Exception $e) {

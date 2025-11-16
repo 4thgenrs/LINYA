@@ -3,8 +3,9 @@
 html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#111}
 .dash-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--card);box-shadow:0 6px 18px rgba(15,23,42,0.04)}
 .brand{font-weight:800;color:var(--accent)}
-.dash-nav{display:flex;gap:8px;margin-left:12px}
-.nav-btn{background:transparent;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:var(--muted)}
+.dash-nav{display:flex;gap:8px;margin-left:12px;align-items:center;min-height:44px}
+.nav-btn{background:transparent;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:var(--muted);transition:opacity .18s ease,transform .18s ease}
+.nav-btn[disabled],.nav-btn.muted{opacity:.45;cursor:default;transform:scale(.98)}
 .nav-btn.active{background:var(--accent);color:#fff}
 .dash-right{display:flex;align-items:center;gap:12px}
 .btn-ghost{background:#f3f4f6;color:#111;border:1px solid rgba(11,18,48,0.04);padding:8px 10px;border-radius:8px}

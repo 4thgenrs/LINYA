@@ -20,6 +20,33 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
     // note: getNextLine expects a numeric window id/identifier; queueData functions use $window as passed
 }
 
+// Server-side permission: staff may only use their assigned window
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
+    $staffId = intval($_SESSION['user_id']);
+    // resolve assigned window for staff
+    $aw = $conn->prepare("SELECT window_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+    if ($aw) {
+        $aw->bind_param('i', $staffId);
+        $aw->execute();
+        $awr = $aw->get_result();
+        $assigned = $awr ? $awr->fetch_assoc() : null;
+        $aw->close();
+
+        if (!$assigned) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: you are not assigned to any window']);
+            exit;
+        }
+
+        // the API calls must refer to the staff's actual assigned window
+        if (intval($assigned['window_id']) !== intval($window)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: window mismatch']);
+            exit;
+        }
+    }
+}
+
 try {
     if ($action === 'next') {
         $res = getNextLine($conn, $office, $window);

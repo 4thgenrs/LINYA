@@ -16,6 +16,12 @@
   const assignedOfficeEl = document.getElementById('assignedOffice');
 
   function setView(name) {
+    // prevent opening window control if user is not assigned
+    if (name === 'window' && !canControl) {
+      alert('You are not assigned to a window. Window control is disabled.');
+      return;
+    }
+
     Object.keys(views).forEach(k => {
       views[k].style.display = (k === name) ? '' : 'none';
     });
@@ -26,7 +32,23 @@
     }
   }
 
-  navBtns.forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+  // keep a flag whether user can use window control (set by API)
+  let canControl = false;
+  // whether the user can view the live office queue (assigned to an office)
+  let canViewOffice = false;
+
+  navBtns.forEach(b => b.addEventListener('click', () => {
+    const view = b.dataset.view;
+    if (view === 'window' && !canControl) {
+      alert('You are not assigned to a window. Window control is disabled.');
+      return;
+    }
+    if (view === 'office' && !canViewOffice) {
+      alert('You are not assigned to an office. Live Office Queue is disabled.');
+      return;
+    }
+    setView(view);
+  }));
 
   async function fetchState() {
     try {
@@ -140,6 +162,36 @@
         document.title = 'Dashboard — LINYA' + ' — ' + officeName;
       }
     } catch (e) { /* ignore */ }
+
+    // update window-control availability
+    canControl = !!(json.user && json.user.assigned_window_id && parseInt(json.user.assigned_window_id, 10) > 0);
+    const windowBtn = navBtns.find(n => n.dataset.view === 'window');
+    if (windowBtn) {
+      if (!canControl) {
+        // hide the tab entirely when user is not assigned to a window
+        windowBtn.style.display = 'none';
+      } else {
+        windowBtn.style.display = '';
+        windowBtn.removeAttribute('disabled');
+        windowBtn.title = '';
+        windowBtn.classList.remove('muted');
+      }
+    }
+
+    // update live office queue availability: require assigned office OR session office
+    canViewOffice = !!(json.user && ((json.user.assigned_office_id && parseInt(json.user.assigned_office_id,10)>0) || (json.user.office && parseInt(json.user.office,10)>0)));
+    const officeBtn = navBtns.find(n => n.dataset.view === 'office');
+    if (officeBtn) {
+      if (!canViewOffice) {
+        // hide the Live Office Queue tab when user is not assigned to an office
+        officeBtn.style.display = 'none';
+      } else {
+        officeBtn.style.display = '';
+        officeBtn.removeAttribute('disabled');
+        officeBtn.title = '';
+        officeBtn.classList.remove('muted');
+      }
+    }
   }
 
   // logout centralized
