@@ -127,27 +127,7 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                     $accountStmt->close();
                 }
 
-                // Clear finished_queues.office_id for rows that reference this office
-                // finished_queues.office_id now stores office name strings, so resolve the name first
-                $officeName = null;
-                $nameStmt = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
-                if ($nameStmt) {
-                    $nameStmt->bind_param("i", $id);
-                    $nameStmt->execute();
-                    $nr = $nameStmt->get_result();
-                    if ($nr && ($nrow = $nr->fetch_assoc())) {
-                        $officeName = $nrow['office_description'];
-                    }
-                    $nameStmt->close();
-                }
-                if (!empty($officeName)) {
-                    $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = NULL WHERE office_id = ?");
-                    if ($finishedQueueStmt) {
-                        $finishedQueueStmt->bind_param("s", $officeName);
-                        $finishedQueueStmt->execute();
-                        $finishedQueueStmt->close();
-                    }
-                }
+                // Preserve finished_queues.office_id (history). Do NOT clear finished queue office references.
 
                 // Unassign office from office_windows by setting office_id to NULL
                 // Delete all windows that belong to this office
