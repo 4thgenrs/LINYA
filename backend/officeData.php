@@ -13,6 +13,22 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
             $desc = trim($_POST['office_description']);
 
             if ($code !== '' && $desc !== '') {
+                // validate duplicates (office_code or office_description)
+                $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM offices WHERE office_code = ? OR office_description = ?");
+                if ($chk) {
+                    $chk->bind_param('ss', $code, $desc);
+                    $chk->execute();
+                    $cres = $chk->get_result();
+                    $cnt = 0;
+                    if ($cres && ($crow = $cres->fetch_assoc())) $cnt = intval($crow['cnt']);
+                    $chk->close();
+
+                    if ($cnt > 0) {
+                        header("Location: ../includes/office.php?error=duplicate_office");
+                        exit;
+                    }
+                }
+
                 addOffice($conn, $code, $desc);
             }
             header("Location: ../includes/office.php");
@@ -23,6 +39,22 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
             $id = intval($_POST['office_id']);
             $code = trim($_POST['office_code']);
             $desc = trim($_POST['office_description']);
+            // validate duplicates on update: don't allow code/description that matches another office
+            $chk = $conn->prepare("SELECT COUNT(*) AS cnt FROM offices WHERE (office_code = ? OR office_description = ?) AND office_id != ?");
+            if ($chk) {
+                $chk->bind_param('ssi', $code, $desc, $id);
+                $chk->execute();
+                $cres = $chk->get_result();
+                $cnt = 0;
+                if ($cres && ($crow = $cres->fetch_assoc())) $cnt = intval($crow['cnt']);
+                $chk->close();
+
+                if ($cnt > 0) {
+                    header("Location: ../includes/office.php?error=duplicate_office");
+                    exit;
+                }
+            }
+
             updateOffice($conn, $id, $code, $desc);
             header("Location: ../includes/office.php");
             exit;
@@ -118,7 +150,8 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                 }
 
                 // Unassign office from office_windows by setting office_id to NULL
-                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = NULL WHERE office_id = ?");
+                // Delete all windows that belong to this office
+                $officeWindowStmt = $conn->prepare("DELETE FROM office_windows WHERE office_id = ?");
                 if ($officeWindowStmt) {
                     $officeWindowStmt->bind_param("i", $id);
                     $officeWindowStmt->execute();

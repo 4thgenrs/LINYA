@@ -9,6 +9,28 @@ $offices = getOfficeData($conn);
     <link rel="stylesheet" href="../css/office.css">
 </head>
 <body>
+    <?php
+    // show simple alerts for known errors/success states
+    $msg = '';
+    if (isset($_GET['error'])) {
+        switch ($_GET['error']) {
+            case 'duplicate_office':
+                $msg = 'An office with that code or description already exists.';
+                break;
+            case 'active_queues':
+                $msg = 'Cannot delete office: there are active queues for this office.';
+                break;
+            default:
+                $msg = 'An error occurred.';
+        }
+    }
+    if (!empty($msg)) {
+        echo '<div class="alert alert-error" style="background:#ffecec;border:1px solid #f5c6cb;padding:10px;margin:12px;border-radius:6px;color:#611;">' . htmlspecialchars($msg) . '</div>';
+    }
+    if (isset($_GET['success']) && $_GET['success'] === 'added') {
+        echo '<div class="alert alert-success" style="background:#ecffef;border:1px solid #b6e6c1;padding:10px;margin:12px;border-radius:6px;color:#064">Office saved successfully.</div>';
+    }
+    ?>
     <h2>Office Management</h2>
 
     <!-- Add/Update Form -->
