@@ -1,119 +1,133 @@
 <?php
 include('../linya_db/config.php');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_office'])) {
-        $code = trim($_POST['office_code']);
-        $desc = trim($_POST['office_description']);
+// Only run POST handling when this file is requested directly,
+// not when it's included by an "includes" page.
+//
+// This lets includes/office.php include this file to get helper functions
+// without executing the POST logic (which would call exit/send headers).
+if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['add_office'])) {
+            $code = trim($_POST['office_code']);
+            $desc = trim($_POST['office_description']);
 
-        if ($code !== '' && $desc !== '') {
-            addOffice($conn, $code, $desc);
-        }
-    }
-
-    if (isset($_POST['update_office'])) {
-        $id = intval($_POST['office_id']);
-        $code = trim($_POST['office_code']);
-        $desc = trim($_POST['office_description']);
-        updateOffice($conn, $id, $code, $desc);
-    }
-
-    // TOGGLE enable/disable (replaces delete)
-    if (isset($_POST['toggle_office'])) {
-        $id = intval($_POST['office_id'] ?? 0);
-        if ($id > 0) {
-            // get current value
-            $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
-            if ($stmt) {
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                $current = 1;
-                if ($res && $row = $res->fetch_assoc()) {
-                    $current = intval($row['enabled']);
-                }
-                $stmt->close();
-
-                $new = $current ? 0 : 1;
-                $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
-                if ($u) {
-                    $u->bind_param("ii", $new, $id);
-                    $u->execute();
-                    $u->close();
-                }
+            if ($code !== '' && $desc !== '') {
+                addOffice($conn, $code, $desc);
             }
+            header("Location: ../includes/office.php");
+            exit;
         }
-    }
-    //Delete Office
-    if (isset($_POST['delete_office'])) {
-        $id = intval($_POST['office_id'] ?? 0);
-        $null = null;
-        if ($id > 0) {
-            //check for active queues before deleting
-            $checkStmt = $conn->prepare("SELECT COUNT(*) AS active_count FROM queues WHERE office_id = ?");
-            if ($checkStmt) {           
-                $checkStmt->bind_param("i", $id);
-                $checkStmt->execute();
-                $checkRes = $checkStmt->get_result();
-                if ($checkRes && $row = $checkRes->fetch_assoc()) {
-                    if (intval($row['active_count']) > 0) {
-                        // There are active queues, do not delete
-                        $checkStmt->close();
-                        header("Location: office.php?error=active_queues");
-                        exit;
+
+        if (isset($_POST['update_office'])) {
+            $id = intval($_POST['office_id']);
+            $code = trim($_POST['office_code']);
+            $desc = trim($_POST['office_description']);
+            updateOffice($conn, $id, $code, $desc);
+            header("Location: ../includes/office.php");
+            exit;
+        }
+
+        // TOGGLE enable/disable (replaces delete)
+        if (isset($_POST['toggle_office'])) {
+            $id = intval($_POST['office_id'] ?? 0);
+            if ($id > 0) {
+                $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
+                if ($stmt) {
+                    $stmt->bind_param("i", $id);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    $current = 1;
+                    if ($res && $row = $res->fetch_assoc()) {
+                        $current = intval($row['enabled']);
+                    }
+                    $stmt->close();
+
+                    $new = $current ? 0 : 1;
+                    $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
+                    if ($u) {
+                        $u->bind_param("ii", $new, $id);
+                        $u->execute();
+                        $u->close();
                     }
                 }
-                $checkStmt->close();
             }
+            header("Location: ../includes/office.php");
+            exit;
+        }
 
-            //Delete Services first
-            $serviceStmt = $conn->prepare("DELETE FROM services WHERE office = ?");
-            if ($serviceStmt) {
-                $serviceStmt->bind_param("i", $id);
-                $serviceStmt->execute();
-                $serviceStmt->close();
-            }
+        // Delete Office (the existing logic) — after deleting redirect back to includes/office.php
+        if (isset($_POST['delete_office'])) {
+            $id = intval($_POST['office_id'] ?? 0);
+            $null = null;
+            if ($id > 0) {
+                //check for active queues before deleting
+                $checkStmt = $conn->prepare("SELECT COUNT(*) AS active_count FROM queues WHERE office_id = ?");
+                if ($checkStmt) {           
+                    $checkStmt->bind_param("i", $id);
+                    $checkStmt->execute();
+                    $checkRes = $checkStmt->get_result();
+                    if ($checkRes && $row = $checkRes->fetch_assoc()) {
+                        if (intval($row['active_count']) > 0) {
+                            // There are active queues, do not delete
+                            $checkStmt->close();
+                            header("Location: office.php?error=active_queues");
+                            exit;
+                        }
+                    }
+                    $checkStmt->close();
+                }
 
-            //Unassign Office from Accounts
-            $accountStmt = $conn->prepare("UPDATE accounts SET office = ? WHERE office = ?");
-            if ($accountStmt) {
-                $accountStmt->bind_param("ii", $null, $id);
-                $accountStmt->execute();
-                $accountStmt->close();
-            }
+                //Delete Services first
+                $serviceStmt = $conn->prepare("DELETE FROM services WHERE office = ?");
+                if ($serviceStmt) {
+                    $serviceStmt->bind_param("i", $id);
+                    $serviceStmt->execute();
+                    $serviceStmt->close();
+                }
 
-            //Unassign Office from Accounts
-            $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = ? WHERE office_id = ?");
-            if ($finishedQueueStmt) {
-                $finishedQueueStmt->bind_param("ii",$null, $id);
-                $finishedQueueStmt->execute();
-                $finishedQueueStmt->close();
-            }
+                //Unassign Office from Accounts
+                $accountStmt = $conn->prepare("UPDATE accounts SET office = ? WHERE office = ?");
+                if ($accountStmt) {
+                    $accountStmt->bind_param("ii", $null, $id);
+                    $accountStmt->execute();
+                    $accountStmt->close();
+                }
 
-            $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = ? WHERE office_id = ?");
-            if ($officeWindowStmt) {
-                $officeWindowStmt->bind_param("ii", $null, $id);
-                $officeWindowStmt->execute();
-                $officeWindowStmt->close();
-            }
+                //Unassign Office from Accounts
+                $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = ? WHERE office_id = ?");
+                if ($finishedQueueStmt) {
+                    $finishedQueueStmt->bind_param("ii",$null, $id);
+                    $finishedQueueStmt->execute();
+                    $finishedQueueStmt->close();
+                }
 
-            $officeCounterStmt = $conn->prepare("DELETE FROM queue_counters WHERE office_id = ?");
-            if ($officeCounterStmt) {
-                $officeCounterStmt->bind_param("i", $id);
-                $officeCounterStmt->execute();
-                $officeCounterStmt->close();
-            }
+                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = ? WHERE office_id = ?");
+                if ($officeWindowStmt) {
+                    $officeWindowStmt->bind_param("ii", $null, $id);
+                    $officeWindowStmt->execute();
+                    $officeWindowStmt->close();
+                }
 
-            //Delete Office latter
-            $officeStmt = $conn->prepare("DELETE FROM offices WHERE office_id = ?");
-            if ($officeStmt) {
-                $officeStmt->bind_param("i", $id);
-                $officeStmt->execute();
-                $officeStmt->close();
+                $officeCounterStmt = $conn->prepare("DELETE FROM queue_counters WHERE office_id = ?");
+                if ($officeCounterStmt) {
+                    $officeCounterStmt->bind_param("i", $id);
+                    $officeCounterStmt->execute();
+                    $officeCounterStmt->close();
+                }
+
+                //Delete Office latter
+                $officeStmt = $conn->prepare("DELETE FROM offices WHERE office_id = ?");
+                if ($officeStmt) {
+                    $officeStmt->bind_param("i", $id);
+                    $officeStmt->execute();
+                    $officeStmt->close();
+                }
             }
+            header("Location: ../includes/office.php");
+            exit;
         }
     }
-    exit;
 }
 
 // Fetch all offices after processing

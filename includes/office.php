@@ -1,43 +1,7 @@
 <?php
-include_once('../backend/officeData.php'); // backend handles POST and includes config itself
-
-// Fetch data
+include_once('../backend/officeData.php'); // provides getOfficeData(), add/update helpers (no POST runs now)
 $offices = getOfficeData($conn);
-
-// if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-//     // existing add/update handlers...
-//     // TOGGLE enable/disable (replaces delete)
-//     if (isset($_POST['toggle_office'])) {
-//         $id = intval($_POST['office_id'] ?? 0);
-//         if ($id > 0) {
-//             $stmt = $conn->prepare("SELECT enabled FROM offices WHERE office_id = ?");
-//             if ($stmt) {
-//                 $stmt->bind_param("i", $id);
-//                 $stmt->execute();
-//                 $res = $stmt->get_result();
-//                 $current = 1;
-//                 if ($res && $row = $res->fetch_assoc()) {
-//                     $current = intval($row['enabled']);
-//                 }
-//                 $stmt->close();
-
-//                 $new = $current ? 0 : 1;
-//                 $u = $conn->prepare("UPDATE offices SET enabled = ? WHERE office_id = ?");
-//                 if ($u) {
-//                     $u->bind_param("ii", $new, $id);
-//                     $u->execute();
-//                     $u->close();
-//                 }
-//             }
-//         }
-//     }
-
-//     // redirect to avoid resubmission
-//     header("Location: office.php");
-//     exit;
-// }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,7 +12,7 @@ $offices = getOfficeData($conn);
     <h2>Office Management</h2>
 
     <!-- Add/Update Form -->
-    <form id="officeForm" method="POST">
+    <form id="officeForm" method="POST" action="../backend/officeData.php">
         <input type="hidden" name="office_id" id="office_id" value="">
         
         <input type="text" name="office_code" id="office_code" placeholder="Enter office code" required>
@@ -84,11 +48,13 @@ $offices = getOfficeData($conn);
                         <td><?php echo intval($office['enabled']) ? "Active" : "Inactive"; ?></td>
                         <td>
                             <button type="button" class="editBtn">Edit</button>
-                            <form method="POST" style="display:inline;">
+
+                            <form method="POST" action="../backend/officeData.php" style="display:inline;">
                                 <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
                                 <input type="submit" name="toggle_office" value="<?php echo intval($office['enabled']) ? 'Disable' : 'Enable'; ?>" onclick="return confirm('Are you sure?');">
                             </form>
-                            <form method="POST" style="display:inline;">
+
+                            <form method="POST" action="../backend/officeData.php" style="display:inline;">
                                 <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
                                 <input type="submit" name="delete_office" value="Delete" onclick="return confirm('Are you sure?');">
                             </form>
