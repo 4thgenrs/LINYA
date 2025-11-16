@@ -164,11 +164,13 @@
     } catch (e) { /* ignore */ }
 
     // update window-control availability
-    canControl = !!(json.user && json.user.assigned_window_id && parseInt(json.user.assigned_window_id, 10) > 0);
+    // require both an assigned window and that the account has an `office` set (server-side guard uses accounts.office)
+    const accountOffice = json.user ? parseInt(json.user.account_office || json.user.office || 0, 10) : 0;
+    canControl = !!(json.user && json.user.assigned_window_id && parseInt(json.user.assigned_window_id, 10) > 0 && accountOffice > 0);
     const windowBtn = navBtns.find(n => n.dataset.view === 'window');
     if (windowBtn) {
       if (!canControl) {
-        // hide the tab entirely when user is not assigned to a window
+        // hide the tab entirely when user is not allowed to control windows
         windowBtn.style.display = 'none';
       } else {
         windowBtn.style.display = '';
@@ -178,8 +180,10 @@
       }
     }
 
-    // update live office queue availability: require assigned office OR session office
-    canViewOffice = !!(json.user && ((json.user.assigned_office_id && parseInt(json.user.assigned_office_id,10)>0) || (json.user.office && parseInt(json.user.office,10)>0)));
+    // update live office queue availability: require assigned office OR account/session office
+    const sessOffice = json.user ? parseInt(json.user.office || 0, 10) : 0;
+    const assignedOffice = json.user ? parseInt(json.user.assigned_office_id || 0, 10) : 0;
+    canViewOffice = !!(json.user && (assignedOffice > 0 || accountOffice > 0 || sessOffice > 0));
     const officeBtn = navBtns.find(n => n.dataset.view === 'office');
     if (officeBtn) {
       if (!canViewOffice) {

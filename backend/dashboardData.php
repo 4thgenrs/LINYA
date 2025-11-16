@@ -19,6 +19,8 @@ $response = [
         'user_id' => $user_id,
         'name' => $user_name,
         'office' => $office,
+        // account_office: the `office` value stored on the accounts table (may be NULL/0)
+        'account_office' => 0,
         'office_description' => null,
         'office_code' => null
     ],
@@ -164,6 +166,19 @@ try {
     $response['user']['assigned_window_id'] = null;
     $response['user']['assigned_window_no'] = null;
     $response['user']['assigned_office_id'] = null;
+    // include account.office in the API so client and server use same source of truth
+    $accountOffice = 0;
+    $acctStmt = $conn->prepare("SELECT office FROM accounts WHERE user_id = ? LIMIT 1");
+    if ($acctStmt) {
+        $acctStmt->bind_param('i', $user_id);
+        $acctStmt->execute();
+        $ares = $acctStmt->get_result();
+        if ($ares && ($arow = $ares->fetch_assoc())) {
+            $accountOffice = isset($arow['office']) ? intval($arow['office']) : 0;
+        }
+        $acctStmt->close();
+    }
+    $response['user']['account_office'] = $accountOffice;
     $aw = $conn->prepare("SELECT window_id, office_id, window_no FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
     if ($aw) {
         $aw->bind_param('i', $user_id);
