@@ -67,14 +67,14 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                     $checkStmt->bind_param("i", $id);
                     $checkStmt->execute();
                     $checkRes = $checkStmt->get_result();
-                    if ($checkRes && $row = $checkRes->fetch_assoc()) {
-                        if (intval($row['active_count']) > 0) {
-                            // There are active queues, do not delete
-                            $checkStmt->close();
-                            header("Location: office.php?error=active_queues");
-                            exit;
+                        if ($checkRes && $row = $checkRes->fetch_assoc()) {
+                            if (intval($row['active_count']) > 0) {
+                                // There are active queues, do not delete
+                                $checkStmt->close();
+                                header("Location: ../includes/office.php?error=active_queues");
+                                exit;
+                            }
                         }
-                    }
                     $checkStmt->close();
                 }
 
@@ -86,25 +86,41 @@ if (realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
                     $serviceStmt->close();
                 }
 
-                //Unassign Office from Accounts
-                $accountStmt = $conn->prepare("UPDATE accounts SET office = ? WHERE office = ?");
+
+                //Unassign Office from Accounts (set to NULL)
+                $accountStmt = $conn->prepare("UPDATE accounts SET office = NULL WHERE office = ?");
                 if ($accountStmt) {
-                    $accountStmt->bind_param("ii", $null, $id);
+                    $accountStmt->bind_param("i", $id);
                     $accountStmt->execute();
                     $accountStmt->close();
                 }
 
-                //Unassign Office from Accounts
-                $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = ? WHERE office_id = ?");
-                if ($finishedQueueStmt) {
-                    $finishedQueueStmt->bind_param("ii",$null, $id);
-                    $finishedQueueStmt->execute();
-                    $finishedQueueStmt->close();
+                // Clear finished_queues.office_id for rows that reference this office
+                // finished_queues.office_id now stores office name strings, so resolve the name first
+                $officeName = null;
+                $nameStmt = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                if ($nameStmt) {
+                    $nameStmt->bind_param("i", $id);
+                    $nameStmt->execute();
+                    $nr = $nameStmt->get_result();
+                    if ($nr && ($nrow = $nr->fetch_assoc())) {
+                        $officeName = $nrow['office_description'];
+                    }
+                    $nameStmt->close();
+                }
+                if (!empty($officeName)) {
+                    $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = NULL WHERE office_id = ?");
+                    if ($finishedQueueStmt) {
+                        $finishedQueueStmt->bind_param("s", $officeName);
+                        $finishedQueueStmt->execute();
+                        $finishedQueueStmt->close();
+                    }
                 }
 
-                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = ? WHERE office_id = ?");
+                // Unassign office from office_windows by setting office_id to NULL
+                $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = NULL WHERE office_id = ?");
                 if ($officeWindowStmt) {
-                    $officeWindowStmt->bind_param("ii", $null, $id);
+                    $officeWindowStmt->bind_param("i", $id);
                     $officeWindowStmt->execute();
                     $officeWindowStmt->close();
                 }
