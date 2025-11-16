@@ -169,7 +169,7 @@ function getAccountsData($conn) {
                 R.role_name, 
                 O.office_description 
             FROM accounts A 
-            INNER JOIN offices O ON A.office = O.office_id 
+            LEFT JOIN offices O ON A.office = O.office_id 
             INNER JOIN roles R ON A.user_type = R.role_id";
     $result = $conn->query($sql);
 

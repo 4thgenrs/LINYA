@@ -44,16 +44,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-//Delete Office
+    //Delete Office
     if (isset($_POST['delete_office'])) {
         $id = intval($_POST['office_id'] ?? 0);
+        $null = null;
         if ($id > 0) {
+            //check for active queues before deleting
+            $checkStmt = $conn->prepare("SELECT COUNT(*) AS active_count FROM queues WHERE office_id = ?");
+            if ($checkStmt) {           
+                $checkStmt->bind_param("i", $id);
+                $checkStmt->execute();
+                $checkRes = $checkStmt->get_result();
+                if ($checkRes && $row = $checkRes->fetch_assoc()) {
+                    if (intval($row['active_count']) > 0) {
+                        // There are active queues, do not delete
+                        $checkStmt->close();
+                        header("Location: office.php?error=active_queues");
+                        exit;
+                    }
+                }
+                $checkStmt->close();
+            }
+
             //Delete Services first
             $serviceStmt = $conn->prepare("DELETE FROM services WHERE office = ?");
             if ($serviceStmt) {
                 $serviceStmt->bind_param("i", $id);
                 $serviceStmt->execute();
                 $serviceStmt->close();
+            }
+
+            //Unassign Office from Accounts
+            $accountStmt = $conn->prepare("UPDATE accounts SET office = ? WHERE office = ?");
+            if ($accountStmt) {
+                $accountStmt->bind_param("ii", $null, $id);
+                $accountStmt->execute();
+                $accountStmt->close();
+            }
+
+            //Unassign Office from Accounts
+            $finishedQueueStmt = $conn->prepare("UPDATE finished_queues SET office_id = ? WHERE office_id = ?");
+            if ($finishedQueueStmt) {
+                $finishedQueueStmt->bind_param("ii",$null, $id);
+                $finishedQueueStmt->execute();
+                $finishedQueueStmt->close();
+            }
+
+            $officeWindowStmt = $conn->prepare("UPDATE office_windows SET office_id = ? WHERE office_id = ?");
+            if ($officeWindowStmt) {
+                $officeWindowStmt->bind_param("ii", $null, $id);
+                $officeWindowStmt->execute();
+                $officeWindowStmt->close();
+            }
+
+            $officeCounterStmt = $conn->prepare("DELETE FROM queue_counters WHERE office_id = ?");
+            if ($officeCounterStmt) {
+                $officeCounterStmt->bind_param("i", $id);
+                $officeCounterStmt->execute();
+                $officeCounterStmt->close();
             }
 
             //Delete Office latter
