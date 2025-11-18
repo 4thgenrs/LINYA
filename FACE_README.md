@@ -24,8 +24,8 @@ Quick setup
    The PHP pages expect the Flask API at `http://127.0.0.1:5000`.
 
 3. Web UI
-   - Register: `http://localhost/LINYA/faceapp_php/register.php`
-   - Login: `http://localhost/LINYA/faceapp_php/login.php`
+   - Register: `http://localhost/LINYA/faceapp_php/kioskRegister.php`
+   - Login: `http://localhost/LINYA/faceapp_php/kioskLogin.php`
    - Kiosk: `http://localhost/LINYA/includes/kioskMenu.php`
    - Admin clients: `http://localhost/LINYA/includes/admin_clients.php` (lists registered clients)
 

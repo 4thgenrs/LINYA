@@ -7,8 +7,8 @@ class automatic_run_api
     private string $projectDir;
 
     public function __construct(
-        string $pythonPath = 'C:\\xampp\\htdocs\\faceapp_php\\.venv\\Scripts\\python.exe',
-        string $apiScript = 'C:\\xampp\\htdocs\\faceapp_php\\main.py',
+        string $pythonPath = 'C:\\Users\\csdmi\\AppData\\Local\\Programs\\Python\\Python313\\python.exe',
+        string $apiScript = 'C:\\xampp\\htdocs\\LINYA\\faceapp_php\\main.py',
         int $port = 5000
     ) {
         $this->pythonPath = $pythonPath;

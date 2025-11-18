@@ -123,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
       confirmBtn.addEventListener('click', () => {
         if (window.FACE_LOGGED) {
           // destroy server-side face session then go to face login
-          fetch('../backend/face_logout.php', { method: 'POST' }).catch(()=>{}).finally(()=>{
-            window.location.href = `${origin}${base}/faceapp_php/login.php`;
+            fetch('../backend/face_logout.php', { method: 'POST' }).catch(()=>{}).finally(()=>{
+            window.location.href = `${origin}${base}/faceapp_php/kioskLogin.php`;
           });
         } else {
           window.location.href = `${origin}${base}/includes/kioskMenu.php`;

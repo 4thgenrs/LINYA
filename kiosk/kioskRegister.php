@@ -1,8 +1,10 @@
 <?php
-require_once 'automatic_run_api.php';
+// Include configuration for Python API base URL
+require_once __DIR__ . '/../config.php';
 
-$faceAPI = new automatic_run_api();
-$faceAPI->start(); // Ensure the Python API is running (development helper)
+// Note: No longer starting Python process from PHP.
+// In development, run: python linya_python_api/app.py
+// In production, Python API is deployed to Google Cloud Run.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -133,11 +135,8 @@ $faceAPI->start(); // Ensure the Python API is running (development helper)
 
 <script>
 /* =========== Config / state =========== */
-// dynamic API base so JS doesn't call client-localhost accidentally
-const _apiHost = window.location.hostname;
-const apiBase = (_apiHost === 'localhost' || _apiHost === '127.0.0.1')
-    ? 'http://127.0.0.1:5000'
-    : `${window.location.protocol}//${_apiHost}:5000`;
+// API base URL injected from PHP config (now using Cloud Run in production)
+const apiBase = <?= json_encode(PYTHON_API_BASE) ?>;
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
@@ -315,12 +314,12 @@ async function submitRegistration(retryCount = 0) {
 
         if (!resp.ok) {
             // Handle well-formed JSON errors (e.g., already_registered, glasses)
-            if (json && json.status === 'already_registered') {
+                if (json && json.status === 'already_registered') {
                 statusMessage.innerHTML = `
                     <div style="text-align:center;">
                         <p style='color:orange;'>⚠️ ${json.message}</p>
                         <p>Registered as: <strong>${json.existing_name || 'Unknown'}</strong></p>
-                        <a href="login.php">
+                        <a href="kioskLogin.php">
                             <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
                                 Go to Login
                             </button>
@@ -361,12 +360,14 @@ async function submitRegistration(retryCount = 0) {
             return;
         }
 
-        // Success flow
+             
+            // Success flow
         if (json.status === 'success') {
             // attempt to save client record in the PHP clients table
             const email = document.getElementById('emailInput').value.trim();
             const phone = document.getElementById('phoneInput').value.trim();
             const folder = json.folder || '';
+            const encoding = json.encoding || '';
 
             try {
                 const fd = new FormData();
@@ -374,21 +375,43 @@ async function submitRegistration(retryCount = 0) {
                 fd.append('email', email);
                 fd.append('phone', phone);
                 fd.append('folder', folder);
+                fd.append('encoding', encoding);
 
                 // fire-and-wait to backend PHP that will store the encoding blob into DB
                 const r = await fetch('../backend/face_register_save.php', { method: 'POST', body: fd });
-                const jr = await r.json();
+
+                // Read the response text first, to avoid JSON parsing errors
+                const respText = await r.text();
+                let jr = null;
+
+                if (respText) {
+                    try {
+                        jr = JSON.parse(respText);
+                    } catch (parseErr) {
+                        throw new Error(`Non-JSON response from face_register_save.php: ${respText}`);
+                    }
+                } else {
+                    throw new Error('Empty response from face_register_save.php');
+                }
 
                 if (jr && jr.status === 'ok') {
                     statusMessage.innerHTML = `
                         <div style="text-align:center;">
                             <p style='color:green;'>✅ ${json.message} (saved to clients)</p>
                             <p>You can now log in using face recognition.</p>
-                            <a href="login.php">
+                            <a href="kioskLogin.php">
                                 <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
                                     Go to Login
                                 </button>
                             </a>
+                        </div>
+                    `;
+                } else if (jr && jr.status === 'already_registered') {
+                    statusMessage.innerHTML = `
+                        <div style="text-align:center;">
+                            <p style='color:orange;'>⚠️ ${jr.message}</p>
+                            <p>Existing record: <strong>${jr.existing_name || 'Unknown'}</strong></p>
+                            <p style='color:gray;'>If this is you, proceed to <a href="kioskLogin.php">Login</a>. Otherwise change the name/phone/email and try again.</p>
                         </div>
                     `;
                 } else {
@@ -396,7 +419,7 @@ async function submitRegistration(retryCount = 0) {
                         <div style="text-align:center;">
                             <p style='color:orange;'>⚠️ ${json.message} (registered on file system)</p>
                             <p style='color:gray;'>Could not save to DB: ${jr && jr.message ? jr.message : 'unknown'}</p>
-                            <a href="login.php">
+                            <a href="kioskLogin.php">
                                 <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
                                     Go to Login
                                 </button>
@@ -417,6 +440,7 @@ async function submitRegistration(retryCount = 0) {
             captureBtn.disabled = false;
             return;
         }
+
 
         // Unexpected but valid JSON
         statusMessage.innerHTML = `<p style='color:orange;'>Unexpected response: ${JSON.stringify(json)}</p>`;

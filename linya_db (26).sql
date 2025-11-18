@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 05, 2025 at 08:06 PM
+-- Generation Time: Nov 18, 2025 at 03:02 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -33,7 +33,7 @@ CREATE TABLE `accounts` (
   `password` varchar(30) NOT NULL,
   `name` varchar(30) NOT NULL,
   `user_type` int(10) NOT NULL,
-  `office` int(10) NOT NULL
+  `office` int(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -42,10 +42,34 @@ CREATE TABLE `accounts` (
 
 INSERT INTO `accounts` (`user_id`, `user_name`, `password`, `name`, `user_type`, `office`) VALUES
 (1, 'admin', 'admin', 'administrator', 1, 1),
-(2, 'Astaff1', 'Astaff1', 'Jason', 2, 2),
-(3, 'Astaff2', 'Astaff2', 'Jameson', 2, 2),
+(2, 'Astaff1', 'Astaff1', 'Jason', 2, 10),
+(3, 'Astaff2', 'Astaff2', 'Jameson', 2, 10),
 (4, 'robert', 'robert', 'Robert', 2, 1),
-(5, 'badong', '1234', 'badong', 2, 2);
+(5, 'badong', '1234', 'badong', 2, 1),
+(7, 'roberts', 'roberts', 'roberts', 2, 1),
+(8, 'eryel', 'eryel', 'eryel', 2, NULL),
+(9, 'christian', '12345', 'christian', 2, NULL),
+(12, 'lexter', '123', 'lexter', 2, NULL),
+(13, 'abcd', '1234', 'abcd', 2, NULL),
+(16, 'lexty', 'lexty', 'lexty', 2, 1),
+(17, 'genggo', '1234', 'genggo', 2, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `clients`
+--
+
+CREATE TABLE `clients` (
+  `client_id` int(11) NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `safe_name` varchar(150) NOT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `face_data` longblob DEFAULT NULL,
+  `face_path` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -56,15 +80,15 @@ INSERT INTO `accounts` (`user_id`, `user_name`, `password`, `name`, `user_type`,
 CREATE TABLE `finished_queues` (
   `finished_id` int(11) NOT NULL,
   `original_queue_id` int(11) DEFAULT NULL,
-  `office_id` int(11) NOT NULL,
-  `window_id` int(11) DEFAULT 0,
+  `office_id` varchar(255) DEFAULT NULL,
+  `window_id` int(11) DEFAULT NULL,
   `processed_by` varchar(100) DEFAULT NULL,
-  `finished_at` datetime NOT NULL,
-  `created_at` datetime NOT NULL,
-  `status` varchar(20) DEFAULT 'finished',
+  `finished_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `status` varchar(50) DEFAULT NULL,
   `services` text DEFAULT NULL,
-  `customer_name` varchar(100) DEFAULT NULL,
-  `customer_phone` varchar(30) DEFAULT NULL,
+  `customer_name` varchar(200) DEFAULT NULL,
+  `customer_phone` varchar(50) DEFAULT NULL,
   `customer_email` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -73,24 +97,14 @@ CREATE TABLE `finished_queues` (
 --
 
 INSERT INTO `finished_queues` (`finished_id`, `original_queue_id`, `office_id`, `window_id`, `processed_by`, `finished_at`, `created_at`, `status`, `services`, `customer_name`, `customer_phone`, `customer_email`) VALUES
-(8, 27, 2, 4, 'badong', '2025-11-03 22:13:17', '2025-10-30 11:06:04', 'finished', 'Order of Payment', NULL, NULL, NULL),
-(9, 28, 2, 4, 'badong', '2025-11-03 22:13:21', '2025-10-30 11:06:04', 'finished', 'Order of Payment', NULL, NULL, NULL),
-(10, 29, 2, 4, 'badong', '2025-11-03 22:13:50', '2025-10-30 11:08:26', 'finished', 'Order of Payment', NULL, NULL, NULL),
-(11, 32, 2, 4, 'badong', '2025-11-03 22:13:52', '2025-10-30 11:13:45', 'finished', 'T.O.R', NULL, NULL, NULL),
-(12, 33, 2, 4, 'badong', '2025-11-03 22:13:55', '2025-10-30 11:13:52', 'finished', 'Order of Payment', NULL, NULL, NULL),
-(13, 36, 2, 4, 'badong', '2025-11-03 22:13:57', '2025-11-01 04:35:33', 'finished', 'Order of Payment, 1v1 with Sir Aldrin, Payment Failure, T.O.R', NULL, NULL, NULL),
-(14, 37, 2, 4, 'badong', '2025-11-03 22:17:15', '2025-11-01 06:22:42', 'finished', 'Payment Failure, Order of Payment', NULL, NULL, NULL),
-(15, 57, 2, 4, 'badong', '2025-11-03 22:29:37', '2025-11-03 22:29:01', 'finished', '1v1 with Sir Aldrin (PDF), T.O.R, Payment Failure', 'Jeremy', '09663811477', 'jeremy@email.com'),
-(16, 58, 2, 4, 'badong', '2025-11-03 22:29:39', '2025-11-03 22:29:17', 'finished', 'Payment Failure (PDF)', 'jobert', '09123455555', 'salvador.ricardo.bscs2022@gmail.com'),
-(17, 60, 2, 4, 'badong', '2025-11-03 23:30:12', '2025-11-03 22:50:04', 'finished', '1v1 with Sir Aldrin, Order of Payment, Payment Failure, T.O.R', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(18, 61, 2, 4, 'badong', '2025-11-03 23:30:16', '2025-11-03 23:28:52', 'finished', 'Order of Payment', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(19, 62, 2, 4, 'badong', '2025-11-05 09:07:31', '2025-11-05 08:51:39', 'finished', 'Order of Payment', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(20, 63, 2, 1, 'Astaff1', '2025-11-05 09:07:34', '2025-11-05 08:52:23', 'finished', 'Payment Failure (PDF), 1v1 with Sir Aldrin (PDF), Order of Payment (PDF), T.O.R (PDF)', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(21, 64, 2, 4, 'badong', '2025-11-05 13:02:42', '2025-11-05 08:52:58', 'finished', '1v1 with Sir Aldrin', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(22, 66, 2, 4, 'badong', '2025-11-05 13:09:50', '2025-11-05 13:02:15', 'finished', 'Order of Payment (PDF)', 'Camille Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com'),
-(23, 67, 2, 4, 'badong', '2025-11-05 13:11:23', '2025-11-05 13:10:32', 'finished', 'Order of Payment (PDF)', 'Lawrence', '09474492247', 'bitancurjohnlawrence.bsit@gmail.com'),
-(24, 68, 2, 4, 'badong', '2025-11-05 13:12:33', '2025-11-05 13:12:13', 'finished', 'Payment Failure (PDF)', 'John Lexter Balladares', '09276164084', 'armenta.johnlexter.bscs2022@gmail.com'),
-(25, 69, 2, 4, 'badong', '2025-11-05 19:57:11', '2025-11-05 19:56:38', 'finished', 'Order of Payment (PDF)', 'Camille Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com');
+(1, 94, NULL, 1, 'lexty', '2025-11-16 20:35:04', '2025-11-16 20:34:59', 'finished', 'Legal Documents', 'John Lexter B. Armenta', '09915261467', 'ricksiv0107@gmail.com'),
+(2, 92, 'Registrar', 3, 'lexty', '2025-11-16 21:21:12', '2025-11-16 19:48:12', 'finished', 'Tor (PDF), form137 (PDF)', 'John Lexter B. Armenta', '09915261467', 'ricksiv0107@gmail.com'),
+(3, 95, NULL, 2, 'lexter', '2025-11-16 21:50:43', '2025-11-16 21:50:15', 'finished', 'Borrow Laptop (PDF), Thesis Defense', 'John Lexter B. Armenta', '09915261467', 'ricksiv0107@gmail.com'),
+(4, 96, NULL, 2, 'lexter', '2025-11-16 21:50:46', '2025-11-16 21:50:25', 'finished', 'Thesis Defense (PDF)', 'Camille T. Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com'),
+(5, 97, NULL, 1, 'eryel', '2025-11-16 21:51:05', '2025-11-16 21:50:35', 'finished', 'Borrow Laptop', 'Christian Espinoza', '09223394958', 'espinoza.christian.bscs2022@gmail.com'),
+(6, 98, 'CSD Office', 2, 'eryel', '2025-11-16 21:56:56', '2025-11-16 21:56:20', 'finished', 'Borrow Remote', 'Camille T. Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com'),
+(7, 99, 'CSD Office', 2, 'eryel', '2025-11-16 21:57:31', '2025-11-16 21:56:35', 'finished', 'Borrow Remote', 'John Lexter B. Armenta', '09915261467', 'ricksiv0107@gmail.com'),
+(8, 100, 'CSD Office', 1, 'christian', '2025-11-16 21:57:33', '2025-11-16 21:56:47', 'finished', 'Borrow Remote (PDF)', 'Christian Espinoza', '09223394958', 'espinoza.christian.bscs2022@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -101,17 +115,17 @@ INSERT INTO `finished_queues` (`finished_id`, `original_queue_id`, `office_id`, 
 CREATE TABLE `offices` (
   `office_id` int(10) NOT NULL,
   `office_description` varchar(20) NOT NULL,
-  `office_code` varchar(3) NOT NULL
+  `office_code` varchar(3) NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `offices`
 --
 
-INSERT INTO `offices` (`office_id`, `office_description`, `office_code`) VALUES
-(1, 'Registrar', 'REG'),
-(2, 'Accounting', 'ACC'),
-(8, 'MIS', 'MIS');
+INSERT INTO `offices` (`office_id`, `office_description`, `office_code`, `enabled`) VALUES
+(1, 'Registrar', 'REG', 1),
+(10, 'Management Informati', 'MIS', 1);
 
 -- --------------------------------------------------------
 
@@ -121,23 +135,12 @@ INSERT INTO `offices` (`office_id`, `office_description`, `office_code`) VALUES
 
 CREATE TABLE `office_windows` (
   `window_id` int(11) NOT NULL,
-  `office_id` int(11) NOT NULL,
+  `office_id` int(11) DEFAULT NULL,
   `window_no` int(11) NOT NULL,
   `assigned_staff_id` int(11) DEFAULT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `office_windows`
---
-
-INSERT INTO `office_windows` (`window_id`, `office_id`, `window_no`, `assigned_staff_id`, `enabled`, `created_at`) VALUES
-(1, 2, 1, 2, 1, '2025-10-30 03:30:48'),
-(2, 2, 2, 3, 1, '2025-10-30 03:32:07'),
-(4, 2, 3, NULL, 0, '2025-10-30 03:32:19'),
-(5, 2, 4, 5, 1, '2025-10-30 03:44:24'),
-(6, 1, 1, 4, 1, '2025-10-30 03:45:40');
 
 -- --------------------------------------------------------
 
@@ -162,10 +165,8 @@ CREATE TABLE `queues` (
 --
 
 INSERT INTO `queues` (`queue_id`, `queue_code`, `office_id`, `window_id`, `created_at`, `status`, `customer_name`, `customer_phone`, `customer_email`) VALUES
-(56, 'REG-001', 1, 0, '2025-11-03 22:28:41', 'pending', 'John', '09915261467', 'ricksiv0107@gmail.com'),
-(59, 'REG-002', 1, 0, '2025-11-03 22:49:47', 'pending', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(65, 'ACC-008', 2, 1, '2025-11-05 09:05:56', 'ongoing', 'Ricardo', '09915261467', 'ricksiv0107@gmail.com'),
-(70, 'ACC-013', 2, 4, '2025-11-05 19:57:39', 'ongoing', 'Jojo B.', '09123455555', 'salvador.ricardo.bscs2022@gmail.com');
+(90, 'MIS-001', 10, 0, '2025-11-16 06:05:00', 'pending', 'John', '09456654322', ''),
+(93, 'REG-003', 1, 14, '2025-11-16 19:48:24', 'ongoing', 'Camille T. Soliman', '09050795313', 'soliman.camille.bscs2022@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -183,8 +184,8 @@ CREATE TABLE `queue_counters` (
 --
 
 INSERT INTO `queue_counters` (`office_id`, `last_number`) VALUES
-(1, 2),
-(2, 13);
+(1, 3),
+(10, 1);
 
 -- --------------------------------------------------------
 
@@ -205,15 +206,9 @@ CREATE TABLE `queue_services` (
 --
 
 INSERT INTO `queue_services` (`id`, `queue_id`, `service_id`, `soft_copy`, `hard_copy`) VALUES
-(1, 56, 4, 1, 1),
-(2, 56, 2, 0, 1),
-(3, 56, 3, 1, 1),
-(8, 59, 4, 1, 1),
-(20, 65, 1, 1, 1),
-(21, 65, 11, 1, 1),
-(22, 65, 12, 1, 1),
-(23, 65, 10, 1, 1),
-(28, 70, 1, 0, 1);
+(59, 90, 17, 0, 1),
+(63, 93, 20, 0, 1),
+(64, 93, 19, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -243,21 +238,20 @@ INSERT INTO `roles` (`role_id`, `role_name`) VALUES
 CREATE TABLE `services` (
   `service_id` int(10) NOT NULL,
   `service_description` varchar(20) NOT NULL,
-  `office` int(10) NOT NULL
+  `office` int(10) NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `services`
 --
 
-INSERT INTO `services` (`service_id`, `service_description`, `office`) VALUES
-(1, 'T.O.R', 2),
-(2, 'Diploma', 1),
-(3, 'Good Moral', 1),
-(4, 'Adding and Changing', 1),
-(10, 'Order of Payment', 2),
-(11, '1v1 with Sir Aldrin', 2),
-(12, 'Payment Failure', 2);
+INSERT INTO `services` (`service_id`, `service_description`, `office`, `enabled`) VALUES
+(16, 'Fix printer', 10, 1),
+(17, 'Add software', 10, 1),
+(18, 'Assist in AIms', 10, 1),
+(19, 'Tor', 1, 1),
+(20, 'form137', 1, 1);
 
 --
 -- Indexes for dumped tables
@@ -272,12 +266,17 @@ ALTER TABLE `accounts`
   ADD KEY `office_and_offices_id` (`office`);
 
 --
+-- Indexes for table `clients`
+--
+ALTER TABLE `clients`
+  ADD PRIMARY KEY (`client_id`),
+  ADD UNIQUE KEY `safe_name` (`safe_name`);
+
+--
 -- Indexes for table `finished_queues`
 --
 ALTER TABLE `finished_queues`
-  ADD PRIMARY KEY (`finished_id`),
-  ADD KEY `office_id` (`office_id`),
-  ADD KEY `original_queue_id` (`original_queue_id`);
+  ADD PRIMARY KEY (`finished_id`);
 
 --
 -- Indexes for table `offices`
@@ -338,37 +337,43 @@ ALTER TABLE `services`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `user_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `clients`
+--
+ALTER TABLE `clients`
+  MODIFY `client_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `finished_queues`
 --
 ALTER TABLE `finished_queues`
-  MODIFY `finished_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `finished_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `offices`
 --
 ALTER TABLE `offices`
-  MODIFY `office_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `office_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `office_windows`
 --
 ALTER TABLE `office_windows`
-  MODIFY `window_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `window_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `queues`
 --
 ALTER TABLE `queues`
-  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
+  MODIFY `queue_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
 
 --
 -- AUTO_INCREMENT for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -380,7 +385,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `services`
 --
 ALTER TABLE `services`
-  MODIFY `service_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `service_id` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- Constraints for dumped tables
@@ -403,8 +408,7 @@ ALTER TABLE `queues`
 -- Constraints for table `queue_services`
 --
 ALTER TABLE `queue_services`
-  ADD CONSTRAINT `fk_qs_queue` FOREIGN KEY (`queue_id`) REFERENCES `queues` (`queue_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_qs_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`service_id`);
+  ADD CONSTRAINT `fk_qs_queue` FOREIGN KEY (`queue_id`) REFERENCES `queues` (`queue_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `services`

@@ -1,9 +1,11 @@
 
 <?php
-require_once 'automatic_run_api.php';
+// Include configuration for Python API base URL
+require_once __DIR__ . '/../config.php';
 
-$faceAPI = new automatic_run_api();
-$faceAPI->start(); // This automatically runs main.py (the new Flask entry point) if not running yet
+// Note: No longer starting Python process from PHP.
+// In development, run: python linya_python_api/app.py
+// In production, Python API is deployed to Google Cloud Run.
 ?>
 <!DOCTYPE html>
 <html>
@@ -96,7 +98,7 @@ $faceAPI->start(); // This automatically runs main.py (the new Flask entry point
     <div id="faceOutline"></div>
 </div>
 
-<form method="POST" action="login.php" id="loginForm">
+<form method="POST" action="kioskLogin.php" id="loginForm">
     <input type="hidden" name="image" id="imageInput">
     <input type="hidden" name="check_glasses" id="checkGlasses" value="true">
     <button type="button" onclick="captureImage()" aria-label="Capture face"> 
@@ -139,9 +141,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $check_glasses = $_POST['check_glasses'] ?? 'false';
 
     if ($image) {
-        // STEP 1: If this is an initial capture, check for glasses FIRST
+        // STEP 1: If this is an initial capture, do a quick face-presence check
+        // NOTE: Older code called a /debug_glasses endpoint (not present on current API).
+        // The Python API now exposes /check_angle which validates that a face exists.
         if ($check_glasses === 'true') {
-            $api_url = "http://127.0.0.1:5000/debug_glasses";
+            $api_url = PYTHON_API_BASE . "/check_angle";
             $payload = json_encode([
                 "image" => str_replace("data:image/jpeg;base64,", "", $image)
             ]);
@@ -151,7 +155,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $result = curl_exec($ch);
             $curl_error = curl_error($ch);
@@ -159,44 +164,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             curl_close($ch);
 
             if ($result === false) {
-                echo "<p style='color:red;'>❌ Error checking accessories: $curl_error</p>";
+                echo "<p style='color:red;'>❌ Error checking face presence: " . htmlspecialchars($curl_error) . "</p>";
                 exit;
             }
-            
+
             $response = json_decode($result, true);
-            
+
             if ($response === null) {
-                echo "<p style='color:red;'>❌ Invalid JSON response from glasses API</p>";
+                echo "<p style='color:red;'>❌ Invalid JSON response from face-check API</p>";
                 echo "<p style='color:red; font-size:12px;'>Raw: " . htmlspecialchars($result) . "</p>";
                 exit;
             }
-            
-            // Check if the endpoint returned an error (e.g., no face detected)
-            if (isset($response['status']) && $response['status'] === 'error') {
-                echo "<p style='color:red;'>❌ Could not detect face: " . htmlspecialchars($response['message'] ?? 'Unknown error') . "</p>";
-                echo "<p style='font-size:12px; color:#666;'><em>Make sure your face is clearly visible in the center and try again.</em></p>";
-                exit;
-            }
-            
-            // Check for glasses
-            if (isset($response['glasses_type'])) {
-                if ($response['glasses_type'] !== 'none') {
-                    $accessoryType = htmlspecialchars($response['glasses_type']);
-                    echo "<p style='color:orange; font-weight:bold;'>⚠️ " . ucfirst($accessoryType) . " detected!</p>";
-                    echo "<p>Please remove your $accessoryType and try again.</p>";
-                    echo "<p style='font-size:12px; color:#666;'><em>Reset the page and capture again without accessories.</em></p>";
-                    exit; // IMPORTANT: Stop here and do NOT proceed to recognition
-                }
-                // No glasses, proceed to recognition
+
+            // Expected successful response: { "status": "ok" }
+            if (isset($response['status']) && $response['status'] === 'ok') {
+                // Face present — proceed to recognition
             } else {
-                echo "<p style='color:red;'>❌ Unexpected response: missing glasses_type field</p>";
-                echo "<p style='color:red; font-size:12px;'>Response: " . htmlspecialchars(json_encode($response)) . "</p>";
+                // Show an informative error to the user
+                $msg = $response['message'] ?? 'No face detected. Please ensure your face is centered and try again.';
+                echo "<p style='color:red;'>❌ " . htmlspecialchars($msg) . "</p>";
+                echo "<p style='font-size:12px; color:#666;'><em>Make sure your face is clearly visible and try again.</em></p>";
                 exit;
             }
         }
 
         // STEP 2: Proceed with recognition (only if no glasses or user is retrying)
-        $api_url = "http://127.0.0.1:5000/recognize";
+        $api_url = PYTHON_API_BASE . "/recognize";
         $payload = json_encode([
             "image" => str_replace("data:image/jpeg;base64,", "", $image)
         ]);
@@ -206,7 +199,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        // NEW / CHANGED:
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // time to establish connection
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);        // total time allowed for the request
+
 
         $result = curl_exec($ch);
         $curl_error = curl_error($ch);
@@ -254,7 +251,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             })();
                         </script>";
                     } elseif ($response['status'] === 'unknown') {
-                    echo "<p style='color:orange;'>Unknown user. <a href='register.php'>Register here</a>.</p>";
+                    echo "<p style='color:orange;'>Unknown user. <a href='kioskRegister.php'>Register here</a>.</p>";
                 } elseif ($response['status'] === 'accessory_detected') {
                     $accessory = htmlspecialchars($response['message']);
                     echo "<p style='color:red; font-weight:bold;'>⚠️ $accessory</p>";
@@ -347,7 +344,7 @@ function captureImage() {
     video.style.display = 'none';
     canvas.style.display = 'block';
 
-    alert("✅ Face captured! Checking for glasses... then click 'Login' to authenticate.");
+    alert("✅ Face captured! Checking for a clear face, then click 'Login' to authenticate.");
 }
 
 function resetCapture() {
