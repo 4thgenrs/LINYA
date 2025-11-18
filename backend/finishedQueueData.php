@@ -13,13 +13,29 @@ try {
         $response['offices'][] = $o;
     }
 
-    // build main query — use the window_id exactly as stored in finished_queues
+    // If caller passed an office_id (numeric), resolve it to the office name
+    $whereClause = '';
+    if ($officeFilter) {
+        $stmt = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+        if ($stmt) {
+            $stmt->bind_param('i', $officeFilter);
+            $stmt->execute();
+            $r = $stmt->get_result();
+            if ($r && ($rw = $r->fetch_assoc())) {
+                $officeName = $rw['office_description'];
+                // finished_queues.office_id will now store office name strings; filter by that
+                $whereClause = " WHERE f.office_id = '" . $conn->real_escape_string($officeName) . "'";
+            }
+            $stmt->close();
+        }
+    }
+
+    // build main query — finished_queues.office_id now stores office name text
     $sql = "SELECT f.finished_id,
                    f.original_queue_id,
-                   f.office_id,
-                   COALESCE(o.office_description, '') AS office_description,
+                   f.office_id AS office_description,
                    f.window_id,
-                   f.window_id AS window_no, /* copy raw value from finished_queues */
+                   f.window_id AS window_no,
                    f.processed_by,
                    f.created_at,
                    f.finished_at,
@@ -28,9 +44,9 @@ try {
                    f.customer_name,
                    f.customer_phone,
                    f.customer_email
-            FROM finished_queues f
-            LEFT JOIN offices o ON f.office_id = o.office_id";
-    if ($officeFilter) $sql .= " WHERE f.office_id = " . intval($officeFilter);
+            FROM finished_queues f";
+
+    $sql .= $whereClause;
     $sql .= " ORDER BY f.finished_at DESC, f.finished_id DESC LIMIT 2000";
 
     $res = $conn->query($sql);

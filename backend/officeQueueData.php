@@ -1,8 +1,36 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+session_start();
 require_once __DIR__ . '/../linya_db/config.php'; // provides $conn
 
 $office = isset($_GET['office']) ? intval($_GET['office']) : 1;
+
+// Server-side permission: staff may only view their assigned office
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
+    $staffId = intval($_SESSION['user_id']);
+    $aw = $conn->prepare("SELECT office_id, window_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+    if ($aw) {
+        $aw->bind_param('i', $staffId);
+        $aw->execute();
+        $awr = $aw->get_result();
+        $assigned = $awr ? $awr->fetch_assoc() : null;
+        $aw->close();
+
+        // If staff has no assigned window/office, deny access
+        if (!$assigned) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: not assigned to any window/office']);
+            exit;
+        }
+
+        // Deny if requested office is not the staff's office
+        if (intval($assigned['office_id']) !== $office) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: access to this office is not allowed']);
+            exit;
+        }
+    }
+}
 
 try {
     // --- get offices for the selector ---

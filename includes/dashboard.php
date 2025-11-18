@@ -26,6 +26,39 @@ if ($office > 0 && isset($conn)) {
         $ostmt->close();
     }
 }
+
+// Determine if staff is assigned to a window (server-side) so nav can hide tabs
+$canControl = false;
+$canViewOffice = ($office > 0);
+if (isset($conn) && isset($_SESSION['user_id']) && intval($_SESSION['user_type']) === 2) {
+  $staffId = intval($_SESSION['user_id']);
+  // read the account's office field; if account.office is null/0, don't show window control
+  $accountOffice = 0;
+  $acctStmt = $conn->prepare("SELECT office FROM accounts WHERE user_id = ? LIMIT 1");
+  if ($acctStmt) {
+    $acctStmt->bind_param('i', $staffId);
+    $acctStmt->execute();
+    $ares = $acctStmt->get_result();
+    if ($ares && ($arow = $ares->fetch_assoc())) {
+      $accountOffice = isset($arow['office']) ? intval($arow['office']) : 0;
+    }
+    $acctStmt->close();
+  }
+  $aw = $conn->prepare("SELECT window_id, office_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+  if ($aw) {
+    $aw->bind_param('i', $staffId);
+    $aw->execute();
+    $awr = $aw->get_result();
+    if ($awr && ($ar = $awr->fetch_assoc())) {
+      // only allow control when assigned AND the account has an office set
+      if (!empty($ar['window_id']) && $accountOffice > 0) {
+        $canControl = true;
+      }
+      if (!empty($ar['office_id'])) $canViewOffice = true;
+    }
+    $aw->close();
+  }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -40,8 +73,12 @@ if ($office > 0 && isset($conn)) {
     <div class="brand">LINYA — Staff Dashboard</div>
     <nav class="dash-nav" role="navigation">
       <button data-view="activity" class="nav-btn active">My Activity</button>
-      <button data-view="window" class="nav-btn">Window Control</button>
-      <button data-view="office" class="nav-btn">Live Office Queue</button>
+      <?php if ($canControl): ?>
+        <button data-view="window" class="nav-btn">Window Control</button>
+      <?php endif; ?>
+      <?php if ($canViewOffice): ?>
+        <button data-view="office" class="nav-btn">Live Office Queue</button>
+      <?php endif; ?>
     </nav>
     <div class="dash-right">
       <div class="small muted">Signed in as <strong><?php echo $userName; ?></strong></div>

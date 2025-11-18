@@ -1,6 +1,26 @@
 <?php
+session_start();
 // optionally require login or leave public. Accept office via ?office=#
 $office = isset($_GET['office']) ? intval($_GET['office']) : 1;
+
+// If a staff user is signed in, ensure they may view this office's live queue
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
+  require_once __DIR__ . '/../linya_db/config.php';
+  $staffId = intval($_SESSION['user_id']);
+  $chk = $conn->prepare("SELECT office_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+  if ($chk) {
+    $chk->bind_param('i', $staffId);
+    $chk->execute();
+    $cres = $chk->get_result();
+    $assigned = $cres ? $cres->fetch_assoc() : null;
+    $chk->close();
+
+    if (!$assigned || intval($assigned['office_id']) !== $office) {
+      header('Location: ../includes/dashboard.php');
+      exit;
+    }
+  }
+}
 ?>
 <!doctype html>
 <html lang="en">

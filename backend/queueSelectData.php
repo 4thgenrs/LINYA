@@ -20,6 +20,33 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
     // note: getNextLine expects a numeric window id/identifier; queueData functions use $window as passed
 }
 
+// Server-side permission: staff may only use their assigned window
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
+    $staffId = intval($_SESSION['user_id']);
+    // resolve assigned window for staff
+    $aw = $conn->prepare("SELECT window_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+    if ($aw) {
+        $aw->bind_param('i', $staffId);
+        $aw->execute();
+        $awr = $aw->get_result();
+        $assigned = $awr ? $awr->fetch_assoc() : null;
+        $aw->close();
+
+        if (!$assigned) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: you are not assigned to any window']);
+            exit;
+        }
+
+        // the API calls must refer to the staff's actual assigned window
+        if (intval($assigned['window_id']) !== intval($window)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Forbidden: window mismatch']);
+            exit;
+        }
+    }
+}
+
 try {
     if ($action === 'next') {
         $res = getNextLine($conn, $office, $window);
@@ -127,9 +154,39 @@ try {
                     customer_phone = VALUES(customer_phone),
                     customer_email = VALUES(customer_email)"
             );
-            // types: 3 ints, then 8 strings = 11 params
-            $types = 'iiissssssss';
-            $office_id = intval($queueRow['office_id']);
+            // We now store office name (text) in finished_queues.office_id.
+            // Resolve office name from session or from queue row's office_id (if numeric), otherwise cast to string.
+            $office_name_to_store = null;
+            if (isset($_SESSION['office_id']) && intval($_SESSION['office_id']) > 0) {
+                $tmp = intval($_SESSION['office_id']);
+                $sr = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                if ($sr) {
+                    $sr->bind_param('i', $tmp);
+                    $sr->execute();
+                    $res = $sr->get_result();
+                    if ($res && ($rw = $res->fetch_assoc())) $office_name_to_store = $rw['office_description'];
+                    $sr->close();
+                }
+            }
+            if (!$office_name_to_store) {
+                $maybe = $queueRow['office_id'] ?? null;
+                if (is_numeric($maybe) && intval($maybe) > 0) {
+                    $sr = $conn->prepare("SELECT office_description FROM offices WHERE office_id = ? LIMIT 1");
+                    if ($sr) {
+                        $mi = intval($maybe);
+                        $sr->bind_param('i', $mi);
+                        $sr->execute();
+                        $res = $sr->get_result();
+                        if ($res && ($rw = $res->fetch_assoc())) $office_name_to_store = $rw['office_description'];
+                        $sr->close();
+                    }
+                }
+            }
+            if (!$office_name_to_store) {
+                // fallback: use whatever is in queueRow.office_id as string (could already be name)
+                $office_name_to_store = (string)($queueRow['office_id'] ?? '');
+            }
+
             $window_id = $window_no_to_store; // store the resolved window NUMBER here
             $created_at = $queueRow['created_at'] ?? null;
             $status = 'finished';
@@ -137,9 +194,12 @@ try {
             $customer_phone = $queueRow['customer_phone'] ?? null;
             $customer_email = $queueRow['customer_email'] ?? null;
 
+            // types: original_queue_id (int), office_id (string), window_id (int), then 8 strings
+            $types = 'isissssssss';
+
             $ins->bind_param($types,
                 $queue_id,
-                $office_id,
+                $office_name_to_store,
                 $window_id,
                 $processed_by,
                 $finishedAt,

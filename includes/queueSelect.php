@@ -31,6 +31,42 @@ if (isset($conn)) {
 }
 // Fallback: if resolution failed keep using window_no (legacy), but prefer PK when available
 $window_attr = $window_id > 0 ? $window_id : $window_no;
+
+// Page-level permission check: staff may only access the page for their assigned window
+if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SESSION['user_type']) === 2) {
+  $staffId = intval($_SESSION['user_id']);
+  $allowed = false;
+  if ($window_id > 0) {
+    $chk = $conn->prepare("SELECT 1 FROM office_windows WHERE window_id = ? AND assigned_staff_id = ? LIMIT 1");
+    if ($chk) {
+      $chk->bind_param('ii', $window_id, $staffId);
+      $chk->execute();
+      $cres = $chk->get_result();
+      if ($cres && $cres->fetch_row()) {
+        $allowed = true;
+      }
+      $chk->close();
+    }
+  } else {
+    // legacy fallback: check office + window_no assignment
+    $chk2 = $conn->prepare("SELECT 1 FROM office_windows WHERE office_id = ? AND window_no = ? AND assigned_staff_id = ? LIMIT 1");
+    if ($chk2) {
+      $chk2->bind_param('iii', $office, $window_no, $staffId);
+      $chk2->execute();
+      $cres2 = $chk2->get_result();
+      if ($cres2 && $cres2->fetch_row()) {
+        $allowed = true;
+      }
+      $chk2->close();
+    }
+  }
+
+  if (!$allowed) {
+    // Not allowed to access this window control page
+    header('Location: ../includes/dashboard.php');
+    exit;
+  }
+}
 ?>
 
 <!doctype html>

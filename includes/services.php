@@ -53,7 +53,7 @@ $offices = getOfficeData($conn);
                 <td><?php echo $counter++; ?></td>
                 <td><?php echo $row['service_description']; ?></td>
                 <td><?php echo $row['office_description']; ?></td>
-                <td><?php echo intval($row['enabled']) ? 1 : 0; ?></td>
+                <td><?php echo intval($row['enabled']) ? "Active" : "Inactive"; ?></td>
                 <td>
                     <button type="button" class="editBtn">Edit</button>
                     
