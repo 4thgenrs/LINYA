@@ -35,42 +35,50 @@ document.addEventListener('DOMContentLoaded', () => {
       rOffice.textContent = q.office_description;
       rServices.textContent = services.map(s => s.description + (s.soft_copy ? ' (PDF)' : '') ).join(', ') || '—';
 
-      // populate visitor fields if present
+      // visitor fields
       if (q.customer_name && q.customer_name.trim().length) {
         rName.textContent = q.customer_name;
         rRowName.style.display = '';
-      } else {
-        rRowName.style.display = 'none';
-      }
+      } else rRowName.style.display = 'none';
+
       if (q.customer_phone && q.customer_phone.trim().length) {
         rPhone.textContent = q.customer_phone;
         rRowPhone.style.display = '';
-      } else {
-        rRowPhone.style.display = 'none';
-      }
+      } else rRowPhone.style.display = 'none';
+
       if (q.customer_email && q.customer_email.trim().length) {
         rEmail.textContent = q.customer_email;
         rRowEmail.style.display = '';
-      } else {
-        rRowEmail.style.display = 'none';
+      } else rRowEmail.style.display = 'none';
+
+      /* -------------------------------------------------------
+         FIX: Reliable app base detection using server-provided
+         window.APP_BASE. (Fallback only if missing.)
+      ---------------------------------------------------------*/
+
+      // Use APP_BASE provided by PHP, fallback to /LINYA
+      let base = (typeof window.APP_BASE === 'string' && window.APP_BASE.length)
+        ? window.APP_BASE
+        : '/LINYA';
+
+      // Ensure base doesn't end with slash unless it's root
+      if (base !== '/' && base.endsWith('/')) {
+        base = base.slice(0, -1);
       }
 
-      // compute app base dynamically (if app sits in /LINYA this will detect it)
-      const path = window.location.pathname || '/';
-      const includesIndex = path.indexOf('/includes/');
-      const base = includesIndex !== -1 ? path.substring(0, includesIndex) : '';
+      const hostOverride = (window.QR_HOST_OVERRIDE && window.QR_HOST_OVERRIDE.length)
+        ? window.QR_HOST_OVERRIDE
+        : window.location.hostname;
 
-      // optional host override (set window.QR_HOST_OVERRIDE in includes/receipt.php if you need LAN IP)
-      const hostOverride = (window.QR_HOST_OVERRIDE && window.QR_HOST_OVERRIDE.length) ? window.QR_HOST_OVERRIDE : window.location.hostname;
-      const portPart = (window.QR_PORT_OVERRIDE && window.QR_PORT_OVERRIDE.length) ? window.QR_PORT_OVERRIDE : (window.location.port ? (':' + window.location.port) : '');
+      const portPart = (window.QR_PORT_OVERRIDE && window.QR_PORT_OVERRIDE.length)
+        ? window.QR_PORT_OVERRIDE
+        : (window.location.port ? (':' + window.location.port) : '');
+
       const origin = window.location.protocol + '//' + hostOverride + portPart;
 
       const liveUrl = `${origin}${base}/includes/queueDisplay.php?office_id=${encodeURIComponent(q.office_id)}`;
+      console.log('Live queue URL:', liveUrl);
 
-      // Debug log and also show the URL below the QR (helps test from same device)
-      console.log('Live queue URL for QR:', liveUrl);
-
-      // show clickable link for testing
       let linkEl = document.getElementById('liveUrlLink');
       if (!linkEl) {
         linkEl = document.createElement('a');
@@ -84,12 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
       linkEl.target = '_blank';
       linkEl.textContent = liveUrl;
 
-      // build QR image URL (Google Charts)
       const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(liveUrl)}&chld=L|1`;
       qrImg.src = qrUrl;
       qrImg.alt = `Open live queue for ${q.office_description}`;
 
-      // handle image load error
       qrImg.onerror = () => {
         qrImg.style.display = 'none';
         let msg = document.getElementById('qrErrorMsg');
@@ -98,36 +104,23 @@ document.addEventListener('DOMContentLoaded', () => {
           msg.id = 'qrErrorMsg';
           msg.className = 'small muted';
           msg.style.marginTop = '8px';
-          msg.textContent = 'QR image failed to load. Open the link above to view the live queue.';
+          msg.textContent = 'QR image failed to load.';
           qrImg.parentNode.appendChild(msg);
         }
-        console.warn('QR image failed to load. QR URL:', qrUrl);
       };
 
-      // host reachability warning
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1') {
-        console.warn('QR points to localhost. Scanning from another device will NOT reach this machine. Use LAN IP or ngrok.');
-        // show small visible note
-        let note = document.getElementById('qrLocalNote');
-        if (!note) {
-          note = document.createElement('div');
-          note.id = 'qrLocalNote';
-          note.className = 'small muted';
-          note.style.marginTop = '6px';
-          note.textContent = 'Note: This server is "localhost". QR will only work on this machine. Use LAN IP or ngrok to scan from another device.';
-          qrImg.parentNode.appendChild(note);
-        }
-      }
-
       confirmBtn.addEventListener('click', () => {
+        console.log('Back to menu clicked, FACE_LOGGED:', window.FACE_LOGGED);
         if (window.FACE_LOGGED) {
-          // destroy server-side face session then go to face login
-            fetch('../backend/face_logout.php', { method: 'POST' }).catch(()=>{}).finally(()=>{
-            window.location.href = `${origin}${base}/faceapp_php/kioskLogin.php`;
-          });
+          fetch('../backend/face_logout.php', { method: 'POST' })
+            .catch((err) => console.log('Logout error:', err))
+            .finally(() => {
+              console.log('Redirecting to: https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php');
+              window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+            });
         } else {
-          window.location.href = `${origin}${base}/includes/kioskMenu.php`;
+          console.log('Redirecting to: https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php');
+          window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
         }
       });
 
