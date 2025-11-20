@@ -12,9 +12,18 @@ require_once __DIR__ . '/../config.php';
 <meta charset="UTF-8">
 <title>Face Registration</title>
 <link rel="stylesheet" href="../css/kioskRegister.css">
+<link rel="stylesheet" href="../css/backButton.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
+    <!-- Back Button -->
+    <a href="../includes/kioskSelect.php" class="back-btn" title="Go back to selection">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Back
+    </a>
+
     <div class="register-container">
         <!-- VISITOR FORM (shown first) -->
         <div id="visitorForm" class="visitor-screen">

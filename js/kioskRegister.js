@@ -33,6 +33,33 @@ const angles = [
     }
 ];
 
+/* =========== Helpers =========== */
+
+/**
+ * Ensure #statusMessage exists and return it.
+ * If it doesn't exist, create it and insert after the #progress element.
+ */
+function ensureStatusMessage() {
+    let el = document.getElementById('statusMessage');
+    if (!el) {
+        const prog = document.getElementById('progress');
+        el = document.createElement('div');
+        el.id = 'statusMessage';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.style.display = 'block';
+        el.style.minHeight = '2.2rem';
+        el.style.marginTop = '12px';
+        if (prog && prog.parentNode) {
+            prog.parentNode.insertBefore(el, prog.nextSibling);
+        } else {
+            const container = document.querySelector('.register-container') || document.body;
+            container.appendChild(el);
+        }
+    }
+    return el;
+}
+
 /* =========== Visitor Form Validation =========== */
 function isValidPhone(p) {
     return typeof p === 'string' && /^\s*09\d{9}\s*$/.test(p);
@@ -148,14 +175,20 @@ function updateAngleInstructions() {
     }
 }
 
-function resetCaptureState() {
+/**
+ * Reset capture internal state.
+ * @param {boolean} keepStatus - if true, don't clear #statusMessage (so messages remain visible)
+ */
+function resetCaptureState(keepStatus = false) {
     capturedImages = [];
     const countDisplay = document.getElementById('count');
     if (countDisplay) countDisplay.textContent = "0";
     currentAngleIndex = 0;
     updateAngleInstructions();
-    const statusMessage = document.getElementById('statusMessage');
-    if (statusMessage) statusMessage.innerHTML = '';
+    if (!keepStatus) {
+        const statusMessage = document.getElementById('statusMessage');
+        if (statusMessage) statusMessage.innerHTML = '';
+    }
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) captureBtn.disabled = false;
 }
@@ -192,7 +225,7 @@ function captureImage() {
     const countDisplay = document.getElementById('count');
     if (countDisplay) countDisplay.textContent = capturedImages.length;
 
-    const statusMessage = document.getElementById('statusMessage');
+    const statusMessage = ensureStatusMessage();
     if (statusMessage) {
         statusMessage.innerHTML = `<p style="color:green;">✅ Captured: <strong>${currentAngle}</strong></p>`;
     }
@@ -215,7 +248,7 @@ async function submitRegistration(retryCount = 0) {
     if (captureBtn) captureBtn.disabled = true;
 
     if (capturedImages.length < maxImages) {
-        const statusMessage = document.getElementById('statusMessage');
+        const statusMessage = ensureStatusMessage();
         if (statusMessage) {
             statusMessage.innerHTML = `<p style='color:orange;'>Please capture all ${maxImages} angles before submitting.</p>`;
         }
@@ -224,7 +257,7 @@ async function submitRegistration(retryCount = 0) {
         return;
     }
 
-    const statusMessage = document.getElementById('statusMessage');
+    const statusMessage = ensureStatusMessage();
     if (statusMessage) {
         statusMessage.innerHTML = `<p>Submitting images... <span class="small-muted">Please wait.</span></p>`;
     }
@@ -248,42 +281,96 @@ async function submitRegistration(retryCount = 0) {
             mode: 'cors'
         });
 
+        console.log('API Response type:', resp.type, 'status:', resp.status);
         console.log('API Response status:', resp.status, resp.statusText);
+        console.log('Response OK?', resp.ok);
         
         const respText = await resp.text();
         console.log('API Response text:', respText);
         
+        // Quick CORS/opaque diagnostic
+        if (resp.type === 'opaque' || resp.status === 0) {
+            if (statusMessage) {
+                statusMessage.innerHTML = `<p style='color:red;'>❌ Network/CORS blocked the request (opaque/0). Check server CORS headers and that API_BASE is correct.</p>`;
+            }
+            submitting = false;
+            if (captureBtn) captureBtn.disabled = false;
+            return;
+        }
+
         let json;
         try {
             json = JSON.parse(respText || '{}');
             console.log('Parsed JSON:', json);
         } catch (e) {
             console.error('JSON parse error:', e);
+            console.log('Raw response that failed to parse:', respText);
             throw new Error(`Invalid server response: ${resp.status} ${resp.statusText}`);
         }
 
         if (!resp.ok) {
             console.log('Response not OK, checking error conditions...');
+            console.log('HTTP Status Code:', resp.status);
+            console.log('Error response status:', json?.status);
+            console.log('Full error response:', json);
+            console.log('Checking 409 Conflict: resp.status === 409?', resp.status === 409);
+            console.log('Checking JSON status: json.status === "already_registered"?', json?.status === 'already_registered');
             
-            if (json && json.status === 'already_registered') {
-                console.log('Already registered detected:', json);
+            // Handle 409 Conflict (already registered) - check HTTP status OR JSON status
+            if (resp.status === 409 || (json && json.status === 'already_registered')) {
+                console.log('✅ ALREADY REGISTERED DETECTED - HTTP 409 or JSON status match:', json);
+                
+                // Try to extract name from various possible JSON response formats
+                const existingName = json?.existing_name || json?.name || 'Unknown User';
+                let displayMessage = 'This face is already registered in the system.';
+                
+                // Use the API message if available, otherwise use default
+                if (json?.message && typeof json.message === 'string') {
+                    displayMessage = json.message;
+                }
+                
                 if (statusMessage) {
                     statusMessage.innerHTML = `
-                        <div style="text-align:center;">
-                            <p style='color:orange;'>⚠️ ${json.message}</p>
-                            <p>Registered as: <strong>${json.existing_name || 'Unknown'}</strong></p>
-                            <a href="kioskLogin.php">
-                                <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
-                                    Go to Login
+                        <div id="alreadyRegisteredMessage" style="text-align:center; background:#fff3cd; border:3px solid #ffc107; border-radius:12px; padding:25px; margin:20px 0; box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);">
+                            <p style='color:#856404; font-size:20px; font-weight:bold; margin:15px 0;'>⚠️ USER ALREADY REGISTERED</p>
+                            <p style='color:#495057; font-size:18px; margin:15px 0;'>${displayMessage}</p>
+                            <p style='color:#dc3545; font-size:22px; font-weight:bold; margin:15px 0;'>${existingName}</p>
+                            <p style='color:#495057; font-size:16px; margin:15px 0;'>Please go to Login instead.</p>
+                            <div style="margin-top:25px;">
+                                <a href="kioskLogin.php" style="text-decoration:none;">
+                                    <button style="padding:15px 30px; border:none; background:#dc3545; color:white; border-radius:8px; cursor:pointer; font-size:18px; font-weight:600; margin:5px;">
+                                        GO TO LOGIN
+                                    </button>
+                                </a>
+                                <button onclick="location.reload()" style="padding:15px 30px; border:2px solid #6c757d; background:white; color:#6c757d; border-radius:8px; cursor:pointer; font-size:18px; font-weight:600; margin:5px;">
+                                    Try Again
                                 </button>
-                            </a>
+                            </div>
                         </div>
                     `;
+                    
+                    // Force visibility and scroll into view
+                    statusMessage.style.display = 'block';
+                    statusMessage.style.visibility = 'visible';
+                    statusMessage.style.opacity = '1';
+                    statusMessage.style.position = 'relative';
+                    statusMessage.style.zIndex = '1000';
+                    
+                    setTimeout(() => {
+                        statusMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                    
+                    console.log('statusMessage innerHTML after update:', statusMessage.innerHTML);
+                } else {
+                    console.error('❌ statusMessage element not found!');
                 }
-                resetCaptureState();
+                // Keep the already-registered UI visible — don't clear it immediately
+                resetCaptureState(true);
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
+            } else {
+                console.log('Not an already_registered error. HTTP Status:', resp.status, 'JSON Status:', json?.status);
             }
 
             if (json && json.status === 'glasses') {
@@ -296,7 +383,7 @@ async function submitRegistration(retryCount = 0) {
                         </div>
                     `;
                 }
-                resetCaptureState();
+                resetCaptureState(); // clear status so user can retake
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
@@ -344,7 +431,7 @@ async function submitRegistration(retryCount = 0) {
                             <div style="text-align:center;">
                                 <p style='color:green;'>✅ ${json.message} (saved to clients)</p>
                                 <p>You can now log in using face recognition.</p>
-                                <a href="../kiosk/kioskLogin.php">
+                                <a href="kioskLogin.php">
                                     <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
                                         Go to Login
                                     </button>
@@ -358,7 +445,7 @@ async function submitRegistration(retryCount = 0) {
                             <div style="text-align:center;">
                                 <p style='color:orange;'>⚠️ ${jr.message}</p>
                                 <p>Existing record: <strong>${jr.existing_name || 'Unknown'}</strong></p>
-                                <p style='color:gray;'>If this is you, proceed to <a href="../kiosk/kioskLogin.php">Login</a>. Otherwise change the name/phone/email and try again.</p>
+                                <p style='color:gray;'>If this is you, proceed to <a href="kioskLogin.php">Login</a>. Otherwise change the name/phone/email and try again.</p>
                             </div>
                         `;
                     }
@@ -368,7 +455,7 @@ async function submitRegistration(retryCount = 0) {
                             <div style="text-align:center;">
                                 <p style='color:orange;'>⚠️ ${json.message} (registered on file system)</p>
                                 <p style='color:gray;'>Could not save to DB: ${jr && jr.message ? jr.message : 'unknown'}</p>
-                                <a href="../kiosk/kioskLogin.php">
+                                <a href="kioskLogin.php">
                                     <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
                                         Go to Login
                                     </button>
@@ -383,7 +470,8 @@ async function submitRegistration(retryCount = 0) {
                 }
             }
 
-            resetCaptureState();
+            // Keep the success message visible instead of wiping it immediately
+            resetCaptureState(true);
             submitting = false;
             if (captureBtn) captureBtn.disabled = false;
             return;
@@ -397,6 +485,8 @@ async function submitRegistration(retryCount = 0) {
 
     } catch (err) {
         console.error("Registration submit error:", err);
+
+        const statusMessage = ensureStatusMessage();
 
         if (retryCount < 1) {
             if (statusMessage) {

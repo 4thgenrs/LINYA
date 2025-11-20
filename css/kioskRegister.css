@@ -278,6 +278,41 @@ button:disabled {
     margin-top: 15px; 
 }
 
+#statusMessage {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 20px;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 100 !important;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #007bff;
+}
+
+#statusMessage p {
+    margin: 10px 0;
+    font-weight: 500;
+}
+
+#statusMessage button {
+    margin-top: 15px;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#statusMessage button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
 .small-muted {
     color: #666;
     font-size: 13px;
