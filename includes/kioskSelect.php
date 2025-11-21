@@ -34,7 +34,7 @@
                 </span>
             </a>
 
-            <a href="kioskMenu.php" class="kiosk-btn btn-guest">
+            <a href="../backend/guestStart.php" class="kiosk-btn btn-guest">
                 <span class="btn-icon">👋</span>
                 <span class="btn-text">
                     Continue as Guest

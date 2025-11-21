@@ -106,40 +106,13 @@
         </div>
     </div>
 
-    <script src="../js/kioskMenu.js"></script>
     <?php
-    // If a client session exists (face-login), inject JS to prefill and auto-enter
+    // If a client session exists (face-login), set skip flag and client data
     if (isset($_SESSION['client']) && is_array($_SESSION['client'])) {
         $client_js = json_encode($_SESSION['client']);
-        echo "<script>window.__CLIENT_SESSION = $client_js;</script>";
-        echo "<script>
-            document.addEventListener('DOMContentLoaded', function(){
-                try {
-                    const c = window.__CLIENT_SESSION;
-                    if (c) {
-                        const nameEl = document.getElementById('visitorName');
-                        const phoneEl = document.getElementById('visitorPhone');
-                        const emailEl = document.getElementById('visitorEmail');
-                        if (nameEl) nameEl.value = c.name || '';
-                        if (phoneEl) phoneEl.value = c.phone || '';
-                        if (emailEl) emailEl.value = c.email || '';
-                        // sync state and auto-proceed to kiosk
-                        if (typeof visitorSyncState === 'function') visitorSyncState();
-                        // simulate confirm after short delay
-                        setTimeout(function(){
-                            // hide visitor form and enter
-                            const visitor = document.getElementById('visitorForm');
-                            const officeSection = document.getElementById('officeSection');
-                            if (visitor) visitor.style.display = 'none';
-                            if (officeSection) { officeSection.style.display = 'block'; setTimeout(()=>officeSection.classList.add('active'),80); }
-                            // populate global visitorInfo
-                            window.visitorInfo = { name: c.name || '', phone: c.phone || '', email: c.email || '' };
-                        }, 250);
-                    }
-                } catch (e) { console.error(e); }
-            });
-        </script>";
+        echo "<script>window.SKIP_VISITOR_FORM = true; window.__CLIENT_SESSION = $client_js;</script>";
     }
     ?>
+    <script src="../js/kioskMenu.js"></script>
 </body>
 </html>

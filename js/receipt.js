@@ -76,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const origin = window.location.protocol + '//' + hostOverride + portPart;
 
-      const liveUrl = `${origin}${base}/includes/queueDisplay.php?office_id=${encodeURIComponent(q.office_id)}`;
+      // Link directly to the Live Office Queue page for this office
+      const liveUrl = `${origin}${base}/includes/officeQueue.php?office=${encodeURIComponent(q.office_id)}`;
       console.log('Live queue URL:', liveUrl);
 
       let linkEl = document.getElementById('liveUrlLink');
@@ -92,22 +93,42 @@ document.addEventListener('DOMContentLoaded', () => {
       linkEl.target = '_blank';
       linkEl.textContent = liveUrl;
 
-      const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(liveUrl)}&chld=L|1`;
-      qrImg.src = qrUrl;
-      qrImg.alt = `Open live queue for ${q.office_description}`;
+      // Hide QR for guest users, show for face-logged users
+      if (!window.FACE_LOGGED) {
+        // Guest mode — hide QR block and caption entirely
+        const qrBlock = document.querySelector('.qr-block');
+        if (qrBlock) qrBlock.style.display = 'none';
 
-      qrImg.onerror = () => {
-        qrImg.style.display = 'none';
-        let msg = document.getElementById('qrErrorMsg');
-        if (!msg) {
-          msg = document.createElement('div');
-          msg.id = 'qrErrorMsg';
-          msg.className = 'small muted';
-          msg.style.marginTop = '8px';
-          msg.textContent = 'QR image failed to load.';
-          qrImg.parentNode.appendChild(msg);
-        }
-      };
+        // Also remove any existing liveUrlLink if present
+        if (linkEl) linkEl.remove();
+      } else {
+        // Face-logged user — show QR with existing behavior
+        const googleQr = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(liveUrl)}&chld=L|1`;
+        const qrServer = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(liveUrl)}`;
+        qrImg.alt = `Open live queue for ${q.office_description}`;
+        qrImg.style.display = '';
+        qrImg.width = 300;
+        qrImg.height = 300;
+        qrImg.src = googleQr;
+        qrImg.onerror = () => {
+          if (qrImg.src === googleQr) {
+            // try backup provider
+            qrImg.onerror = null;
+            qrImg.src = qrServer;
+            return;
+          }
+          qrImg.style.display = 'none';
+          let msg = document.getElementById('qrErrorMsg');
+          if (!msg) {
+            msg = document.createElement('div');
+            msg.id = 'qrErrorMsg';
+            msg.className = 'small muted';
+            msg.style.marginTop = '8px';
+            msg.textContent = 'QR image failed to load.';
+            qrImg.parentNode.appendChild(msg);
+          }
+        };
+      }
 
       confirmBtn.addEventListener('click', () => {
         console.log('Back to menu clicked, FACE_LOGGED:', window.FACE_LOGGED);

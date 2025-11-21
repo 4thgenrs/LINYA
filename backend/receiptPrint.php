@@ -29,6 +29,10 @@ if (!$fpdf_loaded) {
 }
 
 include '../linya_db/config.php';
+session_start();
+
+// Determine whether current viewer is a face-logged session
+$face_logged = isset($_SESSION['client']) && is_array($_SESSION['client']);
 
 $queueId = isset($_GET['queue_id']) ? intval($_GET['queue_id']) : 0;
 if (!$queueId) { die('Missing queue_id'); }
@@ -63,14 +67,18 @@ $host = $_SERVER['HTTP_HOST'];
 // Adjust the base path if your app isn't at /LINYA; this uses /LINYA as the application root
 $liveUrl = $scheme . '://' . $host . "/LINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
 
-// Prepare QR image (Google Charts) and save to temp file
-$chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
-$tmp = tempnam(sys_get_temp_dir(), 'qr_');
-$img = @file_get_contents($chartUrl);
-if ($img !== false) {
-    file_put_contents($tmp, $img);
-} else {
-    $tmp = false;
+// Prepare QR image (Google Charts) and save to temp file - only for face-logged users
+$tmp = false;
+if ($face_logged) {
+    $chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
+    $tmp = tempnam(sys_get_temp_dir(), 'qr_');
+    $img = @file_get_contents($chartUrl);
+    if ($img !== false) {
+        file_put_contents($tmp, $img);
+    } else {
+        @unlink($tmp);
+        $tmp = false;
+    }
 }
 
 // create PDF receipt (80mm width)
