@@ -224,8 +224,8 @@ class FaceProcessor:
 
     def face_exists(self, face_encoding: np.ndarray, tolerance: float = 0.45) -> Tuple[bool, Optional[str]]:
         """Check if a face encoding matches any known user."""
-        # If there are no known encodings, bail early
-        if not self.flat_encodings:
+        # Prevent NumPy truth-value ambiguity
+        if self.flat_encodings is None or self.flat_encodings.size == 0:
             return False, None
 
         try:
@@ -338,7 +338,7 @@ class FaceProcessor:
 
         # 2) Re-initialize in-memory structures
         self.user_encodings = {}
-        self.flat_encodings = []
+        self.flat_encodings = None
         self.flat_names = []
         self.temp_angle_encodings = {}
 
@@ -354,7 +354,7 @@ class FaceProcessor:
         except Exception as e:
             print(f"[refresh_face_database] error: {e}")
             self.user_encodings = {}
-            self.flat_encodings = []
+            self.flat_encodings = None
             self.flat_names = []
 
 

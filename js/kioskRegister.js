@@ -111,17 +111,57 @@ function closeVisitorConfirm() {
     if (modal) modal.style.display = 'none';
 }
 
-function acceptVisitorAndProceed() {
+async function acceptVisitorAndProceed() {
     closeVisitorConfirm();
 
-    // Hide visitor form and show camera screen
-    const visitorForm = document.getElementById('visitorForm');
-    const cameraScreen = document.getElementById('cameraScreen');
+    const name = document.getElementById('visitorName').value.trim();
+    const email = document.getElementById('visitorEmail').value.trim();
+    const phone = document.getElementById('visitorPhone').value.trim();
+
+    // Validate against existing clients before proceeding
+    console.log('Checking for duplicate name/email...');
     
-    if (visitorForm) visitorForm.style.display = 'none';
-    if (cameraScreen) {
-        cameraScreen.style.display = 'block';
-        initializeCamera();
+    try {
+        const checkResponse = await fetch('../backend/checkClientDuplicate.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email })
+        });
+
+        const checkResult = await checkResponse.json();
+        console.log('Duplicate check result:', checkResult);
+
+        if (checkResult.status === 'duplicate') {
+            // Show error message to user
+            const fieldName = checkResult.field === 'email' ? 'Email' : 'Name';
+            alert(`❌ Registration Error\n\n${checkResult.message}`);
+            
+            // Keep modal closed and return to form
+            return;
+        }
+
+        if (checkResult.status !== 'ok') {
+            console.error('Validation error:', checkResult);
+            alert('Unable to validate registration. Please try again.');
+            return;
+        }
+
+        // No duplicates - proceed to camera
+        console.log('✅ No duplicates found, proceeding to face capture');
+        
+        // Hide visitor form and show camera screen
+        const visitorForm = document.getElementById('visitorForm');
+        const cameraScreen = document.getElementById('cameraScreen');
+        
+        if (visitorForm) visitorForm.style.display = 'none';
+        if (cameraScreen) {
+            cameraScreen.style.display = 'block';
+            initializeCamera();
+        }
+
+    } catch (err) {
+        console.error('Duplicate check failed:', err);
+        alert('Connection error. Please check your internet connection and try again.');
     }
 }
 

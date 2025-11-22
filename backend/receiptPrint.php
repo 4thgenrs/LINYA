@@ -67,17 +67,24 @@ $host = $_SERVER['HTTP_HOST'];
 // Adjust the base path if your app isn't at /LINYA; this uses /LINYA as the application root
 $liveUrl = $scheme . '://' . $host . "/LINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
 
-// Prepare QR image (Google Charts) and save to temp file - only for face-logged users
+// Prepare QR image only for face-logged users
 $tmp = false;
 if ($face_logged) {
     $chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
-    $tmp = tempnam(sys_get_temp_dir(), 'qr_');
+    $tmp = tempnam(sys_get_temp_dir(), 'qr_') . '.png';  // Add .png extension
     $img = @file_get_contents($chartUrl);
     if ($img !== false) {
         file_put_contents($tmp, $img);
     } else {
-        @unlink($tmp);
-        $tmp = false;
+        // Try alternative QR code provider if Google Charts fails
+        $altUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($liveUrl);
+        $img = @file_get_contents($altUrl);
+        if ($img !== false) {
+            file_put_contents($tmp, $img);
+        } else {
+            @unlink($tmp);
+            $tmp = false;
+        }
     }
 }
 
@@ -130,11 +137,11 @@ foreach ($services as $s) {
 }
 $pdf->Ln(6);
 
-// Embed QR (centered) that links to office live queue
-if ($tmp && file_exists($tmp)) {
+// Embed QR code only for face-logged users
+if ($face_logged && $tmp && file_exists($tmp)) {
     $imgWidth = 40; // mm
     $x = ($pdf->GetPageWidth() - $imgWidth) / 2;
-    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth);
+    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth, 'PNG');  // Explicitly specify PNG type
     @unlink($tmp);
     $pdf->Ln($imgWidth + 4);
 }

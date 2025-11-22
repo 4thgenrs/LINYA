@@ -183,7 +183,7 @@ class FaceRecognitionApp:
         self.app.route('/register', methods=['POST', 'OPTIONS'])(self.register_user)
         self.app.route('/check_angle', methods=['POST', 'OPTIONS'])(self.check_angle)
         self.app.route('/model_status', methods=['GET'])(self.model_status)
-        # Admin helpers for external processes (e.g., PHP) to notify or modify user data
+        # Admin endpoints
         self.app.route('/admin/delete_user', methods=['POST', 'OPTIONS'])(self.admin_delete_user)
         self.app.route('/admin/refresh', methods=['POST', 'OPTIONS'])(self.admin_refresh)
         # Admin helper: list user folders and files under db_pictures (for debugging)
@@ -464,26 +464,128 @@ class FaceRecognitionApp:
 
 
     def admin_delete_user(self):
-        """Admin endpoint: remove a user by safe_name from disk and memory.
-
-        Expects JSON: { "safe_name": "user_safe_name" }
         """
+        Admin endpoint: safely delete user face data from GCS storage and memory cache.
+        
+        Accepts JSON:
+          - { "safe_name": "john_doe" } OR
+          - { "folder": "gs://bucket/db_pictures/john_doe/20251122_123456Z" }
+        
+        Security:
+          - Requires X-ADMIN-KEY header if ADMIN_KEY env var is set
+          - Only deletes under db_pictures/ prefix (safety guard)
+          - Returns 500 if GCS_BUCKET not configured (prevents orphaned DB records)
+        
+        Returns:
+          - 200: {"status":"ok", "deleted_count": N, "prefix": "..."}
+          - 400: {"status":"error", "message": "Invalid safe_name"}
+          - 403: {"status":"error", "message": "Unauthorized"}
+          - 500: {"status":"error", "message": "GCS error: ..."}
+        """
+        if request.method == 'OPTIONS':
+            return jsonify({"status": "ok"}), 200
+
         try:
+            # 1. Security: check ADMIN_KEY if configured
+            admin_key = os.environ.get('ADMIN_KEY')
+            if admin_key:
+                provided_key = request.headers.get('X-ADMIN-KEY', '').strip()
+                if provided_key != admin_key:
+                    logging.warning("Unauthorized delete_user attempt (invalid ADMIN_KEY)")
+                    return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+            # 2. Parse request
             data = request.get_json(force=True, silent=True) or {}
-            safe_name = (data.get('safe_name') or '').strip()
-            if not safe_name:
-                return jsonify({'status': 'error', 'message': 'Missing safe_name'}), 400
+            folder = data.get('folder', '').strip()
+            safe_name = data.get('safe_name', '').strip()
 
-            removed = self.face_processor.clear_user_data(safe_name)
-            if removed:
-                # 🔑 Rebuild face DB from disk, so this user is gone from memory too
-                self.face_processor.refresh_face_database()
-
-                return jsonify({'status': 'ok', 'message': f'user {safe_name} removed'})
+            # 3. Compute deletion prefix
+            prefix = None
+            if folder:
+                # If folder starts with gs://, strip bucket and validate prefix
+                if folder.startswith('gs://'):
+                    # Remove gs://<bucket>/ to get the path within bucket
+                    parts = folder.replace('gs://', '', 1).split('/', 1)
+                    if len(parts) == 2:
+                        prefix = parts[1]
+                    else:
+                        return jsonify({"status": "error", "message": "Invalid folder format"}), 400
+                else:
+                    prefix = folder
+            elif safe_name:
+                # Validate safe_name: only alphanumeric, underscore, dot, dash
+                if not re.match(r'^[A-Za-z0-9_.-]+$', safe_name):
+                    return jsonify({"status": "error", "message": "Invalid safe_name format"}), 400
+                prefix = f"db_pictures/{safe_name}/"
             else:
-                return jsonify({'status': 'not_found', 'message': f'user {safe_name} not found'})
+                return jsonify({"status": "error", "message": "Missing safe_name or folder"}), 400
+
+            # 4. Safety check: prefix must start with db_pictures/
+            if not prefix.startswith('db_pictures/'):
+                logging.error(f"Unsafe delete prefix rejected: {prefix}")
+                return jsonify({"status": "error", "message": "Unsafe prefix - must be under db_pictures/"}), 400
+
+            # 5. Require GCS to be configured
+            if not self.use_gcs or not self.bucket:
+                logging.error("GCS_BUCKET not configured - cannot delete user data")
+                return jsonify({
+                    "status": "error",
+                    "message": "GCS_BUCKET environment variable not set. Cannot perform deletion."
+                }), 500
+
+            logging.info(f"[admin_delete_user] Starting deletion with prefix: {prefix}")
+
+            # 6. List and delete all blobs under prefix
+            deleted_count = 0
+            try:
+                blobs = list(self.bucket.list_blobs(prefix=prefix))
+                for blob in blobs:
+                    try:
+                        blob.delete()
+                        deleted_count += 1
+                        logging.debug(f"Deleted blob: {blob.name}")
+                    except Exception as e:
+                        logging.error(f"Failed to delete blob {blob.name}: {e}")
+                        raise  # Fail fast on deletion errors
+
+            except Exception as e:
+                logging.error(f"GCS deletion error for prefix {prefix}: {e}")
+                return jsonify({
+                    "status": "error",
+                    "message": f"GCS error: {str(e)}"
+                }), 500
+
+            # 7. Clear from in-memory cache
+            # Extract safe_name from prefix for cache removal
+            if safe_name:
+                cache_key = safe_name
+            else:
+                # Extract from prefix: db_pictures/<safe_name>/...
+                parts = prefix.split('/')
+                if len(parts) >= 2:
+                    cache_key = parts[1]
+                else:
+                    cache_key = None
+
+            if cache_key and cache_key in self.face_processor.user_encodings:
+                del self.face_processor.user_encodings[cache_key]
+                self.face_processor.build_flat_cache()
+                logging.info(f"Removed {cache_key} from in-memory cache")
+
+            logging.info(f"[admin_delete_user] Successfully deleted {deleted_count} objects with prefix: {prefix}")
+
+            return jsonify({
+                "status": "ok",
+                "deleted_count": deleted_count,
+                "prefix": prefix
+            }), 200
+
         except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+            logging.error(f"Unexpected error in admin_delete_user: {e}", exc_info=True)
+            return jsonify({
+                "status": "error",
+                "message": f"Internal server error: {str(e)}"
+            }), 500
 
 
     def admin_refresh(self):

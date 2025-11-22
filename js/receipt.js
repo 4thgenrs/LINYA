@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show printing status message
         const statusMsg = document.createElement('div');
         statusMsg.id = 'printStatus';
-        statusMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#007bff;color:white;padding:10px 20px;border-radius:5px;z-index:9999;font-size:14px;';
+        statusMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#007bff;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:500;';
         statusMsg.textContent = '🖨️ Preparing receipt for printing...';
         document.body.appendChild(statusMsg);
         
@@ -166,77 +166,85 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
-          console.log('🖨️ PDF blob created, setting up iframe for auto-print');
+          console.log('🖨️ PDF blob created, size:', blob.size, 'bytes');
           
           // Update status
           statusMsg.textContent = '🖨️ Opening print dialog...';
           
-          // Create hidden iframe for printing
+          // Create hidden iframe optimized for thermal printer
           const iframe = document.createElement('iframe');
+          iframe.id = 'printFrame';
           iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;visibility:hidden;';
           iframe.src = url;
           
           // Handle iframe load and trigger print
           iframe.onload = () => {
-            try {
-              console.log('🖨️ Iframe loaded, triggering print dialog');
-              setTimeout(() => {
-                try {
-                  iframe.contentWindow.focus();
-                  iframe.contentWindow.print();
-                  console.log('🖨️ Print dialog triggered successfully');
-                  
-                  // Update status to show completion
-                  statusMsg.textContent = '✅ Print dialog opened! Complete printing and click OK to continue.';
-                  statusMsg.style.background = '#28a745';
-                  
-                  // Wait for print to complete, then cleanup and redirect
-                  setTimeout(() => {
-                    console.log('🖨️ Print process completed, cleaning up and redirecting');
-                    URL.revokeObjectURL(url);
-                    document.body.removeChild(iframe);
-                    if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
-                    
-                    // Redirect with face logout if needed (same as "Back to menu" button)
-                    if (window.FACE_LOGGED) {
-                      fetch('../backend/face_logout.php', { method: 'POST' })
-                        .catch((err) => console.log('Logout error:', err))
-                        .finally(() => {
-                          console.log('🖨️ Face logout completed, redirecting to kioskSelect');
-                          window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
-                        });
-                    } else {
-                      console.log('🖨️ Guest user, redirecting to kioskSelect');
-                      window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+            console.log('🖨️ PDF loaded in iframe, triggering print dialog');
+            
+            setTimeout(() => {
+              try {
+                // Focus and trigger print dialog
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                console.log('🖨️ Print dialog opened successfully');
+                
+                // Update status
+                statusMsg.textContent = '✅ Print dialog ready! Print or cancel to continue...';
+                statusMsg.style.background = '#28a745';
+                
+                // Monitor for print completion or cancellation
+                // Most browsers close the dialog when print completes or is cancelled
+                const checkPrintComplete = setInterval(() => {
+                  try {
+                    // Check if iframe still has focus or print dialog is closed
+                    if (document.hasFocus() && document.activeElement !== iframe) {
+                      clearInterval(checkPrintComplete);
+                      console.log('🖨️ Print dialog closed, cleaning up');
+                      
+                      // Cleanup
+                      URL.revokeObjectURL(url);
+                      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                      if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+                      
+                      // Redirect based on login status
+                      if (window.FACE_LOGGED) {
+                        console.log('🖨️ Face-logged user, performing logout before redirect');
+                        fetch('../backend/face_logout.php', { method: 'POST' })
+                          .catch((err) => console.log('Logout error:', err))
+                          .finally(() => {
+                            window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                          });
+                      } else {
+                        console.log('🖨️ Guest user, redirecting to menu');
+                        window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                      }
                     }
-                  }, 3000); // Give 3 seconds for print dialog interaction
-                  
-                } catch (printError) {
-                  console.error('🖨️ ❌ Print error:', printError);
-                  throw printError;
-                }
-              }, 100); // Small delay to ensure iframe is ready
-            } catch (err) {
-              console.error('🖨️ ❌ Auto-print failed:', err);
-              // Fallback to opening in new tab
-              console.log('🖨️ Falling back to new tab method');
-              URL.revokeObjectURL(url);
-              document.body.removeChild(iframe);
-              window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
-              
-              statusMsg.textContent = '⚠️ Auto-print failed - PDF opened in new tab';
-              statusMsg.style.background = '#ffc107';
-              setTimeout(() => {
-                if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
-              }, 3000);
-            }
+                  } catch (e) {
+                    clearInterval(checkPrintComplete);
+                  }
+                }, 500);
+                
+                // Fallback timeout in case monitoring fails
+                setTimeout(() => {
+                  clearInterval(checkPrintComplete);
+                  URL.revokeObjectURL(url);
+                  if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                  if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+                }, 60000); // 1 minute max
+                
+              } catch (printError) {
+                console.error('🖨️ ❌ Print trigger error:', printError);
+                throw printError;
+              }
+            }, 250); // Delay to ensure PDF is fully loaded
           };
           
           // Handle iframe load error
-          iframe.onerror = () => {
-            console.error('🖨️ ❌ Iframe failed to load PDF');
+          iframe.onerror = (error) => {
+            console.error('🖨️ ❌ Iframe failed to load PDF:', error);
             URL.revokeObjectURL(url);
-            document.body.removeChild(iframe);
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            
             // Fallback to new tab
             window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
             
@@ -244,22 +252,23 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMsg.style.background = '#ffc107';
             setTimeout(() => {
               if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
-            }, 3000);
+            }, 4000);
           };
           
           document.body.appendChild(iframe);
+          console.log('🖨️ Print iframe added to page, waiting for PDF load');
           
         } catch (fetchError) {
           console.error('🖨️ ❌ Fetch error:', fetchError);
-          // Fallback to new tab method
-          console.log('🖨️ Falling back to new tab method due to fetch error');
+          
+          // Fallback to opening PDF in new tab
           window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
           
-          statusMsg.textContent = '⚠️ Print request failed - PDF opened in new tab';
+          statusMsg.textContent = '⚠️ Could not fetch PDF - opened in new tab';
           statusMsg.style.background = '#dc3545';
           setTimeout(() => {
             if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
-          }, 3000);
+          }, 4000);
         }
       });
     })
