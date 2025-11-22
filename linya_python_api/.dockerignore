@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.pytest_cache
+.git
+.gitignore
+venv
+.venv
+db_pictures
+.env
+*.npy
+*.log
+face_api_log.txt
+meta.json

@@ -145,8 +145,122 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      printBtn.addEventListener('click', () => {
-        window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+      printBtn.addEventListener('click', async () => {
+        console.log('🖨️ Print Receipt clicked - starting auto-print process');
+        
+        // Show printing status message
+        const statusMsg = document.createElement('div');
+        statusMsg.id = 'printStatus';
+        statusMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#007bff;color:white;padding:10px 20px;border-radius:5px;z-index:9999;font-size:14px;';
+        statusMsg.textContent = '🖨️ Preparing receipt for printing...';
+        document.body.appendChild(statusMsg);
+        
+        try {
+          // Fetch PDF as blob
+          console.log('🖨️ Fetching PDF blob from receiptPrint.php');
+          const response = await fetch(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          console.log('🖨️ PDF blob created, setting up iframe for auto-print');
+          
+          // Update status
+          statusMsg.textContent = '🖨️ Opening print dialog...';
+          
+          // Create hidden iframe for printing
+          const iframe = document.createElement('iframe');
+          iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;visibility:hidden;';
+          iframe.src = url;
+          
+          // Handle iframe load and trigger print
+          iframe.onload = () => {
+            try {
+              console.log('🖨️ Iframe loaded, triggering print dialog');
+              setTimeout(() => {
+                try {
+                  iframe.contentWindow.focus();
+                  iframe.contentWindow.print();
+                  console.log('🖨️ Print dialog triggered successfully');
+                  
+                  // Update status to show completion
+                  statusMsg.textContent = '✅ Print dialog opened! Complete printing and click OK to continue.';
+                  statusMsg.style.background = '#28a745';
+                  
+                  // Wait for print to complete, then cleanup and redirect
+                  setTimeout(() => {
+                    console.log('🖨️ Print process completed, cleaning up and redirecting');
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(iframe);
+                    if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+                    
+                    // Redirect with face logout if needed (same as "Back to menu" button)
+                    if (window.FACE_LOGGED) {
+                      fetch('../backend/face_logout.php', { method: 'POST' })
+                        .catch((err) => console.log('Logout error:', err))
+                        .finally(() => {
+                          console.log('🖨️ Face logout completed, redirecting to kioskSelect');
+                          window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                        });
+                    } else {
+                      console.log('🖨️ Guest user, redirecting to kioskSelect');
+                      window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                    }
+                  }, 3000); // Give 3 seconds for print dialog interaction
+                  
+                } catch (printError) {
+                  console.error('🖨️ ❌ Print error:', printError);
+                  throw printError;
+                }
+              }, 100); // Small delay to ensure iframe is ready
+            } catch (err) {
+              console.error('🖨️ ❌ Auto-print failed:', err);
+              // Fallback to opening in new tab
+              console.log('🖨️ Falling back to new tab method');
+              URL.revokeObjectURL(url);
+              document.body.removeChild(iframe);
+              window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+              
+              statusMsg.textContent = '⚠️ Auto-print failed - PDF opened in new tab';
+              statusMsg.style.background = '#ffc107';
+              setTimeout(() => {
+                if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+              }, 3000);
+            }
+          };
+          
+          // Handle iframe load error
+          iframe.onerror = () => {
+            console.error('🖨️ ❌ Iframe failed to load PDF');
+            URL.revokeObjectURL(url);
+            document.body.removeChild(iframe);
+            // Fallback to new tab
+            window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+            
+            statusMsg.textContent = '⚠️ Auto-print failed - PDF opened in new tab';
+            statusMsg.style.background = '#ffc107';
+            setTimeout(() => {
+              if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+            }, 3000);
+          };
+          
+          document.body.appendChild(iframe);
+          
+        } catch (fetchError) {
+          console.error('🖨️ ❌ Fetch error:', fetchError);
+          // Fallback to new tab method
+          console.log('🖨️ Falling back to new tab method due to fetch error');
+          window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+          
+          statusMsg.textContent = '⚠️ Print request failed - PDF opened in new tab';
+          statusMsg.style.background = '#dc3545';
+          setTimeout(() => {
+            if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+          }, 3000);
+        }
       });
     })
     .catch(err => {

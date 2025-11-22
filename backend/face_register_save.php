@@ -59,8 +59,8 @@ if ($encoding_b64) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid base64 encoding']);
         exit;
     }
-    // Store reference path (even though file is in Cloud Run, we reference it by safe_name)
-    $face_path_db = $folder ? rtrim($folder, "/\\") . DIRECTORY_SEPARATOR . 'encoding.npy' : null;
+    // Store reference path (works for both local paths and GCS URLs)
+    $face_path_db = $folder ? rtrim($folder, "/") . '/encoding.npy' : null;
 }
 
 // ---- CHECK IF CLIENT ALREADY EXISTS ----
