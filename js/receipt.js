@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const portPart = (window.QR_PORT_OVERRIDE && window.QR_PORT_OVERRIDE.length) ? window.QR_PORT_OVERRIDE : (window.location.port ? (':' + window.location.port) : '');
       const origin = window.location.protocol + '//' + hostOverride + portPart;
 
-      const liveUrl = `${origin}${base}/includes/queueDisplay.php?office_id=${encodeURIComponent(q.office_id)}`;
+      // Link directly to the Live Office Queue page for this office
+      const liveUrl = `${origin}${base}/includes/officeQueue.php?office=${encodeURIComponent(q.office_id)}`;
 
       // Debug log and also show the URL below the QR (helps test from same device)
       console.log('Live queue URL for QR:', liveUrl);
@@ -84,13 +85,28 @@ document.addEventListener('DOMContentLoaded', () => {
       linkEl.target = '_blank';
       linkEl.textContent = liveUrl;
 
-      // build QR image URL (Google Charts)
-      const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(liveUrl)}&chld=L|1`;
-      qrImg.src = qrUrl;
+      // build QR image URLs (try Google Charts first, then qrserver backup)
+      const googleQr = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(liveUrl)}&chld=L|1`;
+      const qrServer = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(liveUrl)}`;
       qrImg.alt = `Open live queue for ${q.office_description}`;
+      qrImg.style.display = '';
+      qrImg.width = 300;
+      qrImg.height = 300;
 
-      // handle image load error
+      // try Google Charts first
+      qrImg.src = googleQr;
+
+      // handle image load error: fallback to qrserver then show message
       qrImg.onerror = () => {
+        if (qrImg.src === googleQr) {
+          // try backup QR provider
+          console.warn('Primary QR failed, trying backup provider');
+          qrImg.onerror = null; // avoid loop
+          qrImg.src = qrServer;
+          return;
+        }
+
+        // both providers failed — hide image and show message
         qrImg.style.display = 'none';
         let msg = document.getElementById('qrErrorMsg');
         if (!msg) {
@@ -101,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
           msg.textContent = 'QR image failed to load. Open the link above to view the live queue.';
           qrImg.parentNode.appendChild(msg);
         }
-        console.warn('QR image failed to load. QR URL:', qrUrl);
+        console.warn('QR image failed to load for both providers. Last src:', qrImg.src);
       };
 
       // host reachability warning
