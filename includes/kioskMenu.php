@@ -1,12 +1,21 @@
-<?php include '../linya_db/config.php'; ?>
+<?php include '../linya_db/config.php'; session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Kiosk Menu</title>
     <link rel="stylesheet" href="../css/kioskMenu.css">
+    <link rel="stylesheet" href="../css/backButton.css">
 </head>
 <body>
+    <!-- Back Button -->
+    <a href="kioskSelect.php" class="back-btn" title="Go back to selection">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+        </svg>
+        Back
+    </a>
+
     <div class="kiosk-container">
 
         <!-- VISITOR FORM (shown first) -->
@@ -97,6 +106,13 @@
         </div>
     </div>
 
+    <?php
+    // If a client session exists (face-login), set skip flag and client data
+    if (isset($_SESSION['client']) && is_array($_SESSION['client'])) {
+        $client_js = json_encode($_SESSION['client']);
+        echo "<script>window.SKIP_VISITOR_FORM = true; window.__CLIENT_SESSION = $client_js;</script>";
+    }
+    ?>
     <script src="../js/kioskMenu.js"></script>
 </body>
 </html>

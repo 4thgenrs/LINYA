@@ -6,6 +6,7 @@
   const mapping = {
     landing: '../includes/landing.php',
     accounts: '../includes/accounts.php',
+    adminClients: '../includes/adminClients.php',
     assignStaff: '../includes/assignStaff.php',
     finishedQueue: '../includes/finishedQueue.php',
     office: '../includes/office.php',

@@ -342,6 +342,54 @@ function goBack(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Skip visitor form if user logged in via face recognition
+    if (window.SKIP_VISITOR_FORM === true) {
+        try {
+            // Populate visitor info from client session
+            if (window.__CLIENT_SESSION) {
+                window.visitorInfo = { 
+                    name: window.__CLIENT_SESSION.name || '', 
+                    phone: window.__CLIENT_SESSION.phone || '', 
+                    email: window.__CLIENT_SESSION.email || '' 
+                };
+                
+                // Populate form fields (for any edge cases where they might be accessed)
+                const nameEl = document.getElementById('visitorName');
+                const phoneEl = document.getElementById('visitorPhone');
+                const emailEl = document.getElementById('visitorEmail');
+                if (nameEl) nameEl.value = window.visitorInfo.name;
+                if (phoneEl) phoneEl.value = window.visitorInfo.phone;
+                if (emailEl) emailEl.value = window.visitorInfo.email;
+            }
+            
+            // Hide visitor form, show office section immediately
+            const visitor = document.getElementById('visitorForm');
+            const officeSection = document.getElementById('officeSection');
+            if (visitor) visitor.style.display = 'none';
+            if (officeSection) { 
+                officeSection.style.display = 'block'; 
+                setTimeout(() => officeSection.classList.add('active'), 80); 
+            }
+        } catch (e) { 
+            console.error('SKIP_VISITOR_FORM error:', e); 
+        }
+        
+        // Continue with common initialization (buttons, service section)
+        const toggleBtn = document.getElementById('multiSelectToggle');
+        if (toggleBtn) toggleBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleMultiSelect(); });
+
+        const confirmBtn = document.getElementById('confirmBtn');
+        if (confirmBtn) confirmBtn.addEventListener('click', (e)=>{ e.preventDefault(); confirmSelection(); });
+
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) backBtn.addEventListener('click', (e)=>{ e.preventDefault(); goBack(); });
+
+        const ss = document.getElementById('serviceSection');
+        if (ss) ss.style.display = 'none';
+        
+        return; // Skip visitor form initialization
+    }
+
     const toggleBtn = document.getElementById('multiSelectToggle');
     if (toggleBtn) toggleBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleMultiSelect(); });
 

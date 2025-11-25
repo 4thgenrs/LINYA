@@ -1,8 +1,8 @@
 <?php
 $server="localhost";
-$user="root";
-$pass="";
-$dbname="linya_db";
+$user="u776997507_linya_user";
+$pass="Linyathesis2025";
+$dbname="u776997507_linya_db";
 $conn = new mysqli($server,$user,$pass,$dbname);
 
 if($conn->connect_error){

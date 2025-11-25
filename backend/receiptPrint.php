@@ -29,6 +29,10 @@ if (!$fpdf_loaded) {
 }
 
 include '../linya_db/config.php';
+session_start();
+
+// Determine whether current viewer is a face-logged session
+$face_logged = isset($_SESSION['client']) && is_array($_SESSION['client']);
 
 $queueId = isset($_GET['queue_id']) ? intval($_GET['queue_id']) : 0;
 if (!$queueId) { die('Missing queue_id'); }
@@ -61,43 +65,27 @@ $qs->close();
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
 // Adjust the base path if your app isn't at /LINYA; this uses /LINYA as the application root
-// Point the QR to the Live Office Queue page for the office
-$liveUrl = $scheme . '://' . $host . "/LINYA/includes/officeQueue.php?office=" . urlencode($queue['office_id']);
+$liveUrl = $scheme . '://' . $host . "/LINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
 
-// Prepare QR image (Google Charts) and save to temp file
-// Try primary QR provider (Google Charts), then fallback to qrserver if needed
-$chartUrlPrimary = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
-$chartUrlFallback = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($liveUrl);
-// fetch image bytes and save with correct extension so FPDF recognizes it
-$img = @file_get_contents($chartUrlPrimary);
-if ($img === false) {
-    error_log("Primary QR provider failed, trying fallback");
-    $img = @file_get_contents($chartUrlFallback);
-}
-
-$tmp = false; // path to temp file with extension, or false on failure
-if ($img !== false) {
-    // detect image type from bytes
-    $info = @getimagesizefromstring($img);
-    $ext = 'png';
-    if ($info && isset($info['mime'])) {
-        switch ($info['mime']) {
-            case 'image/png': $ext = 'png'; break;
-            case 'image/jpeg': $ext = 'jpg'; break;
-            case 'image/gif': $ext = 'gif'; break;
-            case 'image/webp': $ext = 'webp'; break;
-            default: $ext = 'png'; break;
+// Prepare QR image only for face-logged users
+$tmp = false;
+if ($face_logged) {
+    $chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
+    $tmp = tempnam(sys_get_temp_dir(), 'qr_') . '.png';  // Add .png extension
+    $img = @file_get_contents($chartUrl);
+    if ($img !== false) {
+        file_put_contents($tmp, $img);
+    } else {
+        // Try alternative QR code provider if Google Charts fails
+        $altUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($liveUrl);
+        $img = @file_get_contents($altUrl);
+        if ($img !== false) {
+            file_put_contents($tmp, $img);
+        } else {
+            @unlink($tmp);
+            $tmp = false;
         }
     }
-    $tmpPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'qr_' . uniqid() . '.' . $ext;
-    if (@file_put_contents($tmpPath, $img) !== false) {
-        $tmp = $tmpPath;
-    } else {
-        // fallback: do not use tmp
-        $tmp = false;
-    }
-} else {
-    $tmp = false;
 }
 
 // create PDF receipt (80mm width)
@@ -149,11 +137,11 @@ foreach ($services as $s) {
 }
 $pdf->Ln(6);
 
-// Embed QR (centered) that links to office live queue
-if ($tmp && file_exists($tmp)) {
+// Embed QR code only for face-logged users
+if ($face_logged && $tmp && file_exists($tmp)) {
     $imgWidth = 40; // mm
     $x = ($pdf->GetPageWidth() - $imgWidth) / 2;
-    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth);
+    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth, 'PNG');  // Explicitly specify PNG type
     @unlink($tmp);
     $pdf->Ln($imgWidth + 4);
 }
