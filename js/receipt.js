@@ -145,8 +145,131 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      printBtn.addEventListener('click', () => {
-        window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+      printBtn.addEventListener('click', async () => {
+        console.log('🖨️ Print Receipt clicked - starting auto-print process');
+        
+        // Show printing status message
+        const statusMsg = document.createElement('div');
+        statusMsg.id = 'printStatus';
+        statusMsg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#007bff;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:500;';
+        statusMsg.textContent = '🖨️ Preparing receipt for printing...';
+        document.body.appendChild(statusMsg);
+        
+        try {
+          // Fetch PDF as blob
+          console.log('🖨️ Fetching PDF blob from receiptPrint.php');
+          const response = await fetch(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          console.log('🖨️ PDF blob created, size:', blob.size, 'bytes');
+          
+          // Update status
+          statusMsg.textContent = '🖨️ Opening print dialog...';
+          
+          // Create hidden iframe optimized for thermal printer
+          const iframe = document.createElement('iframe');
+          iframe.id = 'printFrame';
+          iframe.style.cssText = 'position:absolute;width:0;height:0;border:none;visibility:hidden;';
+          iframe.src = url;
+          
+          // Handle iframe load and trigger print
+          iframe.onload = () => {
+            console.log('🖨️ PDF loaded in iframe, triggering print dialog');
+            
+            setTimeout(() => {
+              try {
+                // Focus and trigger print dialog
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                console.log('🖨️ Print dialog opened successfully');
+                
+                // Update status
+                statusMsg.textContent = '✅ Print dialog ready! Print or cancel to continue...';
+                statusMsg.style.background = '#28a745';
+                
+                // Monitor for print completion or cancellation
+                // Most browsers close the dialog when print completes or is cancelled
+                const checkPrintComplete = setInterval(() => {
+                  try {
+                    // Check if iframe still has focus or print dialog is closed
+                    if (document.hasFocus() && document.activeElement !== iframe) {
+                      clearInterval(checkPrintComplete);
+                      console.log('🖨️ Print dialog closed, cleaning up');
+                      
+                      // Cleanup
+                      URL.revokeObjectURL(url);
+                      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                      if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+                      
+                      // Redirect based on login status
+                      if (window.FACE_LOGGED) {
+                        console.log('🖨️ Face-logged user, performing logout before redirect');
+                        fetch('../backend/face_logout.php', { method: 'POST' })
+                          .catch((err) => console.log('Logout error:', err))
+                          .finally(() => {
+                            window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                          });
+                      } else {
+                        console.log('🖨️ Guest user, redirecting to menu');
+                        window.location.href = 'https://linya.ucc-bsit.org/LINYA/includes/kioskSelect.php';
+                      }
+                    }
+                  } catch (e) {
+                    clearInterval(checkPrintComplete);
+                  }
+                }, 500);
+                
+                // Fallback timeout in case monitoring fails
+                setTimeout(() => {
+                  clearInterval(checkPrintComplete);
+                  URL.revokeObjectURL(url);
+                  if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                  if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+                }, 60000); // 1 minute max
+                
+              } catch (printError) {
+                console.error('🖨️ ❌ Print trigger error:', printError);
+                throw printError;
+              }
+            }, 250); // Delay to ensure PDF is fully loaded
+          };
+          
+          // Handle iframe load error
+          iframe.onerror = (error) => {
+            console.error('🖨️ ❌ Iframe failed to load PDF:', error);
+            URL.revokeObjectURL(url);
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            
+            // Fallback to new tab
+            window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+            
+            statusMsg.textContent = '⚠️ Auto-print failed - PDF opened in new tab';
+            statusMsg.style.background = '#ffc107';
+            setTimeout(() => {
+              if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+            }, 4000);
+          };
+          
+          document.body.appendChild(iframe);
+          console.log('🖨️ Print iframe added to page, waiting for PDF load');
+          
+        } catch (fetchError) {
+          console.error('🖨️ ❌ Fetch error:', fetchError);
+          
+          // Fallback to opening PDF in new tab
+          window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+          
+          statusMsg.textContent = '⚠️ Could not fetch PDF - opened in new tab';
+          statusMsg.style.background = '#dc3545';
+          setTimeout(() => {
+            if (statusMsg.parentNode) statusMsg.parentNode.removeChild(statusMsg);
+          }, 4000);
+        }
       });
     })
     .catch(err => {
