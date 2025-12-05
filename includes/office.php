@@ -1,109 +1,139 @@
 <?php
-include_once('../backend/officeData.php'); // provides getOfficeData(), add/update helpers (no POST runs now)
+include_once('../backend/officeData.php'); 
 $offices = getOfficeData($conn);
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Offices CRUD</title>
+    <meta charset="UTF-8">
+    <title>Office Management</title>
+
+    <!-- BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.css">
+
+    <!-- DATATABLES CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../css/office.css">
 </head>
-<body>
-    <?php
-    // show simple alerts for known errors/success states
-    $msg = '';
-    if (isset($_GET['error'])) {
-        switch ($_GET['error']) {
-            case 'duplicate_office':
-                $msg = 'An office with that code or description already exists.';
-                break;
-            case 'active_queues':
-                $msg = 'Cannot delete office: there are active queues for this office.';
-                break;
-            default:
-                $msg = 'An error occurred.';
-        }
-    }
-    if (!empty($msg)) {
-        echo '<div class="alert alert-error" style="background:#ffecec;border:1px solid #f5c6cb;padding:10px;margin:12px;border-radius:6px;color:#611;">' . htmlspecialchars($msg) . '</div>';
-    }
-    if (isset($_GET['success']) && $_GET['success'] === 'added') {
-        echo '<div class="alert alert-success" style="background:#ecffef;border:1px solid #b6e6c1;padding:10px;margin:12px;border-radius:6px;color:#064">Office saved successfully.</div>';
-    }
-    ?>
-    <h2>Office Management</h2>
+<body class="p-4">
 
-    <!-- Add/Update Form -->
-    <form id="officeForm" method="POST" action="../backend/officeData.php">
-        <input type="hidden" name="office_id" id="office_id" value="">
-        
-        <input type="text" name="office_code" id="office_code" placeholder="Enter office code" required>
-        <input type="text" name="office_description" id="office_description" placeholder="Enter office description" required>
-        
-        <input type="submit" name="add_office" id="submitBtn" value="Add Office">
-    </form>
+<div class="container-fluid">
 
-    <!-- Offices Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Office Code</th>
-                <th>Office Description</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (!empty($offices)) : ?>
-                <?php $counter = 1; ?>
-                <?php foreach ($offices as $office) : ?>
-                    <tr 
-                        data-id="<?php echo $office['office_id']; ?>" 
-                        data-code="<?php echo htmlspecialchars($office['office_code']); ?>"
-                        data-description="<?php echo htmlspecialchars($office['office_description']); ?>"
-                        data-enabled="<?php echo intval($office['enabled']); ?>"
-                    >
-                        <td><?php echo $counter++; ?></td>
-                        <td><?php echo htmlspecialchars($office['office_code']); ?></td>
-                        <td><?php echo htmlspecialchars($office['office_description']); ?></td>
-                        <td><?php echo intval($office['enabled']) ? "Active" : "Inactive"; ?></td>
-                        <td>
-                            <button type="button" class="editBtn">Edit</button>
+    <h2 class="mb-4 fw-bold"><i class="fa-solid fa-building me-2"></i>Office Management</h2>
 
-                            <form method="POST" action="../backend/officeData.php" style="display:inline;">
-                                <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
-                                <input type="submit" name="toggle_office" value="<?php echo intval($office['enabled']) ? 'Disable' : 'Enable'; ?>" onclick="return confirm('Are you sure?');">
-                            </form>
+    <!-- ---------------- FORM CARD ---------------- -->
+    <div class="mb-4">
+        <form id="officeForm" method="POST" action="../backend/officeData.php">
+            <input type="hidden" name="office_id" id="office_id">
+            <input type="hidden" name="form_action" id="form_action" value="">
 
-                            <form method="POST" action="../backend/officeData.php" style="display:inline;">
-                                <input type="hidden" name="office_id" value="<?php echo $office['office_id']; ?>">
-                                <input type="submit" name="delete_office" value="Delete" onclick="return confirm('Are you sure?');">
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else : ?>
-                <tr><td colspan="5">No data found</td></tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+            <div class="row g-3">
 
-    <script>
-    // JS for Edit button functionality
-    document.querySelectorAll('.editBtn').forEach(button => {
-        button.addEventListener('click', function() {
-            const row = this.closest('tr');
-            document.getElementById('office_id').value = row.dataset.id;
-            document.getElementById('office_code').value = row.dataset.code;
-            document.getElementById('office_description').value = row.dataset.description;
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.value = 'Update Office';
-            submitBtn.name = 'update_office';
-        });
-    });
-    </script>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Office Code</label>
+                    <input type="text" class="form-control" name="office_code" id="office_code"
+                           placeholder="Enter office code" required>
+                </div>
 
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Office Description</label>
+                    <input type="text" class="form-control" name="office_description" id="office_description"
+                           placeholder="Enter office description" required>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" id="submitBtn" 
+                           class="btn btn-success fw-semibold flex-grow-1">
+                        Add Office
+                    </button>
+                    <button type="button" id="cancelBtn" class="btn btn-secondary fw-semibold" style="display:none;">
+                        Cancel
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <!-- ---------------- TABLE CARD ---------------- -->
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-success text-white fw-semibold">
+            Office List
+        </div>
+
+        <div class="card-body p-3">
+            <div class="table-responsive">
+
+                <table id="officeTable" class="table table-bordered table-hover align-middle nowrap w-100">
+                    <thead class="table-success">
+                        <tr>
+                            <th>#</th>
+                            <th>Office Code</th>
+                            <th>Office Description</th>
+                            <th>Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <?php if (!empty($offices)) : $counter = 1; ?>
+                            <?php foreach ($offices as $office) : ?>
+                                <tr 
+                                    data-id="<?php echo $office['office_id']; ?>" 
+                                    data-code="<?php echo htmlspecialchars($office['office_code']); ?>"
+                                    data-description="<?php echo htmlspecialchars($office['office_description']); ?>"
+                                    data-enabled="<?php echo intval($office['enabled']); ?>"
+                                >
+                                    <td><?php echo $counter++; ?></td>
+                                    <td><?php echo htmlspecialchars($office['office_code']); ?></td>
+                                    <td><?php echo htmlspecialchars($office['office_description']); ?></td>
+                                    <td><?php echo intval($office['enabled']) ? "Active" : "Inactive"; ?></td>
+
+                                    <td class="text-center">
+
+                                        <!-- EDIT -->
+                                        <button type="button" class="editBtn btn btn-sm btn-warning me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+
+                                        <!-- ENABLE/DISABLE -->
+                                        <button type="button"
+                                                class="btn btn-sm <?php echo intval($office['enabled']) ? 'btn-secondary' : 'btn-success'; ?> toggleBtn"
+                                                data-office-id="<?php echo $office['office_id']; ?>"
+                                                data-office-name="<?php echo htmlspecialchars($office['office_description']); ?>"
+                                                data-current-status="<?php echo intval($office['enabled']); ?>">
+                                            <i class="fa-solid fa-<?php echo intval($office['enabled']) ? 'toggle-on' : 'toggle-off'; ?>"></i>
+                                        </button>
+
+                                        <!-- DELETE -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger deleteBtn"
+                                                data-office-id="<?php echo $office['office_id']; ?>"
+                                                data-office-name="<?php echo htmlspecialchars($office['office_description']); ?>">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr><td colspan="5" class="text-center py-3">No data found</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JS LIBRARIES -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../js/office.js"></script>
 </body>
 </html>

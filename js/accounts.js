@@ -114,4 +114,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // initial enable
     setSubmitState(true);
+
+    // SweetAlert confirmation for add/update form submission
+    const accountsForm = document.getElementById('accountsForm');
+    if (accountsForm) {
+        accountsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const isUpdate = updateIdInput.value ? true : false;
+            const action = isUpdate ? 'Update' : 'Add';
+            const accountName = nameInput.value.trim();
+            const accountUsername = usernameInput.value.trim();
+            
+            Swal.fire({
+                title: `${action} Account?`,
+                html: `Are you sure you want to ${action.toLowerCase()} this account?<br><strong>${accountName}</strong> (${accountUsername})`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: isUpdate ? '#ffc107' : '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `Yes, ${action.toLowerCase()} it!`,
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    accountsForm.submit();
+                }
+            });
+        });
+    }
+
+    // SweetAlert confirmation for delete action
+    $(document).on('click', 'button[name="delete_account"]', function(e) {
+        e.preventDefault();
+        
+        const deleteBtn = $(this);
+        const form = deleteBtn.closest('form');
+        const row = deleteBtn.closest('tr');
+        const accountName = row.find('td:eq(3)').text().trim();
+        const accountUsername = row.find('td:eq(1)').text().trim();
+        
+        Swal.fire({
+            title: 'Delete Account?',
+            html: `Are you sure you want to delete the account:<br><strong>${accountName}</strong> (${accountUsername})?<br><br>This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form[0].submit();
+            }
+        });
+    });
 });

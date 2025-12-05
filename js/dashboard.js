@@ -9,7 +9,8 @@
     window: document.getElementById('view-window'),
     office: document.getElementById('view-office')
   };
-  const activityContainer = document.getElementById('activityContainer');
+  const activityTable = document.getElementById('activityTable');
+  let dataTable = null;
   const officeQueueContainer = document.getElementById('officeQueueContainer');
   const officePending = document.getElementById('officePending');
   const windowFrame = document.getElementById('windowFrame');
@@ -65,19 +66,46 @@
   }
 
   function renderActivity(rows) {
+    if (!activityTable) return;
+    
     if (!rows || !rows.length) {
-      activityContainer.innerHTML = '<div class="activity-row small-muted">No processed transactions</div>';
+      if (dataTable) {
+        dataTable.clear().draw();
+      }
       return;
     }
-    activityContainer.innerHTML = '';
-    rows.forEach(r => {
-      const el = document.createElement('div');
-      el.className = 'activity-row';
-      el.innerHTML = `<div><strong class="queue-code">${escapeHtml(r.services || '—')}</strong></div>
-        <div class="activity-meta">${escapeHtml(r.customer_name || '—')} • ${escapeHtml(r.customer_phone || '')} • ${escapeHtml(r.customer_email || '')}</div>
-        <div class="activity-meta">Finished at: ${escapeHtml(r.finished_at || '')} • Window: ${escapeHtml(String(r.window_id || r.window_no || '—'))}</div>`;
-      activityContainer.appendChild(el);
-    });
+
+    const tableData = rows.map(r => [
+      `<span class="queue-code-badge">${escapeHtml(r.queue_code || '—')}</span>`,
+      escapeHtml(r.services || '—'),
+      escapeHtml(r.customer_name || '—'),
+      `<span class="table-meta">${escapeHtml(r.customer_phone || '')}${r.customer_phone && r.customer_email ? '<br>' : ''}${escapeHtml(r.customer_email || '')}</span>`,
+      `Window ${escapeHtml(String(r.window_id || r.window_no || '—'))}`,
+      `<span class="table-meta">${escapeHtml(r.finished_at || '—')}</span>`
+    ]);
+
+    if (dataTable) {
+      dataTable.clear().rows.add(tableData).draw();
+    } else {
+      // Initialize DataTable
+      dataTable = $(activityTable).DataTable({
+        data: tableData,
+        responsive: true,
+        pageLength: 10,
+        order: [[5, 'desc']], // Sort by finished_at descending
+        language: {
+          search: "Search:",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ entries",
+          paginate: {
+            first: "First",
+            last: "Last",
+            next: "Next",
+            previous: "Previous"
+          }
+        }
+      });
+    }
   }
 
   function renderOffice(data) {

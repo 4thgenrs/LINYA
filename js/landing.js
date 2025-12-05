@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cards.innerHTML = '';
       defs.forEach(d => {
-        const c = document.createElement('div');64
+        const c = document.createElement('div');
         c.className = 'card';
         c.innerHTML = `<div class="num">${(t[d.key] !== undefined) ? t[d.key] : '—'}</div><div class="label">${d.label}</div>`;
         cards.appendChild(c);

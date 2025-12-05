@@ -4,12 +4,33 @@
   const officeSelect = document.getElementById('officeFilter');
   const tbody = document.querySelector('#finishedTable tbody');
   const refreshBtn = document.getElementById('refreshBtn');
+  let dataTable = null;
+  let currentData = []; // Store current data for CSV export
 
   function formatCell(v){
     return (v === null || typeof v === 'undefined' || v === '') ? '—' : String(v);
   }
 
+  function formatDateTime(v){
+    if (!v || v === '—') return '—';
+    // Split datetime into date and time
+    const parts = String(v).split(' ');
+    if (parts.length === 2) {
+      return `<div>${parts[0]}</div><div class="small">${parts[1]}</div>`;
+    }
+    return v;
+  }
+
   function renderRows(rows){
+    // Store data for CSV export
+    currentData = rows || [];
+    
+    // Destroy existing DataTable if it exists
+    if (dataTable) {
+      dataTable.destroy();
+      dataTable = null;
+    }
+
     tbody.innerHTML = '';
     if (!rows || !rows.length) {
       const tr = document.createElement('tr');
@@ -23,8 +44,8 @@
         <td>${formatCell(r.office_description)}</td>
         <td>${formatCell(r.window_no && r.window_no > 0 ? r.window_no : (r.window_id && r.window_id > 0 ? r.window_id : '—'))}</td>
         <td>${formatCell(r.processed_by)}</td>
-        <td>${formatCell(r.created_at)}</td>
-        <td>${formatCell(r.finished_at)}</td>
+        <td>${formatDateTime(r.created_at)}</td>
+        <td>${formatDateTime(r.finished_at)}</td>
         <td style="max-width:320px; white-space:normal;">${formatCell(r.services)}</td>
         <td>${formatCell(r.customer_name)}</td>
         <td>${formatCell(r.customer_phone)}</td>
@@ -32,6 +53,21 @@
       `;
       tbody.appendChild(tr);
     });
+
+    // Initialize DataTable after rows are added
+    dataTable = $('#finishedTable').DataTable({
+      responsive: true,
+      ordering: true,
+      pageLength: 10,
+      order: [[4, 'desc']], // Sort by Finished At column (descending)
+      language: {
+        lengthMenu: 'Show _MENU_ entries',
+        info: 'Showing _START_ to _END_ of _TOTAL_ entries',
+        search: "Search:",
+      }
+    });
+
+    $('.dataTables_filter input').attr('placeholder', 'Search finished queues...');
   }
 
   function populateOffices(list){
@@ -64,17 +100,63 @@
   refreshBtn.addEventListener('click', load);
 
   document.addEventListener('DOMContentLoaded', load);
+
+  // CSV Export functionality
+  const exportCSVBtn = document.getElementById('exportCSVBtn');
+  exportCSVBtn && exportCSVBtn.addEventListener('click', function() {
+    if (!currentData || !currentData.length) {
+      alert('No data to export');
+      return;
+    }
+
+    // Create CSV content
+    const headers = ['Office', 'Window', 'Processed By', 'Created At', 'Finished At', 'Services', 'Name', 'Phone', 'Email'];
+    let csvContent = headers.join(',') + '\n';
+
+    currentData.forEach(r => {
+      const row = [
+        `"${(r.office_description || '').replace(/"/g, '""')}"`,
+        r.window_no || r.window_id || '',
+        `"${(r.processed_by || '').replace(/"/g, '""')}"`,
+        `"${(r.created_at || '').replace(/"/g, '""')}"`,
+        `"${(r.finished_at || '').replace(/"/g, '""')}"`,
+        `"${(r.services || '').replace(/"/g, '""')}"`,
+        `"${(r.customer_name || '').replace(/"/g, '""')}"`,
+        `"${(r.customer_phone || '').replace(/"/g, '""')}"`,
+        `"${(r.customer_email || '').replace(/"/g, '""')}"`
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const downloadUrl = URL.createObjectURL(blob);
+    link.setAttribute('href', downloadUrl);
+    link.setAttribute('download', `finished_queues_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+  });
 })();
 
 // Modal & Report generation helpers
 (function(){
   const openBtn = document.getElementById('openReportBtn');
-  const modal = document.getElementById('reportModal');
-  const closeBtn = document.getElementById('closeReportBtn');
+  const modalElement = document.getElementById('reportModal');
   const officeSelect = document.getElementById('officeFilter');
   const modalOffice = document.getElementById('r_office');
   const modalStaff = document.getElementById('r_staff');
   const reportForm = document.getElementById('reportForm');
+
+  let modal = null;
+
+  // Initialize Bootstrap modal
+  if (modalElement) {
+    modal = new bootstrap.Modal(modalElement);
+  }
 
   function showModal(){
     // clone office options into modal office select
@@ -87,11 +169,7 @@
     });
     // load staff list for current office
     loadStaffList(modalOffice.value);
-    modal.style.display = 'flex';
-  }
-
-  function hideModal(){
-    modal.style.display = 'none';
+    if (modal) modal.show();
   }
 
   async function loadStaffList(officeId){
@@ -115,13 +193,7 @@
   }
 
   openBtn && openBtn.addEventListener('click', showModal);
-  closeBtn && closeBtn.addEventListener('click', hideModal);
   modalOffice && modalOffice.addEventListener('change', e => loadStaffList(e.target.value));
-
-  // Close modal on background click
-  modal && modal.addEventListener('click', (ev) => {
-    if (ev.target === modal) hideModal();
-  });
 
   // Optional: validate date range before submit
   reportForm && reportForm.addEventListener('submit', function(e){

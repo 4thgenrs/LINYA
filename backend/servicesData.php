@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = intval($_POST['update_id']);
         if ($id > 0 && $desc !== '' && $officeId > 0) {
             updateService($conn, $id, $desc, $officeId);
-            header("Location: services.php");
+            header("Location: ../includes/services.php");
             exit;
         }
     }
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ADD service
     if ($desc !== '' && $officeId > 0 && empty($_POST['update_id'])) {
         addService($conn, $desc, $officeId);
-        header("Location: services.php");
+        header("Location: ../includes/services.php");
         exit;
     }
 
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-        header("Location: services.php");
+        header("Location: ../includes/services.php");
         exit;
     }
 }

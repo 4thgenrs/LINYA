@@ -7,7 +7,7 @@ $accounts = getAccountsData($conn);
 $offices = getOfficeData($conn);
 $roles = getRolesData($conn);
 
-// server-side messages (from redirect)
+// server-side messages
 $message = '';
 if (isset($_GET['error'])) {
     $err = $_GET['error'];
@@ -31,27 +31,19 @@ if (isset($_GET['success'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-    <style>
-        body { background:#f4f6f9; }
-        .card { border-radius:12px; }
-        table th { background:#0d6efd; color:white; }
-    </style>
-</head>
-<body class="p-4">
+    <!-- DataTables Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
 
-<div class="container">
+    <link rel="stylesheet" href="../css/accounts.css">
+</head>
+<body class="py-4">
+
+<div class="container-fluid">
 
     <h2 class="mb-4 fw-bold"><i class="fa-solid fa-users-gear me-2"></i>Accounts List</h2>
 
-    <?php if ($message): ?>
-      <div id="serverMessage" class="alert alert-warning text-center fw-semibold">
-        <?php echo htmlspecialchars($message); ?>
-      </div>
-    <?php endif; ?>
-
-
-    <!-- ---------------- ACCOUNT FORM ---------------- -->
-    <div class="card p-4 shadow-sm mb-4">
+    <!-- ==================== ACCOUNT FORM ===================== -->
+    <div class="mb-4">
         <form id="accountsForm" method="POST">
             <input type="hidden" name="user_id" id="user_id">
 
@@ -108,30 +100,29 @@ if (isset($_GET['success'])) {
     </div>
 
 
-    <!-- ---------------- ACCOUNT TABLE ---------------- -->
-        <div class="card shadow-sm">
 
-            <!-- Card Header -->
-            <div class="card-header bg-success text-white fw-semibold">
-                Account List
-            </div>
+    <!-- ==================== TABLE SECTION (NEW UI STYLE) ===================== -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header text-white" style="background-color: #27693f;">
+            <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Accounts List</h5>
+        </div>
 
-            <div class="card-body p-3">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle">
-                        <thead class="table-success">
-                            <tr>
-                                <th>#</th>
-                                <th>User Name</th>
-                                <th>Password</th>
-                                <th>Name</th>
-                                <th>User Type</th>
-                                <th>Office</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="accountsTable" class="table table-hover table-bordered align-middle nowrap w-100">
+                    <thead class="table-success">
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Name</th>
+                            <th>User Type</th>
+                            <th>Office</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
 
-                        <tbody>
+                    <tbody>
                         <?php if (!empty($accounts)) : $counter = 1; ?>
                             <?php foreach ($accounts as $acc) : ?>
                                 <tr
@@ -150,19 +141,15 @@ if (isset($_GET['success'])) {
                                     <td><?php echo htmlspecialchars($acc['office_description']); ?></td>
 
                                     <td class="text-center">
-
-                                        <!-- Edit Button -->
-                                        <button type="button" class="editBtn btn btn-sm btn-warning me-1">
-                                            <i class="fa-solid fa-pen"></i>
+                                        <button type="button" class="btn btn-sm btn-warning editBtn me-1">
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </button>
 
-                                        <!-- Delete Button -->
                                         <form method="POST" style="display:inline;">
                                             <input type="hidden" name="delete_id" value="<?php echo $acc['user_id']; ?>">
                                             <button type="submit" name="delete_account"
-                                                    class="btn btn-sm btn-danger deleteBtn"
-                                                    onclick="return confirm('Are you sure you want to delete this account?');">
-                                                    <i class="fa-solid fa-trash"></i>
+                                                    class="btn btn-sm btn-danger delete-btn">
+                                                <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>
                                     </td>
@@ -170,21 +157,67 @@ if (isset($_GET['success'])) {
                             <?php endforeach; ?>
                         <?php else : ?>
                             <tr>
-                                <td colspan="7" class="text-center py-3">No data found</td>
+                                <td colspan="7" class="text-center text-muted">No data found</td>
                             </tr>
                         <?php endif; ?>
-                        </tbody>
+                    </tbody>
 
-                    </table>
-                </div>
+                </table>
             </div>
         </div>
-
+    </div>
 
 </div>
 
-<script src="../js/accounts.js"></script>
+
+
+<!-- jQuery + DataTables + Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="../js/accounts.js"></script>
+
+<!-- DataTable Initialization -->
+<script>
+$(document).ready(function() {
+    $('#accountsTable').DataTable({
+        responsive: true,
+        ordering: false,
+        pageLength: 10,
+        columnDefs: [{ orderable: false, targets: -1 }],
+        language: {
+            lengthMenu: 'Show _MENU_ entries',
+            info: 'Showing _START_ to _END_ of _TOTAL_ entries'
+        }
+    });
+
+    $('.dataTables_filter input').attr('placeholder', 'Search accounts...');
+
+    // Show SweetAlert for server messages
+    <?php if ($message): ?>
+        <?php
+        $icon = 'info';
+        $title = 'Notification';
+        if (isset($_GET['error'])) {
+            $icon = 'error';
+            $title = 'Error';
+        } elseif (isset($_GET['success'])) {
+            $icon = 'success';
+            $title = 'Success';
+        }
+        ?>
+        Swal.fire({
+            title: '<?php echo $title; ?>',
+            text: '<?php echo addslashes($message); ?>',
+            icon: '<?php echo $icon; ?>',
+            confirmButtonColor: '#1b5e20'
+        });
+    <?php endif; ?>
+});
+</script>
 
 </body>
 </html>

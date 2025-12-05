@@ -11,10 +11,12 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — Overview</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link rel="stylesheet" href="../css/landing.css" />
 </head>
-<body>
-  <div class="land-wrap">
+<body>  
+  <div class="container-fluid py-3"> 
     <header class="land-header">
       <h1>Admin Overview</h1>
       <div class="muted">Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></div>

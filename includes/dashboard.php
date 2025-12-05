@@ -27,95 +27,155 @@ if ($office > 0 && isset($conn)) {
     }
 }
 
-// Determine if staff is assigned to a window (server-side) so nav can hide tabs
+// Determine if staff is assigned to a window (server-side)
 $canControl = false;
 $canViewOffice = ($office > 0);
+
 if (isset($conn) && isset($_SESSION['user_id']) && intval($_SESSION['user_type']) === 2) {
-  $staffId = intval($_SESSION['user_id']);
-  // read the account's office field; if account.office is null/0, don't show window control
-  $accountOffice = 0;
-  $acctStmt = $conn->prepare("SELECT office FROM accounts WHERE user_id = ? LIMIT 1");
-  if ($acctStmt) {
-    $acctStmt->bind_param('i', $staffId);
-    $acctStmt->execute();
-    $ares = $acctStmt->get_result();
-    if ($ares && ($arow = $ares->fetch_assoc())) {
-      $accountOffice = isset($arow['office']) ? intval($arow['office']) : 0;
+    $staffId = intval($_SESSION['user_id']);
+
+    // read the account's office field; if account.office is null/0, don't show window control
+    $accountOffice = 0;
+    $acctStmt = $conn->prepare("SELECT office FROM accounts WHERE user_id = ? LIMIT 1");
+    if ($acctStmt) {
+        $acctStmt->bind_param('i', $staffId);
+        $acctStmt->execute();
+        $ares = $acctStmt->get_result();
+        if ($ares && ($arow = $ares->fetch_assoc())) {
+            $accountOffice = isset($arow['office']) ? intval($arow['office']) : 0;
+        }
+        $acctStmt->close();
     }
-    $acctStmt->close();
-  }
-  $aw = $conn->prepare("SELECT window_id, office_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
-  if ($aw) {
-    $aw->bind_param('i', $staffId);
-    $aw->execute();
-    $awr = $aw->get_result();
-    if ($awr && ($ar = $awr->fetch_assoc())) {
-      // only allow control when assigned AND the account has an office set
-      if (!empty($ar['window_id']) && $accountOffice > 0) {
-        $canControl = true;
-      }
-      if (!empty($ar['office_id'])) $canViewOffice = true;
+
+    $aw = $conn->prepare("SELECT window_id, office_id FROM office_windows WHERE assigned_staff_id = ? LIMIT 1");
+    if ($aw) {
+        $aw->bind_param('i', $staffId);
+        $aw->execute();
+        $awr = $aw->get_result();
+        if ($awr && ($ar = $awr->fetch_assoc())) {
+            if (!empty($ar['window_id']) && $accountOffice > 0) {
+                $canControl = true;
+            }
+            if (!empty($ar['office_id'])) $canViewOffice = true;
+        }
+        $aw->close();
     }
-    $aw->close();
-  }
 }
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard — LINYA<?php echo $office_description ? ' — '.htmlspecialchars($office_description) : ''; ?></title>
-  <link rel="stylesheet" href="../css/dashboard.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dashboard — LINYA<?php echo $office_description ? ' — '.htmlspecialchars($office_description) : ''; ?></title>
+
+<!-- BOOTSTRAP + FONTAWESOME -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+<link rel="stylesheet" href="../css/dashboard.css">
 </head>
 <body>
-  <header class="dash-header">
-    <div class="brand">LINYA — Staff Dashboard</div>
-    <nav class="dash-nav" role="navigation">
-      <button data-view="activity" class="nav-btn active">My Activity</button>
-      <?php if ($canControl): ?>
-        <button data-view="window" class="nav-btn">Window Control</button>
-      <?php endif; ?>
-      <?php if ($canViewOffice): ?>
-        <button data-view="office" class="nav-btn">Live Office Queue</button>
-      <?php endif; ?>
-    </nav>
-    <div class="dash-right">
-      <div class="small muted">Signed in as <strong><?php echo $userName; ?></strong></div>
-      <div class="small muted">Office: <strong id="assignedOffice"><?php echo $office_description ? htmlspecialchars($office_description.' ('.$office_code.')') : '—'; ?></strong></div>
-      <button id="logoutBtn" class="btn-ghost">Logout</button>
+
+<!-- SIDEBAR LIKE ADMIN -->
+<aside id="sidebar">
+
+    <div class="brand-box">
+        <img src="../logo.png" alt="Logo">
+        <div class="brand-text fw-bold">
+            Live Interactive<br>Navigation of Your Appointment
+        </div>
     </div>
-  </header>
 
-  <main class="dash-main">
+    <nav>
+        <button data-view="activity" class="nav-btn active">
+            <i class="fa-solid fa-house"></i> My Activity
+        </button>
+
+        <?php if ($canControl): ?>
+        <button data-view="window" class="nav-btn">
+            <i class="fa-solid fa-sliders"></i> Window Control
+        </button>
+        <?php endif; ?>
+
+        <?php if ($canViewOffice): ?>
+        <button data-view="office" class="nav-btn">
+            <i class="fa-solid fa-list-check"></i> Live Office Queue
+        </button>
+        <?php endif; ?>
+    </nav>
+
+    <div class="user-box">
+        <div><strong><?php echo $userName; ?></strong></div>
+        <small>
+            <?php echo $office_description ? htmlspecialchars($office_description . ' (' . $office_code . ')') : '—'; ?>
+        </small>
+
+        <button id="logoutBtn" class="btn btn-sm mt-2 w-100">Logout</button>
+    </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="dash-main">
+
     <section id="view-activity" class="dash-view">
-      <h2>My Activity</h2>
-      <div id="activityContainer" class="activity-wrap">Loading…</div>
+        <h2>My Activity</h2>
+        <div id="activityContainer">
+            <table id="activityTable" class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Queue Code</th>
+                        <th>Service</th>
+                        <th>Customer</th>
+                        <th>Contact</th>
+                        <th>Window</th>
+                        <th>Finished At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
     </section>
 
-    <section id="view-window" class="dash-view" style="display:none">
-      <h2>Window Control</h2>
-      <!-- open the full window control page in an iframe so staff tools remain available -->
-      <iframe id="windowFrame" src="../includes/queueSelect.php" title="Window Control" frameborder="0"></iframe>
+    <section id="view-window" class="dash-view">
+        <h2>Window Control</h2>
+        <iframe id="windowFrame" src="../includes/queueSelect.php"></iframe>
     </section>
 
-    <section id="view-office" class="dash-view" style="display:none">
-      <h2>Live Office Queue</h2>
-      <div id="officeQueueContainer">Loading…</div>
-      <h3>Pending</h3>
-      <div id="officePending">Loading…</div>
+    <section id="view-office" class="dash-view" style="display:none;">
+        <h2>Live Office Queue</h2>
+        <div class="row">
+            <div id="officeQueueContainer" class="col-12 col-lg-8 mb-3">Loading…</div>
+            <div id="officePending" class="col-12 col-lg-4">Loading…</div>
+        </div>
     </section>
-  </main>
 
-  <script>
-    // expose initial session values to the dashboard script (safe small read-only)
-    window.__LINYA_SESSION = {
-      office: <?php echo json_encode($office); ?>,
-      window_no: <?php echo json_encode($window_no); ?>,
-      office_description: <?php echo json_encode($office_description); ?>,
-      office_code: <?php echo json_encode($office_code); ?>
-    };
-  </script>
-  <script src="../js/dashboard.js" defer></script>
+
+</main>
+
+<!-- JS SESSION PASSTHROUGH -->
+<script>
+window.__LINYA_SESSION = {
+    office: <?php echo json_encode($office); ?>,
+    window_no: <?php echo json_encode($window_no); ?>,
+    office_description: <?php echo json_encode($office_description); ?>,
+    office_code: <?php echo json_encode($office_code); ?>
+};
+</script>
+
+<script src="../js/dashboard.js" defer></script>
+
+<!-- DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
 </body>
 </html>
