@@ -1,0 +1,15 @@
+[16-Nov-2025 14:45:19 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\xampp\htdocs\LINYA\backend\face_register_save.php:58
+Stack trace:
+#0 C:\xampp\htdocs\LINYA\backend\face_register_save.php(58): mysqli->prepare('SELECT id, name...')
+#1 {main}
+  thrown in C:\xampp\htdocs\LINYA\backend\face_register_save.php on line 58
+[16-Nov-2025 15:05:24 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\xampp\htdocs\LINYA\backend\face_register_save.php:67
+Stack trace:
+#0 C:\xampp\htdocs\LINYA\backend\face_register_save.php(67): mysqli->prepare('SELECT id, name...')
+#1 {main}
+  thrown in C:\xampp\htdocs\LINYA\backend\face_register_save.php on line 67
+[16-Nov-2025 15:15:52 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\xampp\htdocs\LINYA\backend\face_register_save.php:67
+Stack trace:
+#0 C:\xampp\htdocs\LINYA\backend\face_register_save.php(67): mysqli->prepare('SELECT id, name...')
+#1 {main}
+  thrown in C:\xampp\htdocs\LINYA\backend\face_register_save.php on line 67
