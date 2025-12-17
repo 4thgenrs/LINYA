@@ -1,0 +1,711 @@
+:root {
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --muted: #7c8593;
+    --accent: #0f62fe;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --glass: rgba(15, 98, 254, 0.06);
+    --radius: 14px;
+    --shadow: 0 6px 18px rgba(12, 18, 29, 0.06);
+    --card-padding: 16px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Remove all text decoration from all elements */
+a, a:hover, a:focus, a:visited, 
+button, input, textarea, 
+h1, h2, h3, h4, h5, h6, p, span, div, label,
+.vf-confirm-row, .confirm-instruction, .capture-guide, .small, .muted {
+    text-decoration: none !important;
+}
+
+body {
+    font-family: sans-serif;
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    background-image: linear-gradient(to right top, #0f762a, #2a893f, #409d53, #54b168, #68c57e, #68c57e, #68c57e, #68c57e, #54b168, #409d53, #2a893f, #0f762a);
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../resources/logo_uccbnw.png');
+    background-repeat: repeat;
+    background-size: 180px 180px;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+    filter: brightness(2) invert(2) drop-shadow(0 0 2px rgba(255, 255, 255, 0.988));
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0.2;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Animated background elements - HIDDEN */
+.background-elements {
+    display: none;
+}
+
+/* MAIN CONTAINER - KEPT ORIGINAL SIZE */
+.register-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.877), rgba(255, 255, 255, 0.778));
+    border-radius: 18px;
+    border: 5px solid rgb(50, 154, 45);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    padding: 70px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+/* headings - UPDATED WITH NEW GRADIENT STYLE */
+.title {
+    margin-top: -30px;
+    font-size: 36px;
+    font-family: sans-serif;
+    text-align: center;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to top, #0a9b57, #1ed760);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* helper text - UPDATED */
+.muted {
+    color: #5a6268;
+}
+
+.small {
+    text-align: center;
+    font-family: sans-serif;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* ========== VISITOR DETAILS SECTION ========== */
+.visitor-screen {
+    display: block;
+    padding: 0;
+}
+
+.visitorDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.vf-field {
+    display: block;
+    margin: 16px 0;
+    width: 100%;
+}
+
+.vf-label {
+    font-weight: 600;
+    font-size: 14px;
+    font-family: sans-serif;
+    margin-bottom: 8px;
+    color: #0b1230;
+}
+
+.vf-field input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-family: sans-serif;
+    border-radius: 8px;
+    border: 1px solid #e1e5e9;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.vf-field input:focus {
+    outline: none;
+    border-color: #0f62fe;
+    box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+}
+
+.vf-field input::placeholder {
+    color: #7c8593;
+    font-size: 14px;
+}
+
+.vf-hint {
+    font-size: 12px;
+    margin-top: 6px;
+    color: #ff0000;
+}
+
+/* Visitor form actions - UPDATED WITH NEW BUTTON COLORS */
+.visitor-screen .vf-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.visitor-screen .primary-btn {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+    color: white;
+    font-family: sans-serif;
+    font-size: 16px;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 280px;
+}
+
+.visitor-screen .primary-btn:hover {
+    background: #20851e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 200, 100, 0.4);
+}
+
+.visitor-screen .primary-btn:disabled {
+    background: #318645;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ========== MODAL STYLES - UPDATED TO MATCH kioskMenu.css ========== */
+.vf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(11, 18, 48, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+    padding: 20px;
+}
+
+.vf-modal-card {
+    background: rgba(255, 255, 255, 0.98);
+    padding: 32px;
+    margin-bottom: 20px;  /* Add this */
+    margin-top: 10px;
+    border-radius: 18px;
+    border: 5px solid rgb(50, 154, 45);
+    width: 90%;
+    max-width: 420px;
+    height: 95%;
+    box-shadow: 0 25px 50px rgba(11, 18, 48, 0.4);
+    text-align: center;
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 10000;
+}
+
+.vf-modal-card::before {
+    content: "👤";
+    font-size: 64px;
+    display: block;
+    text-transform: capitalize;
+    margin-bottom: 16px;
+}
+
+.vf-modal-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0b1230;
+    margin-bottom: 8px;
+    font-family: sans-serif;
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.confirm-instruction {
+    font-size: 14px;
+    color: #5a6268;
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: 20px;
+    font-family: sans-serif;
+    font-weight: 500;
+}
+
+.vf-confirm-row {
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: rgba(42, 218, 141, 0.08);
+    border-radius: 10px;
+    border-left: 4px solid #2ada8d;
+    text-align: left;
+    transition: all 0.3s ease;
+    font-family: sans-serif;
+}
+
+.vf-confirm-row:hover {
+    background: rgba(42, 218, 141, 0.12);
+    transform: translateX(4px);
+}
+
+.vf-confirm-row strong {
+    color: #0b1230;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.vf-confirm-row span {
+    color: #0b1230;
+    font-weight: 500;
+    display: block;
+    font-size: 16px;
+}
+
+.vf-confirm-row span:empty::before {
+    content: "Not provided";
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* BUTTON CONTAINER FOR MODAL */
+.vf-actions {
+    display: flex;
+    align-items: center;
+    padding-top: 20px;
+    gap: 20px;
+    flex-direction: column;
+}
+
+/* STANDARD BUTTON STYLES - APPLIED TO ALL BUTTONS */
+.ghost-btn,
+.cancel-btn,
+.confirm-btn,
+.back-btn {
+    padding: 14px 20px;
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 280px;
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+}
+
+/* Remove underline specifically for back buttons */
+.back-btn,
+a.back-btn,
+button.back-btn {
+    text-decoration: none !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+}
+
+.back-btn:hover,
+.back-btn:focus,
+.back-btn:active,
+a.back-btn:hover,
+a.back-btn:focus,
+a.back-btn:active {
+    text-decoration: none !important;
+}
+
+/* CANCEL/BACK BUTTON STYLES - RED GRADIENT */
+.ghost-btn,
+.cancel-btn,
+.back-btn {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.ghost-btn:hover,
+.cancel-btn:hover,
+.back-btn:hover {
+    background: linear-gradient(90deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* CONFIRM BUTTON STYLES - GREEN GRADIENT */
+.confirm-btn {
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    color: white;
+    margin-bottom: -10px;
+    box-shadow: 0 4px 15px rgba(9, 133, 37, 0.3);
+}
+
+.confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(9, 133, 37, 0.4);
+}
+
+/* CAMERA SCREEN STYLES */
+.camera-screen {
+    display: none;
+    padding: 0;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    max-width: 400px;
+    margin: 0 auto 20px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    overflow: hidden;
+    backdrop-filter: blur(600px) !important;
+    -webkit-backdrop-filter: blur(600px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    isolation: isolate;
+}
+
+#video,
+#canvas {
+    width: 100%;
+    height: 300px;
+    display: block;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    object-fit: cover;
+    z-index: 2;
+}
+
+#faceOutline {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 280px;
+    border: 2px dashed limegreen;
+    border-radius: 50%;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 3;
+    animation: pulseDashed 2s ease-in-out infinite;
+}
+
+@keyframes pulseDashed {
+    0%,
+    100% {
+        border-color: limegreen;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    }
+    50% {
+        border-color: #a8ff60;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+    }
+}
+
+.instruction-panel {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+    color: white;
+    padding: 12px 16px;
+    text-align: center;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.instruction-panel h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.instruction-panel p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.capture-guide {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.capture-guide h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #0b1230;
+}
+
+.capture-guide p {
+    margin: 0;
+    font-size: 13px;
+    color: #7c8593;
+}
+
+.small-muted {
+    font-size: 12px;
+    color: #7c8593;
+    margin-top: 8px;
+}
+
+.form-container {
+    text-align: center;
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+#captureBtn {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-family: sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 280px;
+    min-width: 280px;
+    text-decoration: none !important;
+}
+
+#captureBtn:hover {
+    background: #20851e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 98, 254, 0.3);
+}
+
+#progress {
+    text-align: center;
+    font-size: 14px;
+    color: #0b1230;
+}
+
+#statusMessage {
+    text-align: center;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    body::before {
+        background-size: 200px 200px;
+        opacity: 0.1;
+        filter: brightness(0) invert(1) drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+    }
+
+    .register-container {
+        margin-top: 40px;
+        padding: 24px;
+        max-width: 400px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .small {
+        font-size: 13px;
+    }
+
+    .vf-field {
+        margin: 12px 0;
+    }
+
+    .vf-label {
+        font-size: 13px;
+    }
+
+    .vf-field input {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .visitor-screen .primary-btn {
+        font-size: 15px;
+        padding: 12px 24px;
+    }
+
+    .ghost-btn,
+    .cancel-btn,
+    .confirm-btn,
+    .back-btn,
+    #captureBtn {
+        padding: 12px 24px;
+        font-size: 15px;
+        min-width: 240px;
+        max-width: 240px;
+    }
+
+    .vf-modal {
+        padding: 15px;
+    }
+    
+    .vf-modal-card {
+        padding: 30px 20px;
+        width: 95%;
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 520px) {
+    body::before {
+        background-size: 150px 150px;
+        opacity: 0.08;
+        filter: brightness(0) invert(1) drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.15));
+    }
+
+    body {
+        padding: 16px;
+    }
+
+    .register-container {
+        margin-top: 30px;
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .title {
+        font-size: 22px;
+    }
+
+    .vf-modal {
+        padding: 10px;
+    }
+    
+    .vf-modal-card {
+        padding: 20px 16px;
+        width: calc(100% - 20px);
+        margin: 16px;
+    }
+    
+    .vf-modal-card::before {
+        font-size: 48px;
+    }
+    
+    .vf-modal-card h2 {
+        font-size: 20px;
+    }
+    
+    .vf-confirm-row {
+        padding: 10px 12px;
+        margin: 12px 0;
+    }
+    
+    .vf-confirm-row strong {
+        font-size: 13px;
+    }
+    
+    .vf-confirm-row span {
+        font-size: 14px;
+    }
+    
+    .ghost-btn,
+    .cancel-btn,
+    .confirm-btn,
+    .back-btn,
+    #captureBtn {
+        width: 100%;
+        min-width: auto;
+        max-width: 100%;
+        padding: 12px 20px;
+    }
+}
