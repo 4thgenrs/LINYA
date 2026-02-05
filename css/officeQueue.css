@@ -1,0 +1,120 @@
+ body { background: #f4f6f9; }
+
+    .oq-header {
+      background: #27693f;
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .oq-title {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .oq-sub {
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .oq-main {
+      margin-top: 30px;
+      display: flex;
+      gap: 30px;
+    }
+
+    /* Windows container */
+    #windowsContainer {
+      gap: 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: calc(100vh - 250px);
+      padding-right: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: #27693f #f1f1f1;
+    }
+
+    #windowsContainer::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #windowsContainer::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    #windowsContainer::-webkit-scrollbar-thumb {
+      background: #27693f;
+      border-radius: 10px;
+    }
+
+    #windowsContainer::-webkit-scrollbar-thumb:hover {
+      background: #1b5e20;
+    }
+
+    /* Window Cards */
+    .window-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      background: white;
+      padding: 20px;
+      min-height: 160px;
+      transition: 0.2s;
+      width: 20%;
+      flex-direction: column;
+      border-top: #1b5e20 4px solid;
+      margin-bottom: 10px;
+    }
+
+      .window-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      }
+
+
+    /* Pending section */
+    .oq-pending {
+      width: 320px;
+      padding: 20px;
+      border-radius: 12px;
+      background:	#27693f;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .oq-pending h3 {
+      color: white;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    /* Each transaction inside pending list */
+    .pending-list .pending-item {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Office selector */
+    .oq-select-label {
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    .oq-select {
+      width: 150px;
+    }
+
+    @media (max-width: 768px) {
+      .oq-main {
+        flex-direction: column;
+      }
+      .oq-pending {
+        width: 100%;
+      }
+    }
