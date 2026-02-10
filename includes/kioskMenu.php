@@ -22,7 +22,7 @@ session_start(); ?>
             <form class="visitorDetails" id="visitorDetails" onsubmit="return false;">
                 <label class="vf-field">
                     <div class="vf-label">Name:</div>
-                    <input type="text" id="visitorName" placeholder="Full name" autocomplete="name" required />
+                    <input type="text" id="visitorName" placeholder="e.g., Juan T. Dela Cruz" autocomplete="name" required />
                 </label>
 
                 <label class="vf-field">

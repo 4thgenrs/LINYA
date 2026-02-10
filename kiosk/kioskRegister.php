@@ -28,7 +28,7 @@ require_once __DIR__ . '/../config.php';
             <form id="visitorDetails" onsubmit="return false;">
                 <label class="vf-field">
                     <div class="vf-label">Full Name</div>
-                    <input type="text" id="visitorName" placeholder="Enter your full name" autocomplete="name" required />
+                    <input type="text" id="visitorName" placeholder="e.g., Juan Dela Cruz" autocomplete="name" required />
                 </label>
 
                 <label class="vf-field">
