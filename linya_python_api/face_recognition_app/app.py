@@ -12,6 +12,8 @@ from typing import Dict, Any, List, Tuple, Optional
 from flask import Flask, jsonify, request
 from google.cloud import storage
 from io import BytesIO
+from .core.accessory_detector import AccessoryDetector
+
 
 # Robust imports: Werkzeug and Flask-CORS may vary by environment/version.
 try:
@@ -96,7 +98,8 @@ class FaceRecognitionApp:
         )
         self.face_processor.reset_database(remove_user_dirs=False)
         self.deepface = DeepFaceProcessor()
-        
+        self.accessory_detector = AccessoryDetector()
+
         # Initialize face recognition system
         # If the DB folder has no user data, reset any serialized caches and keep memory empty.
         try:
@@ -206,6 +209,15 @@ class FaceRecognitionApp:
             if not unknown_encodings:
                 return jsonify({"status": "no_person_found"})
 
+            # 🔵 Accessory Detection
+            accessories = self.accessory_detector.detect(unknown_image)
+            if accessories:
+                return jsonify({
+                    "status": "accessory_detected",
+                    "message": f"Accessory detected: {', '.join(accessories)}. Please remove it and try again.",
+                    "accessories": accessories
+                })
+
             # 🔹 No more accessory detection / blocking here.
             # Just refresh DB and try recognition.
             self.face_processor.refresh_face_database()
@@ -273,6 +285,15 @@ class FaceRecognitionApp:
                 return jsonify({
                     'status': 'error',
                     'message': 'No face detected in the image. Please try again.'
+                }), 400
+
+            # 🔵 Accessory Detection
+            accessories = self.accessory_detector.detect(unknown_img)
+            if accessories:
+                return jsonify({
+                    "status": "accessory_detected",
+                    "message": f"Accessory detected: {', '.join(accessories)}. Please remove it and try again.",
+                    "accessories": accessories
                 }), 400
 
             # 🔹 No more glasses/accessory blocking here.
