@@ -28,6 +28,8 @@ h1, h2, h3, h4, h5, h6, p, span, div, label,
 body {
     font-family: sans-serif;
     min-height: 100vh;
+    height: 100vh;        /* ← ADD THIS */
+    overflow: hidden;     /* ← ADD THIS */
     position: relative;
     display: flex;
     justify-content: center;
@@ -35,7 +37,7 @@ body {
     padding: 0;
     margin: 0;
     background-image: linear-gradient(to right top, #0f762a, #2a893f, #409d53, #54b168, #68c57e, #68c57e, #68c57e, #68c57e, #54b168, #409d53, #2a893f, #0f762a);
-}
+}   
 
 body::before {
     content: '';
@@ -94,11 +96,13 @@ body::after {
     border-radius: 18px;
     border: 5px solid rgb(50, 154, 45);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-    padding: 70px;
-    overflow: hidden;
+    padding: 70px 70px 300px 70px;  /* ← only bottom padding increases */
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    max-height: 90vh;   /* ← reduce from 90vh */
     position: relative;
     z-index: 1;
-}
+}   
 
 /* headings - UPDATED WITH NEW GRADIENT STYLE */
 .title {

@@ -1,0 +1,133 @@
+/* ========== UNIVERSAL FLOATING KEYBOARD ========== */
+.floating-keyboard-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: none;
+    justify-content: center;
+    z-index: 999999;
+    pointer-events: none;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.floating-keyboard-container.active {
+    display: flex;
+}
+
+.floating-keyboard {
+    background: rgba(30, 30, 30, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 15px 10px;
+    border-radius: 20px 20px 0 0;
+    border-top: 3px solid rgb(50, 154, 45);
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.5);
+    max-width: 1000px;
+    width: 100%;
+    pointer-events: auto;
+    animation: slideUpKeyboard 0.3s ease;
+}
+
+.keyboard-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.keyboard-key {
+    min-width: 45px;
+    height: 55px;
+    background: linear-gradient(135deg, #444, #333);
+    color: white;
+    border: 1px solid #555;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 #222;
+    flex: 1 0 auto;
+    padding: 0 5px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.keyboard-key:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #222;
+}
+
+.keyboard-key:hover {
+    background: linear-gradient(135deg, #555, #444);
+    border-color: rgb(50, 154, 45);
+}
+
+.keyboard-key.special {
+    background: linear-gradient(135deg, #0c9e3d, #07bf85);
+    border-color: #2ada8d;
+    min-width: 80px;
+    font-weight: 600;
+}
+
+.keyboard-key.wide {
+    min-width: 80px;
+}
+
+.keyboard-key.extra-wide {
+    min-width: 120px;
+}
+
+.keyboard-key.space {
+    min-width: 250px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .keyboard-key {
+        min-width: 35px;
+        height: 48px;
+        font-size: 16px;
+    }
+    .keyboard-key.wide {
+        min-width: 60px;
+    }
+    .keyboard-key.extra-wide {
+        min-width: 90px;
+    }
+    .keyboard-key.space {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 520px) {
+    .keyboard-key {
+        min-width: 30px;
+        height: 45px;
+        font-size: 14px;
+    }
+    .keyboard-row {
+        gap: 3px;
+    }
+}
+
+@keyframes slideUpKeyboard {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Active key highlight */
+.keyboard-key.shift-active {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+}

@@ -13,6 +13,7 @@ require_once __DIR__ . '/../config.php';
     <meta charset="UTF-8">
     <title>Face Registration</title>
     <link rel="stylesheet" href="../css/kioskRegister.css">
+    <link rel="stylesheet" href="../css/floating-keyboard.css">  <!-- ADD THIS LINE -->
     <!-- <link rel="stylesheet" href="../css/backButton.css"> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -107,13 +108,40 @@ require_once __DIR__ . '/../config.php';
             <div id="statusMessage" role="status" aria-live="polite"></div>
         </div>
     </div>
+        <?php include '../includes/floating-keyboard.php'; ?>
 
     <script>
         // Expose API base for JavaScript
         window.PYTHON_API_BASE = <?= json_encode(PYTHON_API_BASE) ?>;
     </script>
     <script src="../js/kioskRegister.js"></script>
+    <script src="../js/floating-keyboard.js"></script>
+    
+    <!-- Emergency scroll fix for email field -->
+    <script>
+const registerContainer = document.querySelector('.register-container');
 
+function scrollContainerToInput(inputEl) {
+    setTimeout(function () {
+        const containerRect = registerContainer.getBoundingClientRect();
+        const inputRect = inputEl.getBoundingClientRect();
+        const inputTopRelative = inputRect.top - containerRect.top + registerContainer.scrollTop;
+        const targetScroll = inputTopRelative - 80; // 80px from top of container
+        registerContainer.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    }, 400);
+}
+
+document.getElementById('visitorName').addEventListener('focus', function () {
+    registerContainer.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('visitorPhone').addEventListener('focus', function () {
+    scrollContainerToInput(this);
+});
+
+document.getElementById('visitorEmail').addEventListener('focus', function () {
+    scrollContainerToInput(this);
+});
+</script>
 </body>
-
 </html>

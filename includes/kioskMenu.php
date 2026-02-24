@@ -8,7 +8,10 @@ session_start(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Menu</title>
     <link rel="stylesheet" href="../css/kioskMenu.css">
+    <link rel="stylesheet" href="../css/floating-keyboard.css">
 </head>
+
+<?php include '../includes/floating-keyboard.php'; ?>
 
 <body>
     <!-- Visitor Form Section -->
@@ -125,6 +128,7 @@ session_start(); ?>
             </div>
         </div>
     </div>
+    
 
     <?php
     if (isset($_SESSION['client']) && is_array($_SESSION['client'])) {
@@ -133,6 +137,33 @@ session_start(); ?>
     }
     ?>
     <script src="../js/kioskMenu.js"></script>
-</body>
+    <script src="../js/floating-keyboard.js"></script>
+    
+    <!-- Emergency scroll fix for email field -->
+    <script>
+const registerContainer = document.querySelector('.kiosk-container');
 
+function scrollContainerToInput(inputEl) {
+    setTimeout(function () {
+        const containerRect = registerContainer.getBoundingClientRect();
+        const inputRect = inputEl.getBoundingClientRect();
+        const inputTopRelative = inputRect.top - containerRect.top + registerContainer.scrollTop;
+        const targetScroll = inputTopRelative - 80; // 80px from top of container
+        registerContainer.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    }, 400);
+}
+
+document.getElementById('visitorName').addEventListener('focus', function () {
+    registerContainer.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('visitorPhone').addEventListener('focus', function () {
+    scrollContainerToInput(this);
+});
+
+document.getElementById('visitorEmail').addEventListener('focus', function () {
+    scrollContainerToInput(this);
+});
+</script>
+</body>
 </html>
