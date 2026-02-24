@@ -1,3 +1,4 @@
+// ../js/kioskRegister.js
 /* =========== Config / state =========== */
 let apiBase = '';
 let capturedImages = [];
@@ -6,28 +7,28 @@ let currentAngleIndex = 0;
 let submitting = false;
 
 const angles = [
-    { 
-        name: "Front View", 
+    {
+        name: "Front View",
         instruction: "Please look straight at the camera for a clear front view of your face.",
         guideTip: "Look straight ahead, keep your face centered and well-lit. This is your primary reference image."
     },
-    { 
-        name: "Left Angle", 
+    {
+        name: "Left Angle",
         instruction: "Turn your head slightly to the left side (about 45 degrees).",
         guideTip: "Turn your head ~45° to the left while keeping your eyes toward the camera. This captures the left profile."
     },
-    { 
-        name: "Right Angle", 
+    {
+        name: "Right Angle",
         instruction: "Turn your head slightly to the right side (about 45 degrees).",
         guideTip: "Turn your head ~45° to the right while keeping your eyes toward the camera. This captures the right profile."
     },
-    { 
-        name: "Upper Angle", 
+    {
+        name: "Upper Angle",
         instruction: "Tilt your head slightly upward while looking at the camera.",
         guideTip: "Tilt your chin up slightly while looking at the camera. This helps with recognition from above."
     },
-    { 
-        name: "Lower Angle", 
+    {
+        name: "Lower Angle",
         instruction: "Tilt your head slightly downward while looking at the camera.",
         guideTip: "Tilt your chin down slightly while looking at the camera. This helps with recognition from below."
     }
@@ -160,11 +161,6 @@ async function acceptVisitorAndProceed() {
 
         if (checkResult.status === 'duplicate') {
             // Show error message to user (supports email/phone/name)
-            const fieldName =
-                checkResult.field === 'email' ? 'Email' :
-                checkResult.field === 'phone' ? 'Phone' :
-                'Name';
-
             alert(`❌ Registration Error\n\n${checkResult.message}`);
             return;
         }
@@ -198,16 +194,16 @@ async function acceptVisitorAndProceed() {
 function initializeCamera() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    
+
     console.log('Initializing camera...');
-    
+
     if (!video || !canvas) {
         console.error('Video or canvas element not found');
         return;
     }
-    
-    navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720, facingMode: "user" } 
+
+    navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: "user" }
     })
     .then(stream => {
         console.log('Camera stream obtained');
@@ -227,11 +223,11 @@ function initializeCamera() {
 function updateAngleInstructions() {
     const currentAngleElement = document.getElementById('currentAngle');
     const angleInstructionElement = document.getElementById('angleInstruction');
-    
+
     if (currentAngleIndex < angles.length) {
         currentAngleElement.textContent = angles[currentAngleIndex].name;
         angleInstructionElement.textContent = angles[currentAngleIndex].instruction;
-        
+
         document.getElementById('guideCounter').textContent = `${currentAngleIndex + 1} / ${angles.length}`;
         document.getElementById('guideTitle').textContent = angles[currentAngleIndex].name;
         document.getElementById('guideTip').textContent = angles[currentAngleIndex].guideTip;
@@ -262,7 +258,55 @@ function resetCaptureState(keepStatus = false) {
     if (captureBtn) captureBtn.disabled = false;
 }
 
-function captureImage() {
+/* =========================================================
+   Accessory pre-check from a frame (uses Python /recognize)
+   ========================================================= */
+async function precheckAccessoriesFromFrame(videoEl, canvasEl) {
+    const ctx = canvasEl.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+    // Make smaller upload for speed
+    const maxW = 640;
+    const aspect = (canvasEl.width && canvasEl.height) ? (canvasEl.width / canvasEl.height) : (1280 / 720);
+    const w = Math.min(maxW, canvasEl.width || maxW);
+    const h = Math.round(w / aspect);
+
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    const tctx = tmp.getContext('2d');
+    tctx.imageSmoothingEnabled = true;
+    tctx.drawImage(videoEl, 0, 0, w, h);
+
+    const dataURL = tmp.toDataURL('image/jpeg', 0.85);
+    const base64 = (dataURL.split(',')[1] || '');
+
+    if (!apiBase) {
+        throw new Error('PYTHON_API_BASE is empty; cannot precheck accessories.');
+    }
+
+    const resp = await fetch(`${apiBase}/recognize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+        mode: 'cors',
+        cache: 'no-store'
+    });
+
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (_) {}
+
+    if (json && json.status === 'accessory_detected') {
+        return { ok: false, message: json.message || 'Accessory detected. Please remove it and try again.' };
+    }
+
+    // Allow all other statuses here (we only use this as an accessory gate)
+    return { ok: true };
+}
+
+/* =========== Capture =========== */
+async function captureImage() {
     if (capturedImages.length >= maxImages) {
         alert("You've already captured all required angles.");
         return;
@@ -271,6 +315,21 @@ function captureImage() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+
+    // Block FIRST capture (Front View) if accessory detected
+    if (currentAngleIndex === 0) {
+        try {
+            const check = await precheckAccessoriesFromFrame(video, canvas);
+            if (!check.ok) {
+                showModal('warning', 'Accessory Detected', check.message);
+                return; // do not capture/save front image
+            }
+        } catch (e) {
+            console.error('Accessory precheck failed:', e);
+            showModal('error', 'Precheck Failed', 'Could not verify accessories. Please try again.');
+            return; // strict: do not capture when precheck fails
+        }
+    }
 
     // Draw visible preview
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -290,7 +349,7 @@ function captureImage() {
     const dataURL = tmpCanvas.toDataURL('image/jpeg', 0.85);
     const currentAngle = angles[currentAngleIndex].name;
     capturedImages.push(dataURL);
-    
+
     const countDisplay = document.getElementById('count');
     if (countDisplay) countDisplay.textContent = capturedImages.length;
 
@@ -312,12 +371,35 @@ function captureImage() {
 async function submitRegistration(retryCount = 0) {
     if (submitting) return;
     submitting = true;
-    
+
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) captureBtn.disabled = true;
 
     if (capturedImages.length < maxImages) {
         showModal('warning', 'Incomplete Registration', `Please capture all ${maxImages} angles before submitting.`);
+        submitting = false;
+        if (captureBtn) captureBtn.disabled = false;
+        return;
+    }
+
+    // ✅ NEW: Final accessory gate BEFORE calling /register (blocks saving)
+    try {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        if (video && canvas) {
+            const check = await precheckAccessoriesFromFrame(video, canvas);
+            if (!check.ok) {
+                showModal('warning', 'Accessory Detected', check.message);
+                resetCaptureState(true);
+                submitting = false;
+                if (captureBtn) captureBtn.disabled = false;
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('Final accessory precheck failed:', e);
+        showModal('error', 'Precheck Failed', 'Could not verify accessories. Please try again.');
+        resetCaptureState(true);
         submitting = false;
         if (captureBtn) captureBtn.disabled = false;
         return;
@@ -329,9 +411,9 @@ async function submitRegistration(retryCount = 0) {
         const name = document.getElementById('visitorName').value.trim();
         const email = document.getElementById('visitorEmail').value.trim();
         const phone = document.getElementById('visitorPhone').value.trim();
-        
+
         console.log('Submitting registration:', { name, email, phone, imageCount: capturedImages.length, apiBase });
-        
+
         const formData = new FormData();
         formData.append("name", name);
         formData.append("email", email);
@@ -345,10 +427,10 @@ async function submitRegistration(retryCount = 0) {
         });
 
         console.log('API Response type:', resp.type, 'status:', resp.status);
-        
+
         const respText = await resp.text();
         console.log('API Response text:', respText);
-        
+
         // Quick CORS/opaque diagnostic
         if (resp.type === 'opaque' || resp.status === 0) {
             showModal('error', 'Network Error', 'Network/CORS blocked the request. Check server CORS headers and that API_BASE is correct.');
@@ -371,21 +453,28 @@ async function submitRegistration(retryCount = 0) {
             if (resp.status === 409 || (json && json.status === 'already_registered')) {
                 const existingName = json?.existing_name || json?.name || 'Unknown User';
                 const displayMessage = json?.message || 'This face is already registered in the system.';
-                
+
                 showModal('already_registered', 'User Already Registered', displayMessage, {
                     existingName: existingName,
                     showLoginButton: true
                 });
-                
+
                 resetCaptureState(true);
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
             }
 
-            if (json && json.status === 'glasses') {
-                showModal('warning', 'Glasses Detected', `${json.message}. Please remove your ${json.type} and retake the Front View.`);
-                resetCaptureState();
+            // Accessory detection handling
+            if (json && json.status === 'accessory_detected') {
+                showModal(
+                    'warning',
+                    'Accessory Detected',
+                    json.message || 'Please remove glasses, hats, or masks and retake the Front View.'
+                );
+
+                resetCaptureState(true);
+
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
@@ -467,9 +556,8 @@ async function submitRegistration(retryCount = 0) {
     }
 }
 
-// Modal management functions
+// Modal management functions (unchanged)
 function createModal() {
-    // Remove existing modal if any
     const existingModal = document.getElementById('registrationModal');
     if (existingModal) {
         existingModal.remove();
@@ -522,7 +610,6 @@ function createModal() {
 
     document.body.appendChild(modal);
 
-    // Close modal when clicking X or backdrop
     modal.querySelector('.modal-close').addEventListener('click', hideModal);
     modal.addEventListener('click', (e) => {
         if (e.target === modal) hideModal();
@@ -543,7 +630,6 @@ function showModal(type, title, message, options = {}) {
     const actionsEl = modal.querySelector('.modal-actions');
     const contentEl = modal.querySelector('.modal-content');
 
-    // Set icon and colors based on type
     let icon = '', color = '';
     switch (type) {
         case 'success':
@@ -576,10 +662,8 @@ function showModal(type, title, message, options = {}) {
     messageEl.textContent = message;
     contentEl.style.borderTop = `4px solid ${color}`;
 
-    // Clear previous actions
     actionsEl.innerHTML = '';
 
-    // Add actions based on type and options
     if (type === 'loading') {
         // No buttons for loading state
     } else if (type === 'already_registered') {
@@ -647,20 +731,19 @@ function showModal(type, title, message, options = {}) {
         `;
     }
 
-    // Show modal
     modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
 }
 
 function hideModal() {
     const modal = document.getElementById('registrationModal');
     if (modal) {
         modal.style.display = 'none';
-        document.body.style.overflow = ''; // Restore scrolling
+        document.body.style.overflow = '';
     }
 }
 
-// Optional: Add CSS for smooth animations
+// Optional CSS for smooth animations (unchanged)
 const style = document.createElement('style');
 style.textContent = `
     #registrationModal {
@@ -684,7 +767,6 @@ document.head.appendChild(style);
 
 /* =========== Initialize =========== */
 document.addEventListener('DOMContentLoaded', function() {
-    // Set API base from global variable
     if (typeof window.PYTHON_API_BASE !== 'undefined') {
         apiBase = window.PYTHON_API_BASE;
         console.log('API Base set to:', apiBase);
@@ -692,13 +774,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('PYTHON_API_BASE not found in window object');
     }
 
-    // Visitor form event listeners
     ['visitorName', 'visitorPhone', 'visitorEmail'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', visitorSyncState, {passive: true});
     });
 
-    // Phone input formatting
     const phoneInput = document.getElementById('visitorPhone');
     if (phoneInput) {
         phoneInput.addEventListener('input', function() {
@@ -730,19 +810,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Camera capture button
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) {
         captureBtn.addEventListener('click', captureImage);
     }
 
-    // Initialize visitor form state
     visitorSyncState();
-    
-    // Initialize camera instructions
     updateAngleInstructions();
     resetCaptureState();
 });
 
-// Expose functions globally if needed
 window.captureImage = captureImage;

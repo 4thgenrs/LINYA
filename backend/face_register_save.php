@@ -1,9 +1,9 @@
 <?php
 // backend/face_register_save.php
 
-// Show PHP errors while we debug (you can turn display_errors off later)
+// Log PHP errors (do not print into JSON)
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 
 // Always send JSON
 header('Content-Type: application/json; charset=utf-8');
@@ -11,8 +11,24 @@ header('Content-Type: application/json; charset=utf-8');
 // Include DB config
 require_once '../linya_db/config.php';
 
+function slog(string $msg, array $ctx = []): void {
+    $line = "[face_register_save] " . $msg;
+    if (!empty($ctx)) $line .= " " . json_encode($ctx, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    error_log($line);
+}
+
+function normalize_safe_name(string $s): string {
+    $s = trim($s);
+    $s = preg_replace('/[^0-9a-zA-Z]+/', '_', $s);
+    $s = strtolower((string)$s);
+    $s = preg_replace('/_+/', '_', $s);
+    $s = trim($s, '_');
+    return $s;
+}
+
 // Make sure we have a valid mysqli connection
 if (!isset($conn) || !$conn instanceof mysqli) {
+    slog("DB connection object not set");
     echo json_encode([
         'status'  => 'error',
         'message' => 'DB connection object not set'
@@ -21,9 +37,10 @@ if (!isset($conn) || !$conn instanceof mysqli) {
 }
 
 if ($conn->connect_error) {
+    slog("DB connection failed", ['err' => $conn->connect_error]);
     echo json_encode([
         'status'  => 'error',
-        'message' => 'DB connection failed: ' . $conn->connect_error
+        'message' => 'DB connection failed'
     ]);
     exit;
 }
@@ -46,8 +63,8 @@ if ($name === '') {
     exit;
 }
 
-// compute safe_name like the Python code: lower, spaces -> underscore
-$safe_name = strtolower(str_replace(' ', '_', $name));
+// ✅ FIX: compute safe_name exactly like Python + face_login.php (regex-based)
+$safe_name = normalize_safe_name($name);
 
 $face_blob    = null;
 $face_path_db = null;
@@ -65,20 +82,22 @@ if ($encoding_b64) {
 
 // ---- CHECK IF CLIENT ALREADY EXISTS ----
 // NOTE: your PK is client_id, not id → use client_id AS id
-$checkSql = 'SELECT client_id AS id, name, phone, email 
-             FROM clients 
-             WHERE name = ? AND phone = ? AND email = ? 
+$checkSql = 'SELECT client_id AS id, name, phone, email
+             FROM clients
+             WHERE name = ? AND phone = ? AND email = ?
              LIMIT 1';
 
 $chk = $conn->prepare($checkSql);
 if (!$chk) {
-    echo json_encode(['status' => 'error', 'message' => 'DB prepare error (check): ' . $conn->error]);
+    slog("DB prepare error (check)", ['err' => $conn->error]);
+    echo json_encode(['status' => 'error', 'message' => 'DB prepare error (check)']);
     exit;
 }
 
 $chk->bind_param('sss', $name, $phone, $email);
 if (!$chk->execute()) {
-    echo json_encode(['status' => 'error', 'message' => 'DB execute error (check): ' . $chk->error]);
+    slog("DB execute error (check)", ['err' => $chk->error]);
+    echo json_encode(['status' => 'error', 'message' => 'DB execute error (check)']);
     $chk->close();
     exit;
 }
@@ -102,11 +121,12 @@ $chk->close();
 
 // ---- INSERT NEW CLIENT ----
 $stmt = $conn->prepare(
-    'INSERT INTO clients (name, safe_name, phone, email, face_data, face_path) 
+    'INSERT INTO clients (name, safe_name, phone, email, face_data, face_path)
      VALUES (?, ?, ?, ?, ?, ?)'
 );
 if (!$stmt) {
-    echo json_encode(['status' => 'error', 'message' => 'DB prepare error (insert): ' . $conn->error]);
+    slog("DB prepare error (insert)", ['err' => $conn->error]);
+    echo json_encode(['status' => 'error', 'message' => 'DB prepare error (insert)']);
     exit;
 }
 
@@ -123,7 +143,8 @@ if ($face_blob !== null) {
 }
 
 if (!$stmt->execute()) {
-    echo json_encode(['status' => 'error', 'message' => 'DB execute error (insert): ' . $stmt->error]);
+    slog("DB execute error (insert)", ['err' => $stmt->error]);
+    echo json_encode(['status' => 'error', 'message' => 'DB execute error (insert)']);
     $stmt->close();
     exit;
 }

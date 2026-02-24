@@ -1,4 +1,3 @@
-
 import os
 import base64
 import json
@@ -28,9 +27,11 @@ try:
     CORS_AVAILABLE = True
 except Exception:
     CORS_AVAILABLE = False
+
 from .core.face_processor import FaceProcessor
 from .core.deepface_processor import DeepFaceProcessor
 from .utils.image_utils import decode_base64_to_rgb, save_temp_image
+
 
 class FaceRecognitionApp:
     def __init__(self, db_dir: str):
@@ -38,10 +39,12 @@ class FaceRecognitionApp:
         # Configure CORS. Keep it simple: allow localhost origins and enable credentials support.
         # Using the top-level parameters ensures flask-cors applies headers correctly.
         if CORS_AVAILABLE:
-            CORS(self.app,
-                 resources={r"/*": {"origins": "*"}},
-                 supports_credentials=True,
-                 allow_headers=["Content-Type", "Authorization", "Accept"])
+            CORS(
+                self.app,
+                resources={r"/*": {"origins": "*"}},
+                supports_credentials=True,
+                allow_headers=["Content-Type", "Authorization", "Accept"]
+            )
         else:
             # If flask_cors is not available, rely on the explicit after_request to set headers.
             logging.warning('flask_cors not available — proceeding without CORS extension')
@@ -84,21 +87,42 @@ class FaceRecognitionApp:
                 'status': 'error',
                 'message': 'Request entity too large. Reduce image size or increase server MAX_CONTENT_LENGTH.'
             }), 413
+
         self.db_dir = db_dir
-        
+
         # Initialize storage client first
         self._init_storage_client()
-        
+
         # Initialize face processor with GCS support
         self.face_processor = FaceProcessor(
-            db_dir, 
+            db_dir,
             gcs_client=self.storage_client if self.use_gcs else None,
             bucket=self.bucket if self.use_gcs else None,
             use_gcs=self.use_gcs
         )
         self.face_processor.reset_database(remove_user_dirs=False)
         self.deepface = DeepFaceProcessor()
-        self.accessory_detector = AccessoryDetector()
+
+        # ============================================================
+        # ✅ FIX: Lazy-load AccessoryDetector to prevent Gunicorn timeout
+        # (does NOT change existing logic/output, only delays model load)
+        # ============================================================
+        self._accessory_model_path = os.path.join(
+            os.path.dirname(__file__),
+            "core",
+            "models",
+            "accessory_model.pt"
+        )
+        self.accessory_detector = None  # will be initialized on first use
+
+        print(
+            "[FaceRecognitionApp] Accessory model path:",
+            self._accessory_model_path,
+            "exists:",
+            os.path.isfile(self._accessory_model_path),
+            flush=True
+        )
+        # ============================================================
 
         # Initialize face recognition system
         # If the DB folder has no user data, reset any serialized caches and keep memory empty.
@@ -109,9 +133,32 @@ class FaceRecognitionApp:
             # On any error, ensure we have a clean in-memory state
             print(f"Error initializing face database: {e}")
             self.face_processor.reset_database()
-        
+
         # Register routes
         self._register_routes()
+
+    # ✅ New helper (lazy init)
+    def _get_accessory_detector(self):
+        if self.accessory_detector is not None:
+            return self.accessory_detector
+
+        detector = AccessoryDetector(
+            model_path=self._accessory_model_path,
+            conf=0.50,
+            iou=0.45,
+            max_det=10,
+            image_size=640
+        )
+        self.accessory_detector = detector
+
+        print(
+            "[FaceRecognitionApp] Accessory detector ready:",
+            "available=", bool(getattr(detector, "available", False)),
+            "path=", self._accessory_model_path,
+            "exists=", os.path.isfile(self._accessory_model_path),
+            flush=True
+        )
+        return detector
 
     def _init_storage_client(self):
         """Initialize Google Cloud Storage client."""
@@ -193,67 +240,60 @@ class FaceRecognitionApp:
         self.app.route('/admin/list_users_files', methods=['GET'])(self.admin_list_users_files)
 
     def recognize(self):
-        """Handle face recognition requests."""
         try:
             data = request.get_json()
             if not data or 'image' not in data:
-                return jsonify({"status": "error", "message": "No image provided"})
+                return jsonify({"status": "error", "message": "No image provided"}), 400
 
             # Process image
             unknown_image = decode_base64_to_rgb(data['image'], target_size=None)
             if unknown_image is None:
-                return jsonify({"status": "error", "message": "Could not decode image"})
+                return jsonify({"status": "error", "message": "Could not decode image"}), 400
 
             # Get face locations and encodings
             locations, unknown_encodings = self.face_processor.get_face_encoding(unknown_image)
             if not unknown_encodings:
-                return jsonify({"status": "no_person_found"})
+                return jsonify({"status": "no_person_found"}), 200
 
-            # 🔵 Accessory Detection
-            accessories = self.accessory_detector.detect(unknown_image)
+            # 🔵 Accessory Detection (BLOCK) - now lazy initialized
+            detector = self._get_accessory_detector()
+            accessories = detector.detect(unknown_image)
             if accessories:
                 return jsonify({
                     "status": "accessory_detected",
                     "message": f"Accessory detected: {', '.join(accessories)}. Please remove it and try again.",
                     "accessories": accessories
-                })
+                }), 400
 
-            # 🔹 No more accessory detection / blocking here.
-            # Just refresh DB and try recognition.
+            # Refresh DB and try recognition.
             self.face_processor.refresh_face_database()
             face_exists, name = self.face_processor.face_exists(unknown_encodings[0])
 
             if face_exists:
-                # compute a safe_name to identify the folder / user key
                 safe_name = re.sub(r"[^0-9a-zA-Z]+", "_", name.strip()).lower()
                 return jsonify({
                     "status": "recognized",
                     "name": name,
                     "safe_name": safe_name,
-                    # kept for compatibility with frontend, always 'none' now
-                    "glasses": "none"
-                })
-            else:
-                return jsonify({
-                    "status": "unknown",
-                    "message": "Unknown user. Please register first.",
-                    "glasses": "none"
-                })
+                    "glasses": "none"  # kept for frontend compatibility
+                }), 200
+
+            return jsonify({
+                "status": "unknown",
+                "message": "Unknown user. Please register first.",
+                "glasses": "none"
+            }), 200
 
         except Exception as e:
-            return jsonify({"status": "error", "message": str(e)})
-
-
+            return jsonify({"status": "error", "message": str(e)}), 500
 
     def register_user(self):
-        """Handle user registration requests."""
         if request.method == 'OPTIONS':
-            # Handle preflight request
             response = jsonify({"status": "ok"})
             response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
             response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
             response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-            return response
+            return response, 200
 
         try:
             # Refresh in-memory face DB to avoid stale cache
@@ -271,7 +311,7 @@ class FaceRecognitionApp:
             # Process first image for validation
             img_data = images[0].split(',')[1] if ',' in images[0] else images[0]
             unknown_img = decode_base64_to_rgb(img_data, target_size=None)
-            
+
             if unknown_img is None:
                 return jsonify({
                     'status': 'error',
@@ -280,15 +320,15 @@ class FaceRecognitionApp:
 
             # Check for face
             locations, face_encodings = self.face_processor.get_face_encoding(unknown_img)
-
             if not face_encodings:
                 return jsonify({
                     'status': 'error',
                     'message': 'No face detected in the image. Please try again.'
                 }), 400
 
-            # 🔵 Accessory Detection
-            accessories = self.accessory_detector.detect(unknown_img)
+            # 🔵 Accessory Detection (BLOCK) - now lazy initialized
+            detector = self._get_accessory_detector()
+            accessories = detector.detect(unknown_img)
             if accessories:
                 return jsonify({
                     "status": "accessory_detected",
@@ -296,8 +336,28 @@ class FaceRecognitionApp:
                     "accessories": accessories
                 }), 400
 
-            # 🔹 No more glasses/accessory blocking here.
-            # We just ensure a face is present.
+            # ============================================================
+            # ✅ UPDATE (NO LOGIC CHANGE): also block if ANY uploaded image
+            # contains accessories. This prevents saving if later angles have
+            # glasses/hat/etc. Recognize() already blocks; registration now too.
+            # ============================================================
+            for i, img_item in enumerate(images):
+                img_item_data = img_item.split(',')[1] if ',' in img_item else img_item
+                img_rgb = decode_base64_to_rgb(img_item_data, target_size=None)
+                if img_rgb is None:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Could not decode uploaded image #{i + 1}.'
+                    }), 400
+
+                accessories_i = detector.detect(img_rgb)
+                if accessories_i:
+                    return jsonify({
+                        "status": "accessory_detected",
+                        "message": f"Accessory detected: {', '.join(accessories_i)}. Please remove it and try again.",
+                        "accessories": accessories_i
+                    }), 400
+            # ============================================================
 
             # Check if this face is already registered
             face_exists, existing_name = self.face_processor.face_exists(face_encodings[0])
@@ -306,7 +366,7 @@ class FaceRecognitionApp:
                     'status': 'already_registered',
                     'message': f'Face already registered as {existing_name}. Please go to Login instead.',
                     'existing_name': existing_name
-                }), 409  # HTTP Conflict
+                }), 409
 
             # No conflict → Save user data
             return self._save_user_data(name, images)
@@ -322,20 +382,18 @@ class FaceRecognitionApp:
                 'traceback': traceback.format_exc()
             }), 500
 
-
-
     def _save_user_data(self, name: str, images: List[str]) -> Dict[str, Any]:
         """Save user images and compute face encodings to GCS or local storage."""
         safe_name = re.sub(r"[^0-9a-zA-Z]+", "_", name.strip()).lower()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         saved_files = []
         temp_files = []  # For GCS, we'll need temp files to compute encodings
-        
+
         if self.use_gcs:
             # GCS path structure: db_pictures/<safe_name>/<timestamp>/
             folder_path = f"db_pictures/{safe_name}/{timestamp}"
-            
+
             # Save images to GCS
             for idx, img_data in enumerate(images, start=1):
                 if ',' in img_data:
@@ -343,11 +401,11 @@ class FaceRecognitionApp:
 
                 img_bytes = base64.b64decode(img_data)
                 blob_name = f"{folder_path}/{safe_name}_{idx}.jpg"
-                
+
                 # Upload to GCS
                 if self._upload_to_gcs(blob_name, img_bytes):
                     saved_files.append(blob_name)
-                    
+
                     # Create temp file for encoding computation
                     temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
                     temp_file.write(img_bytes)
@@ -357,7 +415,7 @@ class FaceRecognitionApp:
             # Local fallback
             folder_path = os.path.join(self.db_dir, safe_name)
             os.makedirs(folder_path, exist_ok=True)
-            
+
             for idx, img_data in enumerate(images, start=1):
                 if ',' in img_data:
                     img_data = img_data.split(',')[1]
@@ -371,7 +429,7 @@ class FaceRecognitionApp:
         # Compute encodings
         enc_list = []
         files_to_process = temp_files if self.use_gcs else saved_files
-        
+
         for img_path in files_to_process:
             try:
                 img = cv2.imread(img_path)
@@ -392,7 +450,7 @@ class FaceRecognitionApp:
         encoding_b64 = None
         if enc_list:
             enc_array = np.stack(enc_list).astype('float32')
-            
+
             if self.use_gcs:
                 # Upload encoding.npy to GCS
                 with BytesIO() as npy_buffer:
@@ -400,20 +458,20 @@ class FaceRecognitionApp:
                     npy_bytes = npy_buffer.getvalue()
                     self._upload_to_gcs(f"{folder_path}/encoding.npy", npy_bytes)
                     encoding_b64 = base64.b64encode(npy_bytes).decode('utf-8')
-                
+
                 # Upload meta.json to GCS
                 meta = {"display_name": name}
                 meta_bytes = json.dumps(meta, ensure_ascii=False).encode('utf-8')
                 self._upload_to_gcs(f"{folder_path}/meta.json", meta_bytes)
-                
+
             else:
                 # Local fallback
                 np.save(os.path.join(folder_path, "encoding.npy"), enc_array)
-                
+
                 meta = {"display_name": name}
                 with open(os.path.join(folder_path, "meta.json"), "w", encoding="utf-8") as f:
                     json.dump(meta, f, ensure_ascii=False)
-                
+
                 # Encode the NPY file to base64 for transmission to PHP/DB
                 enc_npy_path = os.path.join(folder_path, "encoding.npy")
                 with open(enc_npy_path, "rb") as f:
@@ -431,7 +489,7 @@ class FaceRecognitionApp:
             final_folder = f"gs://{self.bucket_name}/{folder_path}"
         else:
             final_folder = folder_path
-        
+
         return jsonify({
             'status': 'success',
             'folder': final_folder,
@@ -459,7 +517,7 @@ class FaceRecognitionApp:
 
             # Get face encoding
             locations, new_encodings = self.face_processor.get_face_encoding(new_image)
-            
+
             if not new_encodings:
                 return jsonify({"status": "error", "message": "No face detected"})
 
@@ -470,33 +528,74 @@ class FaceRecognitionApp:
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)})
 
-
-
     def model_status(self):
         """Get status of available models and processors."""
         try:
+            import inspect
+
+            detector = getattr(self, "accessory_detector", None)
+
+            accessory_detector_class = None
+            accessory_detector_module = None
+            accessory_detector_file = None
+
+            if detector is not None:
+                accessory_detector_class = detector.__class__.__name__
+                accessory_detector_module = detector.__class__.__module__
+                try:
+                    accessory_detector_file = inspect.getfile(detector.__class__)
+                except Exception:
+                    accessory_detector_file = None
+
+            # If lazy, detector is None until first use
+            lazy_initialized = detector is not None
+
+            # If detector exists, read its state
+            accessory_available = bool(getattr(detector, "available", False)) if detector else False
+            model_path = getattr(detector, "model_path", None) if detector else None
+
+            # fallback: your stored path
+            if not model_path:
+                model_path = getattr(self, "_accessory_model_path", None)
+
+            model_exists = bool(model_path and os.path.isfile(model_path))
+
             return jsonify({
-                'deepface_available': self.deepface.available,
-                'heuristic_fallback': True,
-                'face_recognition_loaded': True
+                "deepface_available": self.deepface.available,
+                "heuristic_fallback": True,
+                "face_recognition_loaded": True,
+
+                "ultralytics_available": True,
+
+                "accessory_model_path": model_path,
+                "accessory_model_exists": model_exists,
+
+                # ✅ new:
+                "accessory_detector_lazy": True,
+                "accessory_detector_initialized": lazy_initialized,
+                "accessory_available": accessory_available,
+
+                "accessory_detector_class": accessory_detector_class,
+                "accessory_detector_module": accessory_detector_module,
+                "accessory_detector_file": accessory_detector_file,
+                "accessory_last_error": getattr(detector, "last_error", None),
             })
         except Exception as e:
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-
+            return jsonify({"status": "error", "message": str(e)}), 500
 
     def admin_delete_user(self):
         """
         Admin endpoint: safely delete user face data from GCS storage and memory cache.
-        
+
         Accepts JSON:
           - { "safe_name": "john_doe" } OR
           - { "folder": "gs://bucket/db_pictures/john_doe/20251122_123456Z" }
-        
+
         Security:
           - Requires X-ADMIN-KEY header if ADMIN_KEY env var is set
           - Only deletes under db_pictures/ prefix (safety guard)
           - Returns 500 if GCS_BUCKET not configured (prevents orphaned DB records)
-        
+
         Returns:
           - 200: {"status":"ok", "deleted_count": N, "prefix": "..."}
           - 400: {"status":"error", "message": "Invalid safe_name"}
@@ -608,7 +707,6 @@ class FaceRecognitionApp:
                 "message": f"Internal server error: {str(e)}"
             }), 500
 
-
     def admin_refresh(self):
         """Admin endpoint: force the face processor to reload encodings from disk.
 
@@ -658,11 +756,11 @@ class FaceRecognitionApp:
 def create_app():
     """
     Application factory for Cloud Run and WSGI servers.
-    
+
     Returns a Flask application instance configured for face recognition.
     The db_dir (for storing user encodings) is set relative to this module,
     allowing flexible deployment to local, Docker, or Cloud Run environments.
-    
+
     Note on persistence:
     - On Cloud Run, db_pictures/ is ephemeral (lost on container restart)
     - For production, consider plugging in Google Cloud Storage or Cloud SQL
@@ -671,7 +769,7 @@ def create_app():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     db_dir = os.path.join(base_dir, '..', 'db_pictures')  # ../db_pictures relative to app.py
     os.makedirs(db_dir, exist_ok=True)
-    
+
     face_app = FaceRecognitionApp(db_dir)
     return face_app.app
 
