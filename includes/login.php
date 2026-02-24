@@ -35,10 +35,12 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
 </head>
 <body>
   <main class="login-wrap">
+    <div  class="logo-card">
+      <img src="../resources/ucc.png" alt="" class="ucclogo">
+    </div>
     <form id="loginForm" class="login-card" autocomplete="off">
+      <img src="../resources/linya_logo.png" alt="" class="linyaLogo">
       <h1 class="brand">LINYA</h1>
-      <p class="hint">Staff login — enter credentials (case sensitive).</p>
-
       <label class="field">
         <span class="label">Username</span>
         <input id="username" name="user_name" type="text" autocomplete="off" required />
@@ -55,7 +57,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
         <button id="submitBtn" type="submit" class="btn primary">Sign in</button>
       </div>
 
-      <div class="small muted foot">Only staff accounts can access the queue window.</div>
+      <div class="small muted foot">Only Staff can access the queue window.</div>
     </form>
   </main>
 

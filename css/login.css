@@ -1,17 +1,166 @@
-:root{ --bg:#f6f7fb; --card:#fff; --accent:#0f62fe; --muted:#6b7280 }
-*{box-sizing:border-box}
-body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f4f6fb,#eef3ff);font-family:Inter,Segoe UI,system-ui,sans-serif}
-.login-wrap{width:420px;max-width:95%}
-.login-card{background:var(--card);padding:28px;border-radius:14px;box-shadow:0 10px 30px rgba(12,18,29,0.06);display:flex;flex-direction:column;gap:12px}
-.brand{margin:0;font-size:20px;color:#0b1230}
-.hint{margin:0;color:var(--muted);font-size:13px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field .label{font-size:13px;color:var(--muted)}
-input[type="text"],input[type="password"]{padding:12px;border-radius:10px;border:1px solid rgba(11,18,48,0.06);background:#fbfdff;outline:none;font-size:15px}
-input:focus{box-shadow:0 6px 18px rgba(15,98,254,0.06);border-color:var(--accent)}
-.actions{display:flex;justify-content:flex-end}
-.btn{padding:10px 16px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
-.btn.primary{background:linear-gradient(90deg,var(--accent),#2aa7ff);color:#fff}
-.error{color:#b91c1c;padding:8px;background:rgba(239,68,68,0.06);border-radius:8px}
-.small{font-size:12px;color:var(--muted)}
-.foot{margin-top:6px;text-align:center}
+:root {
+    --bg: #f6f7fb;
+    --card: #fff;
+    --accent: #0f62fe;
+    --muted: #6b7280
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../resources/bg_get.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: 0.8; /* Adjust this value: 0.1 to 1 */
+    z-index: -1;
+}
+
+.login-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 1000px;
+    height: 620px;
+}
+
+.logo-card{
+    width: 50%;
+    height: 100%;
+    background: rgb(3, 93, 3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+    box-shadow: 0 10px 30px rgba(12, 18, 29, 0.06);
+}
+
+.linyaLogo{
+    width: 300px;
+    height: 300px;
+    position: absolute;
+    margin-bottom: 350px;
+}
+.ucclogo{
+    width: 80%;
+}
+
+.login-card {
+    background: white;
+    /* padding: 2px; */
+    border-top-right-radius: 14px;
+    border-bottom-right-radius: 14px;
+    box-shadow: 0 10px 30px rgba(12, 18, 29, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    /* gap: 2px; */
+    width: 50%;
+    height: 100%;
+}
+
+.brand {
+    font-size: 40px;
+    background: linear-gradient(135deg, #234a3f, #0c9e3d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;  /* Fallback */
+    margin-bottom: 10px;
+}
+
+.hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;   
+    width: 80%;
+}
+
+.field .label {
+    font-size: 13px;
+    color: var(--muted)
+}
+
+input[type="text"],
+input[type="password"] {
+    padding: 12px;
+    border-radius: 10px;
+    border: 3px solid rgba(0, 0, 0, 0.06);
+    background: #fbfdff;
+    outline: none;
+    font-size: 15px
+}
+
+input:focus {
+    box-shadow: 0 6px 18px rgba(15, 98, 254, 0.06);
+    border-color: var(--accent)
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    width: 50%;
+    height: 40px;
+    margin-top: 15px;  /* Add this line - creates space above button */
+}
+
+.btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 0;
+    font-weight: 700;
+    cursor: pointer
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+    color: #fff;
+    width: 100%;
+    padding-bottom: 20px;
+}
+
+.error {
+    color: #b91c1c;
+    padding: 8px;
+    background: rgba(239, 68, 68, 0.06);
+    border-radius: 8px
+}
+
+.small {
+    font-size: 12px;
+    color: var(--muted)
+}
+
+.foot {
+    margin-top: 6px;
+    text-align: center
+}
