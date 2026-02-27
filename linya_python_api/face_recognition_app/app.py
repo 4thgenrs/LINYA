@@ -164,7 +164,9 @@ class FaceRecognitionApp:
         """Initialize Google Cloud Storage client."""
         try:
             self.bucket_name = os.environ.get('GCS_BUCKET')
-            if self.bucket_name:
+            use_gcs_flag = os.environ.get('USE_GCS', '0').lower() in ('1', 'true', 'yes')
+
+            if self.bucket_name and use_gcs_flag:
                 self.storage_client = storage.Client()
                 self.bucket = self.storage_client.bucket(self.bucket_name)
                 self.use_gcs = True
@@ -173,7 +175,8 @@ class FaceRecognitionApp:
                 self.storage_client = None
                 self.bucket = None
                 self.use_gcs = False
-                logging.warning("GCS_BUCKET environment variable not set. Using local storage.")
+                logging.warning("GCS disabled (local mode). Using local storage.")
+
         except Exception as e:
             self.storage_client = None
             self.bucket = None
