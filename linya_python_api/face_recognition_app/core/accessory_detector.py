@@ -5,15 +5,22 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-# ✅ PyTorch 2.6+ safe unpickling fix imports
+# ✅ PyTorch import with real error logging
+TORCH_AVAILABLE = False
+TORCH_IMPORT_ERROR = None
+
 try:
     import torch
     from torch.serialization import add_safe_globals
     TORCH_AVAILABLE = True
-except Exception:
+    print("[AccessoryDetector] Torch imported successfully:", torch.__version__, flush=True)
+except Exception as e:
     torch = None
     add_safe_globals = None
     TORCH_AVAILABLE = False
+    TORCH_IMPORT_ERROR = f"{type(e).__name__}: {e}"
+    print("[AccessoryDetector] TORCH IMPORT FAILED:", TORCH_IMPORT_ERROR, flush=True)
+    traceback.print_exc()
 
 try:
     from ultralytics import YOLO
@@ -92,8 +99,8 @@ class AccessoryDetector:
             print("[AccessoryDetector] class names =", self.names, flush=True)
 
             if not TORCH_AVAILABLE or torch is None:
-                self.last_error = "torch not available for inference"
-                print("[AccessoryDetector] torch not available for inference", flush=True)
+                self.last_error = f"torch not available for inference ({TORCH_IMPORT_ERROR})"
+                print("[AccessoryDetector] torch not available for inference", self.last_error, flush=True)
                 return
 
             torch_model = getattr(self.model, "model", None)

@@ -4,11 +4,10 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const context = canvas.getContext('2d');
-const loginBtn = document.getElementById('loginBtn');
-const loginWrapper = document.getElementById('loginWrapper');
 
 // Global variables for camera management
 window.videoStream = null;
+window.autoCaptureCountdown = null;
 
 /* ============================================
    DEBUG HELPERS
@@ -184,18 +183,79 @@ function captureImage() {
   const dataURL = tmpCanvas.toDataURL('image/jpeg', 0.85);
   document.getElementById('imageInput').value = dataURL;
 
-  // Enable login
-  if (loginBtn) {
-    loginBtn.disabled = false;
-    if (loginWrapper) loginWrapper.classList.remove('disabled');
-    loginBtn.setAttribute('aria-disabled', 'false');
+  // Keep the live camera feed visible (scanning effect)
+  // The captured image is kept in the hidden input and used for verification.
+  const statusEl = document.getElementById('statusMessage');
+  if (statusEl) {
+    statusEl.innerHTML = '<p style="color:green;">✅ Face captured! Logging in...</p>';
   }
 
-  // Show preview
-  video.style.display = 'none';
-  canvas.style.display = 'block';
+  // Run the EXACT same verification flow the old Login button used to trigger
+  if (typeof handleLogin === 'function') {
+    handleLogin();
+  }
+}
 
-  alert("✅ Face captured! Click 'Login' to authenticate.\n(Remove glasses/hats/masks if prompted.)");
+/* ============================================
+   AUTO-CAPTURE FLOW (START CAPTURE FACE)
+   ============================================ */
+
+function startCaptureFace() {
+  dbg("▶️ startCaptureFace()");
+
+  const btn = document.getElementById('startCaptureBtn');
+  const statusEl = document.getElementById('statusMessage');
+
+  // Prevent multiple sessions
+  if (window.autoCaptureCountdown) {
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.setAttribute('aria-disabled', 'true');
+  }
+
+  let remaining = 3;
+  const labelEl = btn ? btn.querySelector('.btn-label') : null;
+  const originalText = labelEl ? labelEl.textContent : 'Start Capture Face';
+
+  const updateUI = () => {
+    if (statusEl) {
+      statusEl.innerHTML = `<p style="color:blue;">Preparing capture... ${remaining}</p>`;
+    }
+    if (labelEl) {
+      labelEl.textContent = `Capturing in ${remaining}...`;
+    }
+  };
+
+  updateUI();
+
+  window.autoCaptureCountdown = setInterval(() => {
+    remaining -= 1;
+
+    if (remaining <= 0) {
+      clearInterval(window.autoCaptureCountdown);
+      window.autoCaptureCountdown = null;
+
+      if (labelEl) {
+        labelEl.textContent = originalText;
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.setAttribute('aria-disabled', 'false');
+      }
+
+      if (statusEl) {
+        statusEl.innerHTML = '';
+      }
+
+      captureImage();
+      return;
+    }
+
+    updateUI();
+  }, 1000);
 }
 
 function resetCapture() {
@@ -218,11 +278,20 @@ function resetCapture() {
   const faceCheckError = document.getElementById('faceCheckError');
   if (faceCheckError) faceCheckError.remove();
 
-  if (loginBtn) {
-    loginBtn.disabled = true;
-    if (loginWrapper) loginWrapper.classList.add('disabled');
-    loginBtn.setAttribute('aria-disabled', 'true');
+  // Cancel any in-progress auto-capture countdown
+  if (window.autoCaptureCountdown) {
+    clearInterval(window.autoCaptureCountdown);
+    window.autoCaptureCountdown = null;
   }
+
+  const startBtn = document.getElementById('startCaptureBtn');
+  if (startBtn) {
+    const labelEl = startBtn.querySelector('.btn-label');
+    if (labelEl) labelEl.textContent = 'Start Capture Face';
+    startBtn.disabled = false;
+    startBtn.setAttribute('aria-disabled', 'false');
+  }
+
 }
 
 /* ============================================
@@ -373,11 +442,6 @@ function applyServerCaptureReset() {
       window.startCamera();
     }
 
-    if (cfg.disableLogin && loginBtn) {
-      loginBtn.disabled = true;
-      loginBtn.setAttribute('aria-disabled', 'true');
-      if (loginWrapper) loginWrapper.classList.add('disabled');
-    }
 
     const faceCheckErrorEl = document.getElementById('faceCheckError');
     if (faceCheckErrorEl) faceCheckErrorEl.remove();
