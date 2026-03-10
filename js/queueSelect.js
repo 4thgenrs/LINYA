@@ -102,7 +102,7 @@
     const container = $('queueListContainer');
     container.innerHTML = '';
     if (!list || !list.length) {
-      container.innerHTML = '<div class="queue-item small muted">No pending queues</div>';
+      container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox" style="display:block;font-size:22px;margin-bottom:8px;color:#94a3b8"></i>No pending queues</div>';
       return;
     }
     list.forEach(q => {
@@ -314,8 +314,8 @@
 
     if (attachBtn && attachInput) {
       attachBtn.addEventListener('click', () => {
-        attachInput.value = '';
-        attachInput.click();
+        attachStatus.style.display = 'none';
+        showAttachModal();
       });
 
       // modal elements
@@ -339,14 +339,17 @@
           row.style.display = 'flex';
           row.style.alignItems = 'center';
           row.style.justifyContent = 'space-between';
-          row.style.padding = '6px';
-          row.style.borderBottom = '1px solid #f3f3f3';
+          row.style.padding = '10px 12px';
+          row.style.border = '1px solid #e5e7eb';
+          row.style.borderRadius = '12px';
+          row.style.background = '#fff';
+          row.style.boxShadow = '0 8px 18px rgba(15,23,42,0.05)';
           const left = document.createElement('div');
           left.style.display = 'flex';
           left.style.alignItems = 'center';
           left.style.gap = '10px';
           const info = document.createElement('div');
-          info.innerHTML = `<strong style="font-size:13px">${f.name}</strong><div style="font-size:12px;color:#666">${(f.size/1024/1024).toFixed(2)} MB • ${f.type || 'unknown'}</div>`;
+          info.innerHTML = `<strong style="font-size:13px;color:#0f172a">${f.name}</strong><div style="font-size:12px;color:#64748b">${(f.size/1024/1024).toFixed(2)} MB • ${f.type || 'unknown'}</div>`;
           left.appendChild(info);
           // thumbnail for images
           if (f.type && f.type.startsWith('image/')) {
@@ -362,7 +365,7 @@
           }
           const removeBtn = document.createElement('button');
           removeBtn.className = 'btn-ghost';
-          removeBtn.textContent = 'Remove';
+          removeBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Remove';
           removeBtn.addEventListener('click', () => {
             // remove file from FileList by rebuilding list (cannot modify FileList directly)
             const newFiles = Array.from(attachInput.files).filter(x => x !== f);

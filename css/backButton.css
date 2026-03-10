@@ -1,94 +1,35 @@
-/* 
- * Back Button Component
- * Reusable back button for kiosk pages
- */
-
+/* Back Button Specific Styles */
 .back-btn {
-    position: fixed;
+    position: absolute;
     top: 20px;
-    right: 20px;
+    left: 20px;
+    z-index: 10;
+    background-color: transparent;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #333;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
-    background: #6c757d;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
     font-family: Arial, sans-serif;
-    transition: all 0.2s ease;
-    z-index: 1000;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border: none;
-    cursor: pointer;
+    font-size: 16px;
 }
 
 .back-btn:hover {
-    background: #5a6268;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    color: white;
-    text-decoration: none;
+    transform: translateY(-2px);
 }
 
 .back-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.back-btn:focus {
-    outline: 2px solid #007bff;
-    outline-offset: 2px;
 }
 
 .back-btn svg {
-    flex-shrink: 0;
     transition: transform 0.2s ease;
 }
 
 .back-btn:hover svg {
     transform: translateX(-2px);
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-    .back-btn {
-        top: 15px;
-        right: 15px;
-        padding: 8px 12px;
-        font-size: 13px;
-    }
-    
-    .back-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .back-btn {
-        border: 2px solid currentColor;
-    }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-    .back-btn {
-        transition: none;
-    }
-    
-    .back-btn:hover {
-        transform: none;
-    }
-    
-    .back-btn svg {
-        transition: none;
-    }
-    
-    .back-btn:hover svg {
-        transform: none;
-    }
 }

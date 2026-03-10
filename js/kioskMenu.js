@@ -1,4 +1,4 @@
-// Modernized kiosk menu JS (per-service soft toggle + minimal UI)
+// Modernized kiosk menu JS (per-service soft toggle + minimal UI + pagination)
 
 window.multiSelectMode = window.multiSelectMode || false;
 window.selectedServicesSet = window.selectedServicesSet || new Set();
@@ -7,6 +7,154 @@ window.perServiceSoft = window.perServiceSoft || {}; // { id: 0|1 }
 // Add visitor form handling at top of file (keeps existing functions below working)
 window.visitorInfo = window.visitorInfo || { name: '', phone: '', email: '' };
 
+// ========== PAGINATION STATE AND FUNCTIONS ==========
+window.paginationState = {
+    office: { currentPage: 1, itemsPerPage: 6, totalItems: 0 },
+    service: { currentPage: 1, itemsPerPage: 6, totalItems: 0 }
+};
+
+function createPaginationHTML(type, currentPage, totalPages) {
+    if (totalPages <= 1) return '';
+
+    let html = '<div class="pagination-container">';
+    html += `<div class="pagination-info">Page ${currentPage} of ${totalPages}</div>`;
+    html += '<div class="pagination-controls">';
+    
+    // Previous button
+    html += `<button class="pagination-btn prev-btn" onclick="changePage('${type}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>`;
+    
+    // Page numbers
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="changePage('${type}', 1)">1</button>`;
+        if (startPage > 2) {
+            html += '<span class="pagination-dots">...</span>';
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage('${type}', ${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += '<span class="pagination-dots">...</span>';
+        }
+        html += `<button class="pagination-btn" onclick="changePage('${type}', ${totalPages})">${totalPages}</button>`;
+    }
+    
+    // Next button
+    html += `<button class="pagination-btn next-btn" onclick="changePage('${type}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+    
+    html += '</div></div>';
+    return html;
+}
+
+function paginateItems(items, page, itemsPerPage) {
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return items.slice(start, end);
+}
+
+function changePage(type, newPage) {
+    const state = window.paginationState[type];
+    const totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+    
+    if (newPage < 1 || newPage > totalPages) return;
+    
+    state.currentPage = newPage;
+    
+    if (type === 'office') {
+        renderOfficePage();
+    } else if (type === 'service') {
+        renderServicePage();
+    }
+    
+    // Smooth scroll to top of section
+    const container = type === 'office' 
+        ? document.querySelector('.office-section-container')
+        : document.querySelector('.service-section-container');
+    
+    if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function renderOfficePage() {
+    const grid = document.getElementById('officeGrid');
+    if (!grid) return;
+    
+    const allOffices = Array.from(grid.querySelectorAll('.office-btn'));
+    window.paginationState.office.totalItems = allOffices.length;
+    
+    const state = window.paginationState.office;
+    const totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+    
+    // Hide all offices first
+    allOffices.forEach(btn => btn.style.display = 'none');
+    
+    // Show only current page offices
+    const currentPageOffices = paginateItems(allOffices, state.currentPage, state.itemsPerPage);
+    currentPageOffices.forEach(btn => btn.style.display = '');
+    
+    // Add animation
+    grid.classList.add('animating');
+    setTimeout(() => grid.classList.remove('animating'), 400);
+    
+    // Update or create pagination
+    let paginationDiv = document.getElementById('officePagination');
+    if (!paginationDiv) {
+        paginationDiv = document.createElement('div');
+        paginationDiv.id = 'officePagination';
+        grid.parentNode.appendChild(paginationDiv);
+    }
+    
+    paginationDiv.innerHTML = createPaginationHTML('office', state.currentPage, totalPages);
+}
+
+function renderServicePage() {
+    const grid = document.getElementById('serviceGrid');
+    if (!grid) return;
+    
+    const allServices = Array.from(grid.querySelectorAll('.service-card'));
+    window.paginationState.service.totalItems = allServices.length;
+    
+    const state = window.paginationState.service;
+    const totalPages = Math.ceil(state.totalItems / state.itemsPerPage);
+    
+    // Hide all services first
+    allServices.forEach(card => card.style.display = 'none');
+    
+    // Show only current page services
+    const currentPageServices = paginateItems(allServices, state.currentPage, state.itemsPerPage);
+    currentPageServices.forEach(card => card.style.display = '');
+    
+    // Add animation
+    grid.classList.add('animating');
+    setTimeout(() => grid.classList.remove('animating'), 400);
+    
+    // Update or create pagination
+    let paginationDiv = document.getElementById('servicePagination');
+    if (!paginationDiv) {
+        paginationDiv = document.createElement('div');
+        paginationDiv.id = 'servicePagination';
+        const serviceSection = document.getElementById('serviceSection');
+        if (serviceSection) {
+            serviceSection.appendChild(paginationDiv);
+        }
+    }
+    
+    paginationDiv.innerHTML = createPaginationHTML('service', state.currentPage, totalPages);
+}
+
+// ========== VISITOR FORM FUNCTIONS ==========
 function isValidPhone(p) {
     // allow only digits, must be 11 chars and start with 09
     return typeof p === 'string' && /^\s*09\d{9}\s*$/.test(p);
@@ -29,7 +177,7 @@ function visitorSyncState() {
     const email = emailEl ? emailEl.value.trim() : '';
 
     const phoneOk = isValidPhone(phone);
-    const emailOk = email === '' ? true : isValidEmail(email); // allow empty email if desired; change to require by removing condition
+    const emailOk = email === '' ? true : isValidEmail(email);
 
     // show inline hints
     const phoneHint = document.getElementById('visitorPhoneHint');
@@ -67,16 +215,20 @@ function acceptVisitorAndEnter() {
 
     closeVisitorConfirm();
 
-    // show kiosk (officeSection) and hide visitor form
-    const visitor = document.getElementById('visitorForm');
+    // Hide the entire kiosk container
+    const kioskContainer = document.querySelector('.kiosk-container');
     const officeSection = document.getElementById('officeSection');
-    if (visitor) visitor.style.display = 'none';
+    
+    if (kioskContainer) kioskContainer.style.display = 'none';
+    
+    // Show office section
     if (officeSection) {
         officeSection.style.display = 'block';
         setTimeout(() => officeSection.classList.add('active'), 80);
     }
 }
 
+// ========== SERVICE SELECTION FUNCTIONS ==========
 function refreshUIForMode() {
     const serviceActions = document.getElementById('serviceActions');
     const toggleBtn = document.getElementById('multiSelectToggle');
@@ -100,17 +252,24 @@ function refreshUIForMode() {
 function loadServices(officeId, officeName) {
     const officeSection = document.getElementById("officeSection");
     const serviceSection = document.getElementById("serviceSection");
+    const serviceSectionContainer = document.querySelector(".service-section-container");
     const serviceTitle = document.getElementById("serviceTitle");
     const serviceGrid = document.getElementById("serviceGrid");
 
     if (!serviceGrid) return;
+    
+    // Update title
     serviceTitle && (serviceTitle.textContent = "Services — " + officeName);
     window.currentOfficeId = officeId;
     window.selectedServicesSet = new Set();
     window.perServiceSoft = {};
 
+    // Reset service pagination
+    window.paginationState.service.currentPage = 1;
+
     refreshUIForMode();
 
+    // Fetch services
     fetch(`../backend/kioskMenuData.php?office_id=${encodeURIComponent(officeId)}`)
         .then(r => r.text())
         .then(html => {
@@ -125,25 +284,17 @@ function loadServices(officeId, officeName) {
                 // initialize per-service soft default (0 = hard)
                 window.perServiceSoft[sid] = (softCb && softCb.checked) ? 1 : 0;
 
-                // ensure soft toggle is clickable and does not bubble to card click
                 if (softCb) {
-                    // remove disabling — allow click; clicking will auto-select the card if needed
                     softCb.disabled = false;
 
-                    // stop clicks on the switch from triggering the card click
                     softCb.addEventListener('click', (ev) => {
                         ev.stopPropagation();
                     }, {passive: true});
 
-                    // handle change: update perServiceSoft and auto-select on toggle ON
                     softCb.addEventListener('change', (e) => {
-                        // update mapping
                         window.perServiceSoft[sid] = softCb.checked ? 1 : 0;
 
-                        // if user toggled ON and service not selected yet, select it
                         if (softCb.checked && !(window.selectedServicesSet && window.selectedServicesSet.has(sid))) {
-                            // If NOT in multi-select mode, selecting a soft copy should behave like a single selection:
-                            // clear other selections and select this one only.
                             if (!window.multiSelectMode) {
                                 clearAllSelections();
                             }
@@ -151,7 +302,6 @@ function loadServices(officeId, officeName) {
                             window.selectedServicesSet.add(sid);
                             card.classList.add('selected');
                             if (hiddenCb) hiddenCb.checked = true;
-                            // ensure actions and confirm state reflect selection
                             const serviceActions = document.getElementById('serviceActions');
                             if (serviceActions) serviceActions.style.display = 'flex';
                             refreshUIForMode();
@@ -160,9 +310,7 @@ function loadServices(officeId, officeName) {
                     });
                 }
 
-                // card click handles selection (ignore clicks inside controls area)
                 card.addEventListener('click', (e) => {
-                    // if click happened inside the controls area (switch/label), do nothing here
                     if (e.target.closest('.service-controls') || e.target.closest('.service-soft-checkbox') || e.target.closest('label.switch')) {
                         return;
                     }
@@ -170,15 +318,12 @@ function loadServices(officeId, officeName) {
                     if (window.multiSelectMode) {
                         toggleCardSelection(card, sid, hiddenCb, softCb);
                     } else {
-                        // single selection: toggle the single selection (allow deselect)
                         if (!window.selectedServicesSet) window.selectedServicesSet = new Set();
                         if (window.selectedServicesSet.has(sid)) {
-                            // deselect current
                             clearAllSelections();
                             const serviceActions = document.getElementById('serviceActions');
                             if (serviceActions) serviceActions.style.display = 'none';
                         } else {
-                            // select this single card (clear others)
                             clearAllSelections();
                             window.selectedServicesSet.add(sid);
                             card.classList.add('selected');
@@ -186,20 +331,42 @@ function loadServices(officeId, officeName) {
                             const serviceActions = document.getElementById('serviceActions');
                             if (serviceActions) serviceActions.style.display = 'flex';
                         }
-                        // keep soft toggle state as-is (user can toggle after)
                         refreshUIForMode();
                         updateSelectedCount();
                     }
                 });
             });
 
-            // transition to services view
-            if (officeSection) officeSection.classList.remove("active");
+            // Smooth Transition: Fade out office section, populate content, then show service container
+            if (officeSection) {
+                officeSection.classList.remove("active");
+            }
+            
             setTimeout(() => {
+                // Hide office section
                 if (officeSection) officeSection.style.display = "none";
-                if (serviceSection) serviceSection.style.display = "block";
-                setTimeout(() => serviceSection && serviceSection.classList.add("active"), 80);
-            }, 260);
+                
+                // Prepare service section (but keep hidden)
+                if (serviceSection) {
+                    serviceSection.style.display = "block";
+                    serviceSection.classList.remove("active"); // ensure it starts hidden
+                }
+                
+                // Wait a tiny bit for content to render, then show container
+                requestAnimationFrame(() => {
+                    if (serviceSectionContainer) serviceSectionContainer.style.display = 'block';
+                    
+                    // Then trigger the animation
+                    setTimeout(() => {
+                        if (serviceSection) serviceSection.classList.add("active");
+                        
+                        // Initialize service pagination AFTER a short delay to ensure DOM is ready
+                        setTimeout(() => {
+                            renderServicePage();
+                        }, 100);
+                    }, 50);
+                });
+            }, 300);
 
             refreshUIForMode();
             updateSelectedCount();
@@ -215,13 +382,11 @@ function loadServices(officeId, officeName) {
             window.selectedServicesSet.delete(sid);
             card.classList.remove('selected');
             if (hiddenCb) hiddenCb.checked = false;
-            // when deselected, clear soft toggle mapping but keep the user's switch visual state (optional)
             if (softCb) { softCb.checked = false; window.perServiceSoft[sid] = 0; }
         } else {
             window.selectedServicesSet.add(sid);
             card.classList.add('selected');
             if (hiddenCb) hiddenCb.checked = true;
-            // keep soft toggle as-is (user may have toggled it already)
         }
         refreshUIForMode();
         updateSelectedCount();
@@ -232,7 +397,6 @@ function loadServices(officeId, officeName) {
         if (!grid) return;
         grid.querySelectorAll('.service-card.selected').forEach(c => c.classList.remove('selected'));
         grid.querySelectorAll('.service-checkbox').forEach(cb => cb.checked = false);
-        // clear soft toggle visuals and mapping
         grid.querySelectorAll('.service-soft-checkbox').forEach(s => { s.checked = false; });
         window.selectedServicesSet && window.selectedServicesSet.clear();
         window.perServiceSoft = {};
@@ -250,11 +414,9 @@ function loadServices(officeId, officeName) {
 function toggleMultiSelect(){
     window.multiSelectMode = !window.multiSelectMode;
     if (!window.multiSelectMode) {
-        // clear any multi selections on exit
         window.selectedServicesSet && window.selectedServicesSet.clear();
         document.querySelectorAll('.service-card.selected').forEach(c => c.classList.remove('selected'));
         document.querySelectorAll('.service-checkbox').forEach(cb => { cb.checked = false; cb.style.display = 'none'; });
-        // keep soft toggles visible and reset them to unchecked for clarity
         document.querySelectorAll('.service-soft-checkbox').forEach(cb => cb.checked = false);
         document.getElementById('selectedCount').textContent = '0 selected';
         const confirmBtn = document.getElementById('confirmBtn');
@@ -291,7 +453,6 @@ function postQueue(services){
         form.append('soft_copy[]', window.perServiceSoft && window.perServiceSoft[sid] ? 1 : 0);
     });
 
-    // include visitor info if present
     if (window.visitorInfo) {
         form.append('customer_name', window.visitorInfo.name || '');
         form.append('customer_phone', window.visitorInfo.phone || '');
@@ -318,18 +479,28 @@ function postQueue(services){
 function goBack(){
     const officeSection = document.getElementById("officeSection");
     const serviceSection = document.getElementById("serviceSection");
+    const serviceSectionContainer = document.querySelector(".service-section-container");
     const serviceGrid = document.getElementById("serviceGrid");
 
+    // Hide service section
     serviceSection && serviceSection.classList.remove("active");
+    
     setTimeout(() => {
+        if (serviceSectionContainer) serviceSectionContainer.style.display = 'none';
         serviceSection && (serviceSection.style.display = "none");
-        officeSection && (officeSection.style.display = "block");
-        setTimeout(() => officeSection && officeSection.classList.add("active"), 80);
+        
+        // Show office section
+        if (officeSection) {
+            officeSection.style.display = "block";
+            setTimeout(() => officeSection && officeSection.classList.add("active"), 80);
+        }
     }, 260);
 
+    // Reset state
     window.selectedServicesSet && window.selectedServicesSet.clear();
     window.perServiceSoft = {};
     window.multiSelectMode = false;
+    window.paginationState.service.currentPage = 1; // Reset service pagination
     document.body.classList.remove('multi-select-mode');
 
     if (serviceGrid) {
@@ -339,42 +510,48 @@ function goBack(){
     if (actions) actions.style.display = 'none';
     const selectedCount = document.getElementById('selectedCount');
     if (selectedCount) selectedCount.textContent = '0 selected';
+    
+    // Remove service pagination
+    const servicePagination = document.getElementById('servicePagination');
+    if (servicePagination) servicePagination.innerHTML = '';
 }
 
+// ========== DOM CONTENT LOADED ==========
+// ========== DOM CONTENT LOADED ==========
 document.addEventListener('DOMContentLoaded', () => {
     // Skip visitor form if user logged in via face recognition
     if (window.SKIP_VISITOR_FORM === true) {
         try {
-            // Populate visitor info from client session
             if (window.__CLIENT_SESSION) {
                 window.visitorInfo = { 
                     name: window.__CLIENT_SESSION.name || '', 
                     phone: window.__CLIENT_SESSION.phone || '', 
                     email: window.__CLIENT_SESSION.email || '' 
                 };
-                
-                // Populate form fields (for any edge cases where they might be accessed)
-                const nameEl = document.getElementById('visitorName');
-                const phoneEl = document.getElementById('visitorPhone');
-                const emailEl = document.getElementById('visitorEmail');
-                if (nameEl) nameEl.value = window.visitorInfo.name;
-                if (phoneEl) phoneEl.value = window.visitorInfo.phone;
-                if (emailEl) emailEl.value = window.visitorInfo.email;
             }
             
-            // Hide visitor form, show office section immediately
-            const visitor = document.getElementById('visitorForm');
+            // Hide kiosk container, show office section
+            const kioskContainer = document.querySelector('.kiosk-container');
             const officeSection = document.getElementById('officeSection');
-            if (visitor) visitor.style.display = 'none';
+            
+            if (kioskContainer) kioskContainer.style.display = 'none';
+            
             if (officeSection) { 
                 officeSection.style.display = 'block'; 
-                setTimeout(() => officeSection.classList.add('active'), 80); 
+                setTimeout(() => {
+                    officeSection.classList.add('active');
+                    
+                    // Wait for CSS to fully render before applying pagination
+                    setTimeout(() => {
+                        renderOfficePage();
+                    }, 300); // Increased delay for CSS rendering
+                }, 80); 
             }
         } catch (e) { 
             console.error('SKIP_VISITOR_FORM error:', e); 
         }
         
-        // Continue with common initialization (buttons, service section)
+        // Initialize buttons
         const toggleBtn = document.getElementById('multiSelectToggle');
         if (toggleBtn) toggleBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleMultiSelect(); });
 
@@ -387,9 +564,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const ss = document.getElementById('serviceSection');
         if (ss) ss.style.display = 'none';
         
-        return; // Skip visitor form initialization
+        return;
     }
 
+    // Normal flow: Initialize all buttons
     const toggleBtn = document.getElementById('multiSelectToggle');
     if (toggleBtn) toggleBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleMultiSelect(); });
 
@@ -402,13 +580,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ss = document.getElementById('serviceSection');
     if (ss) ss.style.display = 'none';
 
-    // visitor form initialisation
+    // Visitor form initialization
     const visitorForm = document.getElementById('visitorForm');
     if (visitorForm) {
-        // show visitor form first, hide office section
+        // Show kiosk container with visitor form, hide office section initially
         const officeSection = document.getElementById('officeSection');
         if (officeSection) officeSection.style.display = 'none';
-        // attach input listeners
+        
+        // Attach input listeners
         ['visitorName','visitorPhone','visitorEmail'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', visitorSyncState, {passive:true});
@@ -426,13 +605,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmBtn = document.getElementById('visitorConfirm');
         if (confirmBtn) confirmBtn.addEventListener('click', (e)=>{ e.preventDefault(); acceptVisitorAndEnter(); });
 
-        // initialize state
         visitorSyncState();
     }
 });
 
-// expose for inline office buttons
+// Wait for window load (CSS and images fully loaded)
+window.addEventListener('load', () => {
+    // Initialize office pagination if offices exist
+    const officeGrid = document.getElementById('officeGrid');
+    if (officeGrid && officeGrid.querySelectorAll('.office-btn').length > 0) {
+        // Small delay to ensure everything is rendered
+        setTimeout(() => {
+            renderOfficePage();
+        }, 100);
+    }
+});
+
+// Expose for inline office buttons
 window.loadServices = loadServices;
 window.toggleMultiSelect = toggleMultiSelect;
 window.confirmSelection = confirmSelection;
 window.goBack = goBack;
+window.changePage = changePage;
+window.renderOfficePage = renderOfficePage;
+window.renderServicePage = renderServicePage;

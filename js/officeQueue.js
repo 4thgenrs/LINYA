@@ -1,4 +1,3 @@
-// Polls backend and updates DOM every 3s. Populates office selector from backend.offices and switches live view on change.
 (function(){
   const api = '../backend/officeQueueData.php';
   const root = document.getElementById('root');
@@ -67,7 +66,7 @@
   function renderWindows(windows) {
     // show skeleton if empty and first load
     if (!windows) {
-      windowsContainer.innerHTML = '<div class="skel" style="height:220px;border-radius:12px"></div>';
+      windowsContainer.innerHTML = '<div class="skel" style="height:20px;border-radius:12px"></div>';
       return;
     }
 

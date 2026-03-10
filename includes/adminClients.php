@@ -11,97 +11,209 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Face Recognition Clients</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; background: #f6f8fb; color: #111; }
-    .container { padding: 20px; }
-    h1 { color: #0f62fe; margin: 0 0 20px 0; font-size: 28px; }
-    .table-container { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+    body { margin: 0; font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; background: linear-gradient(180deg, #f4f7fb 0%, #eef4ff 100%); color: #111827; }
+    .container { padding: 28px; max-width: 1320px; margin: 0 auto; }
+    h1 { color: #157347; margin: 0; font-size: 28px; letter-spacing: -0.02em; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; padding: 20px 22px; border-radius: 18px; background: linear-gradient(135deg, #ffffff, #f3fbf6); border: 1px solid #cfe2d6; box-shadow: 0 14px 30px rgba(15,23,42,0.06); }
+    .page-header-main { display: flex; align-items: center; gap: 14px; }
+    .page-header-icon { width: 52px; height: 52px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #157347, #198754); color: #fff; box-shadow: 0 12px 24px rgba(25, 135, 84, 0.28); font-size: 20px; }
+    .page-subtitle { margin: 6px 0 0; color: #5f6b66; font-size: 14px; }
+    .table-container { background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 40px rgba(15,23,42,0.08); border: 1px solid #e5e7eb; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; background: linear-gradient(135deg, #157347, #198754); color: #fff; }
+    .table-header-title { display: flex; align-items: center; gap: 12px; }
+    .table-header-icon { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.16); font-size: 18px; }
+    .table-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .table-header p { margin: 2px 0 0; font-size: 13px; color: rgba(255, 255, 255, 0.86); }
+    .table-body { padding: 8px; }
     table { width: 100%; border-collapse: collapse; }
-    th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: 700; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
-    td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-    tr:hover { background: #fafbfc; }
+    th { background: #d1e7dd; padding: 14px 12px; text-align: left; font-weight: 700; color: #0f5132; border-bottom: 1px solid #badbcc; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 14px 12px; border-bottom: 1px solid #eef2f7; vertical-align: middle; }
+    tr:hover { background: #f3fbf6; }
     .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-    .badge-info { background: #dbeafe; color: #1e40af; }
-    .btn-delete { background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
-    .btn-delete:hover { background: #b91c1c; }
-    .btn-delete:disabled { background: #9ca3af; cursor: not-allowed; }
+    .badge-info { background: #d1e7dd; color: #0f5132; }
+    .btn-delete { border-radius: 10px; font-size: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 8px 18px rgba(220, 53, 69, 0.18); display: inline-flex; align-items: center; }
+    .btn-delete:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(220, 53, 69, 0.24); }
+    .btn-delete:disabled { cursor: not-allowed; box-shadow: none; }
     .loading { text-align: center; padding: 40px; color: #6b7280; }
-    .error { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 4px; margin-bottom: 20px; }
-    .success { background: #dcfce7; color: #166534; padding: 12px; border-radius: 4px; margin-bottom: 20px; }
+    .alert-banner { display: none; align-items: center; gap: 10px; border: 0; border-radius: 14px; margin-bottom: 18px; padding: 14px 16px; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06); }
+    .alert-banner i { font-size: 18px; }
+    .error { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #991b1b; }
+    .success { background: linear-gradient(135deg, #ecfdf5, #dcfce7); color: #166534; }
     .empty { text-align: center; padding: 40px; color: #9ca3af; }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-    .modal.show { display: flex; }
-    .modal-content { background: white; padding: 24px; border-radius: 8px; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.15); }
-    .modal-title { font-size: 18px; font-weight: 700; margin: 0 0 12px 0; }
-    .modal-message { color: #6b7280; margin: 0 0 20px 0; }
-    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .modal-content { border: 0; border-radius: 18px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18); }
+    .modal-header,
+    .modal-footer { border-color: #e5e7eb; }
+    .modal-title { font-size: 18px; font-weight: 700; margin: 0; }
+    .modal-message { color: #6b7280; margin: 0; line-height: 1.6; }
     .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
     .btn-primary { background: #0f62fe; color: white; }
     .btn-primary:hover { background: #0353e9; }
     .btn-secondary { background: #e5e7eb; color: #111; }
     .btn-secondary:hover { background: #d1d5db; }
     .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-    .stat-card { background: #fff; padding: 16px; border-radius: 8px; border-left: 4px solid #0f62fe; }
+    .stat-card { background: linear-gradient(135deg, #ffffff, #f3fbf6); padding: 18px 20px; border-radius: 16px; border: 1px solid #cfe2d6; box-shadow: 0 14px 30px rgba(15,23,42,0.06); min-width: 260px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .stat-card-icon { width: 52px; height: 52px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #157347, #198754); color: #fff; box-shadow: 0 12px 24px rgba(25, 135, 84, 0.28); font-size: 20px; }
     .stat-label { color: #6b7280; font-size: 12px; font-weight: 600; }
-    .stat-value { font-size: 24px; font-weight: 700; color: #0f62fe; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #157347; }
+    #clientsTable { border-radius: 14px; overflow: hidden; margin-bottom: 0 !important; }
+    #clientsTable_wrapper { padding: 14px 12px 8px; }
+    .dataTables_wrapper .row { align-items: center; }
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter { margin-bottom: 14px; }
+    .dataTables_wrapper .dataTables_filter { text-align: right; }
+    .dataTables_wrapper .dataTables_length label,
+    .dataTables_wrapper .dataTables_filter label,
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate { color: #475569; font-size: 14px; }
+    .dataTables_wrapper .dataTables_length label,
+    .dataTables_wrapper .dataTables_filter label { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select {
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: #fff;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .dataTables_wrapper .dataTables_filter input:focus,
+    .dataTables_wrapper .dataTables_length select:focus {
+      border-color: #75b798;
+      box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.16);
+    }
+    .dataTables_wrapper .dataTables_filter input { min-width: 260px; }
+    .dataTables_wrapper .dataTables_length select { min-width: 82px; }
+    .dataTables_wrapper .pagination { gap: 6px; }
+    .dataTables_wrapper .page-item .page-link {
+      border-radius: 10px !important;
+      border: 1px solid #dbe3ef !important;
+      color: #157347;
+      margin: 0;
+      transition: all 0.2s ease;
+      padding: 0.5rem 0.85rem;
+    }
+    .dataTables_wrapper .page-item .page-link:hover {
+      background: #eefaf2 !important;
+      border-color: #badbcc !important;
+      color: #157347 !important;
+    }
+    .dataTables_wrapper .page-item.active .page-link,
+    .dataTables_wrapper .page-item.active .page-link:hover {
+      background: linear-gradient(135deg, #157347, #198754) !important;
+      color: #fff !important;
+      border-color: transparent !important;
+      box-shadow: 0 10px 20px rgba(25, 135, 84, 0.2);
+    }
+    .dataTables_wrapper .page-item.disabled .page-link {
+      color: #94a3b8 !important;
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+    .dataTables_wrapper .dataTables_info { padding-top: 18px; }
+    .table > :not(caption) > * > * { box-shadow: none; }
+    @media (max-width: 768px) {
+      .container { padding: 18px; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+      .page-header-main { align-items: flex-start; }
+      .stats { flex-direction: column; }
+      .stat-card { min-width: 0; }
+      .table-container { padding: 0; }
+      .table-header { padding: 16px; }
+      .table-header-title { align-items: flex-start; }
+      .dataTables_wrapper .dataTables_length,
+      .dataTables_wrapper .dataTables_filter,
+      .dataTables_wrapper .dataTables_info,
+      .dataTables_wrapper .dataTables_paginate {
+        text-align: left;
+      }
+      .dataTables_wrapper .dataTables_filter label,
+      .dataTables_wrapper .dataTables_length label { display: flex; width: 100%; }
+      .dataTables_wrapper .dataTables_filter input { width: 100%; min-width: 0; margin-left: 0; }
+    }
   </style>
+  <link rel="stylesheet" href="../css/table-unified.css">
 </head>
 <body>
 
-<div class="container">
-  <h1>👤 Face Recognition Clients</h1>
-
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-label">Total Clients</div>
-      <div class="stat-value" id="statTotal">—</div>
+<div class="container-fluid p-3">
+  <div class="page-header">
+    <div class="page-header-main">
+      <div class="page-header-icon">
+        <i class="fa-solid fa-users-viewfinder"></i>
+      </div>
+      <div>
+        <h1>Face Recognition Clients</h1>
+        <p class="page-subtitle">Manage registered face recognition profiles with searchable, sortable client records.</p>
+      </div>
     </div>
   </div>
 
-  <div id="msgSuccess" class="success" style="display: none;"></div>
-  <div id="msgError" class="error" style="display: none;"></div>
+  <div class="stats">
+    <div class="stat-card">
+      <div>
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+      <div class="stat-card-icon">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+    </div>
+  </div>
+
+  <div id="msgSuccess" class="alert-banner success" role="alert" aria-live="polite">
+    <i class="fa-solid fa-circle-check"></i>
+    <span></span>
+  </div>
+  <div id="msgError" class="alert-banner error" role="alert" aria-live="assertive">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <span></span>
+  </div>
 
   <div class="table-container">
-    <div id="loadingMsg" class="loading">Loading clients...</div>
-    <div id="emptyMsg" class="empty" style="display: none;">No clients registered yet.</div>
-    <table id="clientsTable" style="display: none;">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Safe Name</th>
-          <th>Created At</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="clientsBody">
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Confirmation Modal -->
-<div id="confirmModal" class="modal">
-  <div class="modal-content">
-    <h2 class="modal-title">Delete Client?</h2>
-    <p class="modal-message">
-      This will delete <strong id="modalClientName"></strong> and remove all face recognition data from the database and filesystem.
-      <br><br>
-      This action cannot be undone.
-    </p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+    <div class="table-header">
+      <div class="table-header-title">
+        <div class="table-header-icon">
+          <i class="fa-solid fa-table-list"></i>
+        </div>
+        <div>
+          <h2>Client Directory</h2>
+          <p>Browse, search, and manage enrolled clients.</p>
+        </div>
+      </div>
+    </div>
+    <div class="table-body">
+      <div id="loadingMsg" class="loading">Loading clients...</div>
+      <div id="emptyMsg" class="empty" style="display: none;">No clients registered yet.</div>
+      <div class="table-responsive">
+      <table id="clientsTable" class="table table-hover align-middle w-100" style="display: none;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Safe Name</th>
+            <th>Created At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clientsBody">
+        </tbody>
+      </table>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 let clients = [];
-let pendingDeleteId = null;
+let clientsDataTable = null;
 
 async function loadClients() {
   try {
@@ -130,6 +242,8 @@ function renderTable() {
 
   loadingMsg.style.display = 'none';
 
+  destroyDataTable();
+
   if (clients.length === 0) {
     table.style.display = 'none';
     emptyMsg.style.display = 'block';
@@ -150,12 +264,49 @@ function renderTable() {
       <td><span class="badge badge-info">${escapeHtml(client.safe_name)}</span></td>
       <td>${formatDate(client.created_at)}</td>
       <td>
-        <button class="btn-delete" onclick="openDeleteConfirm(${client.client_id}, '${escapeAttr(client.name)}')">
-          🗑️ Delete
+        <button class="btn btn-danger btn-sm btn-delete" onclick="openDeleteConfirm(${client.client_id}, '${escapeAttr(client.name)}')">
+          <i class="fa-solid fa-trash-can me-1"></i>Delete
         </button>
       </td>
     </tr>
   `).join('');
+
+  initializeDataTable();
+}
+
+function destroyDataTable() {
+  if (window.jQuery && $.fn.DataTable && $.fn.DataTable.isDataTable('#clientsTable')) {
+    $('#clientsTable').DataTable().destroy();
+  }
+  clientsDataTable = null;
+}
+
+function initializeDataTable() {
+  if (!window.jQuery || !$.fn.DataTable) return;
+
+  clientsDataTable = $('#clientsTable').DataTable({
+    dom: "<'row g-3 align-items-center mb-3'<'col-md-6'l><'col-md-6 text-md-end'f>>" +
+         "t" +
+         "<'row g-3 align-items-center mt-2'<'col-md-5'i><'col-md-7 text-md-end'p>>",
+    pageLength: 10,
+    lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
+    order: [[0, 'desc']],
+    columnDefs: [
+      { orderable: false, targets: 6 }
+    ],
+    language: {
+      search: '',
+      searchPlaceholder: 'Search clients...',
+      lengthMenu: 'Show _MENU_ clients',
+      info: 'Showing _START_ to _END_ of _TOTAL_ clients',
+      emptyTable: 'No clients registered yet.'
+    },
+    initComplete: function () {
+      const wrapper = $('#clientsTable_wrapper');
+      wrapper.find('.dataTables_filter input').addClass('form-control form-control-sm');
+      wrapper.find('.dataTables_length select').addClass('form-select form-select-sm');
+    }
+  });
 }
 
 function escapeHtml(text) {
@@ -177,68 +328,104 @@ function formatDate(dateStr) {
   }
 }
 
-function openDeleteConfirm(clientId, clientName) {
-  pendingDeleteId = clientId;
-  document.getElementById('modalClientName').textContent = clientName;
-  document.getElementById('confirmModal').classList.add('show');
+async function openDeleteConfirm(clientId, clientName) {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'Delete client?',
+    html: `This will delete <strong>${escapeHtml(clientName)}</strong> and remove all face recognition data from the database and filesystem.<br><br>This action cannot be undone.`,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fa-solid fa-trash-can me-1"></i>Delete',
+    cancelButtonText: '<i class="fa-solid fa-xmark me-1"></i>Cancel',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    reverseButtons: true,
+    focusCancel: true
+  });
+
+  if (result.isConfirmed) {
+    await confirmDelete(clientId);
+  }
 }
 
-function closeModal() {
-  document.getElementById('confirmModal').classList.remove('show');
-  pendingDeleteId = null;
-}
-
-async function confirmDelete() {
-  if (!pendingDeleteId) return;
-
-  const btn = document.getElementById('confirmDeleteBtn');
-  btn.disabled = true;
-  btn.textContent = 'Deleting...';
+async function confirmDelete(clientId) {
+  if (!clientId) return;
 
   try {
+    Swal.fire({
+      title: 'Deleting client...',
+      html: 'Please wait while we remove the client data.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     const resp = await fetch('../backend/clients_delete.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: pendingDeleteId })
+      body: JSON.stringify({ client_id: clientId })
     });
 
     const json = await resp.json();
 
     if (json.status === 'ok') {
-      showSuccess(`Client deleted successfully (DB, filesystem, and Python cache updated)`);
-      closeModal();
+      await showSuccess('Client deleted successfully (DB, filesystem, and Python cache updated)');
       await loadClients();
     } else {
-      showError(`Deletion failed: ${json.message || 'Unknown error'}`);
+      await showError(`Deletion failed: ${json.message || 'Unknown error'}`);
     }
   } catch (e) {
     console.error('Delete error:', e);
-    showError('Delete error: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🗑️ Delete';
+    await showError('Delete error: ' + e.message);
   }
 }
 
 function showError(msg) {
-  const el = document.getElementById('msgError');
-  el.textContent = msg;
-  el.style.display = 'block';
-  document.getElementById('msgSuccess').style.display = 'none';
-  setTimeout(() => { el.style.display = 'none'; }, 5000);
+  setInlineAlert('msgError', msg);
+  hideInlineAlert('msgSuccess');
+  return Swal.fire({
+    icon: 'error',
+    title: 'Something went wrong',
+    text: msg,
+    confirmButtonColor: '#dc2626'
+  });
 }
 
 function showSuccess(msg) {
-  const el = document.getElementById('msgSuccess');
-  el.textContent = msg;
-  el.style.display = 'block';
-  document.getElementById('msgError').style.display = 'none';
-  setTimeout(() => { el.style.display = 'none'; }, 4000);
+  setInlineAlert('msgSuccess', msg);
+  hideInlineAlert('msgError');
+  return Swal.fire({
+    icon: 'success',
+    title: 'Success',
+    text: msg,
+    confirmButtonColor: '#0f62fe'
+  });
+}
+
+function setInlineAlert(id, msg) {
+  const element = document.getElementById(id);
+  const message = element.querySelector('span');
+  message.textContent = msg;
+  element.style.display = 'flex';
+}
+
+function hideInlineAlert(id) {
+  const element = document.getElementById(id);
+  element.style.display = 'none';
 }
 
 // Load on page ready
-document.addEventListener('DOMContentLoaded', loadClients);
+document.addEventListener('DOMContentLoaded', () => {
+  loadClients();
+});
 </script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
 </html>

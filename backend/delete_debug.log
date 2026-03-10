@@ -1,0 +1,72 @@
+2026-02-23 14:18:57 - Script started
+DB config loaded
+Python API config loaded
+Session started
+Raw input: {"client_id":18}
+Decoded data: Array
+(
+    [client_id] => 18
+)
+
+Client found: safe_name=sharbel, face_path=gs://linya-api-bucket/db_pictures/sharbel/20260222_111201/encoding.npy
+Python API URL: https://face-recognition-api-546052063562.asia-southeast1.run.app
+Delete URL: https://face-recognition-api-546052063562.asia-southeast1.run.app/admin/delete_user
+Payload: {"folder":"gs:\/\/linya-api-bucket\/db_pictures\/sharbel\/20260222_111201\/encoding.npy"}
+cURL response code: 200
+cURL error: 
+Python response: {"deleted_count":1,"prefix":"db_pictures/sharbel/20260222_111201/encoding.npy","status":"ok"}
+
+2026-02-23 14:19:06 - Script started
+DB config loaded
+Python API config loaded
+Session started
+Raw input: {"client_id":17}
+Decoded data: Array
+(
+    [client_id] => 17
+)
+
+Client found: safe_name=alwyn, face_path=gs://linya-api-bucket/db_pictures/alwyn/20260205_074658/encoding.npy
+Python API URL: https://face-recognition-api-546052063562.asia-southeast1.run.app
+Delete URL: https://face-recognition-api-546052063562.asia-southeast1.run.app/admin/delete_user
+Payload: {"folder":"gs:\/\/linya-api-bucket\/db_pictures\/alwyn\/20260205_074658\/encoding.npy"}
+cURL response code: 200
+cURL error: 
+Python response: {"deleted_count":1,"prefix":"db_pictures/alwyn/20260205_074658/encoding.npy","status":"ok"}
+
+2026-02-23 14:27:35 - Script started
+DB config loaded
+Python API config loaded
+Session started
+Raw input: {"client_id":16}
+Decoded data: Array
+(
+    [client_id] => 16
+)
+
+Client found: safe_name=aeryhiel_john_mojica, face_path=gs://linya-api-bucket/db_pictures/aeryhiel_john_mojica/20251122_140343/encoding.npy
+Python API URL: https://face-recognition-api-546052063562.asia-southeast1.run.app
+Delete URL: https://face-recognition-api-546052063562.asia-southeast1.run.app/admin/delete_user
+Payload: {"folder":"gs:\/\/linya-api-bucket\/db_pictures\/aeryhiel_john_mojica\/20251122_140343\/encoding.npy"}
+cURL response code: 200
+cURL error: 
+Python response: {"deleted_count":0,"prefix":"db_pictures/aeryhiel_john_mojica/20251122_140343/encoding.npy","status":"ok"}
+
+2026-02-23 14:27:40 - Script started
+DB config loaded
+Python API config loaded
+Session started
+Raw input: {"client_id":14}
+Decoded data: Array
+(
+    [client_id] => 14
+)
+
+Client found: safe_name=ricardo_salvador_iv, face_path=gs://linya-api-bucket/db_pictures/ricardo_salvador_iv/20251122_114713/encoding.npy
+Python API URL: https://face-recognition-api-546052063562.asia-southeast1.run.app
+Delete URL: https://face-recognition-api-546052063562.asia-southeast1.run.app/admin/delete_user
+Payload: {"folder":"gs:\/\/linya-api-bucket\/db_pictures\/ricardo_salvador_iv\/20251122_114713\/encoding.npy"}
+cURL response code: 200
+cURL error: 
+Python response: {"deleted_count":0,"prefix":"db_pictures/ricardo_salvador_iv/20251122_114713/encoding.npy","status":"ok"}
+

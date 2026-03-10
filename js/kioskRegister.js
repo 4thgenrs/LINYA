@@ -1,3 +1,4 @@
+// ../js/kioskRegister.js
 /* =========== Config / state =========== */
 let apiBase = '';
 let capturedImages = [];
@@ -6,28 +7,28 @@ let currentAngleIndex = 0;
 let submitting = false;
 
 const angles = [
-    { 
-        name: "Front View", 
+    {
+        name: "Front View",
         instruction: "Please look straight at the camera for a clear front view of your face.",
         guideTip: "Look straight ahead, keep your face centered and well-lit. This is your primary reference image."
     },
-    { 
-        name: "Left Angle", 
+    {
+        name: "Left Angle",
         instruction: "Turn your head slightly to the left side (about 45 degrees).",
         guideTip: "Turn your head ~45° to the left while keeping your eyes toward the camera. This captures the left profile."
     },
-    { 
-        name: "Right Angle", 
+    {
+        name: "Right Angle",
         instruction: "Turn your head slightly to the right side (about 45 degrees).",
         guideTip: "Turn your head ~45° to the right while keeping your eyes toward the camera. This captures the right profile."
     },
-    { 
-        name: "Upper Angle", 
+    {
+        name: "Upper Angle",
         instruction: "Tilt your head slightly upward while looking at the camera.",
         guideTip: "Tilt your chin up slightly while looking at the camera. This helps with recognition from above."
     },
-    { 
-        name: "Lower Angle", 
+    {
+        name: "Lower Angle",
         instruction: "Tilt your head slightly downward while looking at the camera.",
         guideTip: "Tilt your chin down slightly while looking at the camera. This helps with recognition from below."
     }
@@ -114,45 +115,68 @@ function closeVisitorConfirm() {
 async function acceptVisitorAndProceed() {
     closeVisitorConfirm();
 
-    const name = document.getElementById('visitorName').value.trim();
+    const name  = document.getElementById('visitorName').value.trim();
     const email = document.getElementById('visitorEmail').value.trim();
     const phone = document.getElementById('visitorPhone').value.trim();
 
     // Validate against existing clients before proceeding
     console.log('Checking for duplicate name/email...');
-    
+
     try {
         const checkResponse = await fetch('../backend/checkClientDuplicate.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email })
+            body: JSON.stringify({ name, email, phone }),
+            cache: 'no-store'
         });
 
-        const checkResult = await checkResponse.json();
+        // Read RAW response first (prevents JSON parse crash when PHP outputs HTML errors)
+        const rawText = await checkResponse.text();
+        console.log('Duplicate check HTTP:', checkResponse.status, checkResponse.statusText);
+        console.log('Duplicate check raw response:', rawText);
+
+        // Handle non-2xx responses with useful message
+        if (!checkResponse.ok) {
+            alert(
+                `Duplicate check failed (HTTP ${checkResponse.status}).\n\n` +
+                rawText.slice(0, 300)
+            );
+            return;
+        }
+
+        // Parse JSON safely
+        let checkResult;
+        try {
+            checkResult = JSON.parse(rawText);
+        } catch (parseErr) {
+            console.error('Duplicate check JSON parse error:', parseErr);
+            alert(
+                'Duplicate check returned NON-JSON response.\n\n' +
+                rawText.slice(0, 300)
+            );
+            return;
+        }
+
         console.log('Duplicate check result:', checkResult);
 
         if (checkResult.status === 'duplicate') {
-            // Show error message to user
-            const fieldName = checkResult.field === 'email' ? 'Email' : 'Name';
+            // Show error message to user (supports email/phone/name)
             alert(`❌ Registration Error\n\n${checkResult.message}`);
-            
-            // Keep modal closed and return to form
             return;
         }
 
         if (checkResult.status !== 'ok') {
             console.error('Validation error:', checkResult);
-            alert('Unable to validate registration. Please try again.');
+            alert(checkResult.message || 'Unable to validate registration. Please try again.');
             return;
         }
 
         // No duplicates - proceed to camera
         console.log('✅ No duplicates found, proceeding to face capture');
-        
-        // Hide visitor form and show camera screen
-        const visitorForm = document.getElementById('visitorForm');
+
+        const visitorForm  = document.getElementById('visitorForm');
         const cameraScreen = document.getElementById('cameraScreen');
-        
+
         if (visitorForm) visitorForm.style.display = 'none';
         if (cameraScreen) {
             cameraScreen.style.display = 'block';
@@ -161,24 +185,25 @@ async function acceptVisitorAndProceed() {
 
     } catch (err) {
         console.error('Duplicate check failed:', err);
-        alert('Connection error. Please check your internet connection and try again.');
+        alert('Unable to reach duplicate-check endpoint. Please try again.\n\n' + (err?.message || err));
     }
 }
+
 
 /* =========== Camera Functions =========== */
 function initializeCamera() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    
+
     console.log('Initializing camera...');
-    
+
     if (!video || !canvas) {
         console.error('Video or canvas element not found');
         return;
     }
-    
-    navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720, facingMode: "user" } 
+
+    navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720, facingMode: "user" }
     })
     .then(stream => {
         console.log('Camera stream obtained');
@@ -198,11 +223,11 @@ function initializeCamera() {
 function updateAngleInstructions() {
     const currentAngleElement = document.getElementById('currentAngle');
     const angleInstructionElement = document.getElementById('angleInstruction');
-    
+
     if (currentAngleIndex < angles.length) {
         currentAngleElement.textContent = angles[currentAngleIndex].name;
         angleInstructionElement.textContent = angles[currentAngleIndex].instruction;
-        
+
         document.getElementById('guideCounter').textContent = `${currentAngleIndex + 1} / ${angles.length}`;
         document.getElementById('guideTitle').textContent = angles[currentAngleIndex].name;
         document.getElementById('guideTip').textContent = angles[currentAngleIndex].guideTip;
@@ -233,7 +258,55 @@ function resetCaptureState(keepStatus = false) {
     if (captureBtn) captureBtn.disabled = false;
 }
 
-function captureImage() {
+/* =========================================================
+   Accessory pre-check from a frame (uses Python /recognize)
+   ========================================================= */
+async function precheckAccessoriesFromFrame(videoEl, canvasEl) {
+    const ctx = canvasEl.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+
+    // Make smaller upload for speed
+    const maxW = 640;
+    const aspect = (canvasEl.width && canvasEl.height) ? (canvasEl.width / canvasEl.height) : (1280 / 720);
+    const w = Math.min(maxW, canvasEl.width || maxW);
+    const h = Math.round(w / aspect);
+
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    const tctx = tmp.getContext('2d');
+    tctx.imageSmoothingEnabled = true;
+    tctx.drawImage(videoEl, 0, 0, w, h);
+
+    const dataURL = tmp.toDataURL('image/jpeg', 0.85);
+    const base64 = (dataURL.split(',')[1] || '');
+
+    if (!apiBase) {
+        throw new Error('PYTHON_API_BASE is empty; cannot precheck accessories.');
+    }
+
+    const resp = await fetch(`${apiBase}/recognize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+        mode: 'cors',
+        cache: 'no-store'
+    });
+
+    const text = await resp.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (_) {}
+
+    if (json && json.status === 'accessory_detected') {
+        return { ok: false, message: json.message || 'Accessory detected. Please remove it and try again.' };
+    }
+
+    // Allow all other statuses here (we only use this as an accessory gate)
+    return { ok: true };
+}
+
+/* =========== Capture =========== */
+async function captureImage() {
     if (capturedImages.length >= maxImages) {
         alert("You've already captured all required angles.");
         return;
@@ -242,6 +315,21 @@ function captureImage() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+
+    // Block FIRST capture (Front View) if accessory detected
+    if (currentAngleIndex === 0) {
+        try {
+            const check = await precheckAccessoriesFromFrame(video, canvas);
+            if (!check.ok) {
+                showModal('warning', 'Accessory Detected', check.message);
+                return; // do not capture/save front image
+            }
+        } catch (e) {
+            console.error('Accessory precheck failed:', e);
+            showModal('error', 'Precheck Failed', 'Could not verify accessories. Please try again.');
+            return; // strict: do not capture when precheck fails
+        }
+    }
 
     // Draw visible preview
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -261,7 +349,7 @@ function captureImage() {
     const dataURL = tmpCanvas.toDataURL('image/jpeg', 0.85);
     const currentAngle = angles[currentAngleIndex].name;
     capturedImages.push(dataURL);
-    
+
     const countDisplay = document.getElementById('count');
     if (countDisplay) countDisplay.textContent = capturedImages.length;
 
@@ -283,32 +371,49 @@ function captureImage() {
 async function submitRegistration(retryCount = 0) {
     if (submitting) return;
     submitting = true;
-    
+
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) captureBtn.disabled = true;
 
     if (capturedImages.length < maxImages) {
-        const statusMessage = ensureStatusMessage();
-        if (statusMessage) {
-            statusMessage.innerHTML = `<p style='color:orange;'>Please capture all ${maxImages} angles before submitting.</p>`;
-        }
+        showModal('warning', 'Incomplete Registration', `Please capture all ${maxImages} angles before submitting.`);
         submitting = false;
         if (captureBtn) captureBtn.disabled = false;
         return;
     }
 
-    const statusMessage = ensureStatusMessage();
-    if (statusMessage) {
-        statusMessage.innerHTML = `<p>Submitting images... <span class="small-muted">Please wait.</span></p>`;
+    // ✅ NEW: Final accessory gate BEFORE calling /register (blocks saving)
+    try {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        if (video && canvas) {
+            const check = await precheckAccessoriesFromFrame(video, canvas);
+            if (!check.ok) {
+                showModal('warning', 'Accessory Detected', check.message);
+                resetCaptureState(true);
+                submitting = false;
+                if (captureBtn) captureBtn.disabled = false;
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('Final accessory precheck failed:', e);
+        showModal('error', 'Precheck Failed', 'Could not verify accessories. Please try again.');
+        resetCaptureState(true);
+        submitting = false;
+        if (captureBtn) captureBtn.disabled = false;
+        return;
     }
+
+    showModal('loading', 'Submitting Registration', 'Processing your images... Please wait.');
 
     try {
         const name = document.getElementById('visitorName').value.trim();
         const email = document.getElementById('visitorEmail').value.trim();
         const phone = document.getElementById('visitorPhone').value.trim();
-        
+
         console.log('Submitting registration:', { name, email, phone, imageCount: capturedImages.length, apiBase });
-        
+
         const formData = new FormData();
         formData.append("name", name);
         formData.append("email", email);
@@ -322,17 +427,13 @@ async function submitRegistration(retryCount = 0) {
         });
 
         console.log('API Response type:', resp.type, 'status:', resp.status);
-        console.log('API Response status:', resp.status, resp.statusText);
-        console.log('Response OK?', resp.ok);
-        
+
         const respText = await resp.text();
         console.log('API Response text:', respText);
-        
+
         // Quick CORS/opaque diagnostic
         if (resp.type === 'opaque' || resp.status === 0) {
-            if (statusMessage) {
-                statusMessage.innerHTML = `<p style='color:red;'>❌ Network/CORS blocked the request (opaque/0). Check server CORS headers and that API_BASE is correct.</p>`;
-            }
+            showModal('error', 'Network Error', 'Network/CORS blocked the request. Check server CORS headers and that API_BASE is correct.');
             submitting = false;
             if (captureBtn) captureBtn.disabled = false;
             return;
@@ -344,95 +445,42 @@ async function submitRegistration(retryCount = 0) {
             console.log('Parsed JSON:', json);
         } catch (e) {
             console.error('JSON parse error:', e);
-            console.log('Raw response that failed to parse:', respText);
             throw new Error(`Invalid server response: ${resp.status} ${resp.statusText}`);
         }
 
         if (!resp.ok) {
-            console.log('Response not OK, checking error conditions...');
-            console.log('HTTP Status Code:', resp.status);
-            console.log('Error response status:', json?.status);
-            console.log('Full error response:', json);
-            console.log('Checking 409 Conflict: resp.status === 409?', resp.status === 409);
-            console.log('Checking JSON status: json.status === "already_registered"?', json?.status === 'already_registered');
-            
-            // Handle 409 Conflict (already registered) - check HTTP status OR JSON status
+            // Handle 409 Conflict (already registered)
             if (resp.status === 409 || (json && json.status === 'already_registered')) {
-                console.log('✅ ALREADY REGISTERED DETECTED - HTTP 409 or JSON status match:', json);
-                
-                // Try to extract name from various possible JSON response formats
                 const existingName = json?.existing_name || json?.name || 'Unknown User';
-                let displayMessage = 'This face is already registered in the system.';
-                
-                // Use the API message if available, otherwise use default
-                if (json?.message && typeof json.message === 'string') {
-                    displayMessage = json.message;
-                }
-                
-                if (statusMessage) {
-                    statusMessage.innerHTML = `
-                        <div id="alreadyRegisteredMessage" style="text-align:center; background:#fff3cd; border:3px solid #ffc107; border-radius:12px; padding:25px; margin:20px 0; box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);">
-                            <p style='color:#856404; font-size:20px; font-weight:bold; margin:15px 0;'>⚠️ USER ALREADY REGISTERED</p>
-                            <p style='color:#495057; font-size:18px; margin:15px 0;'>${displayMessage}</p>
-                            <p style='color:#dc3545; font-size:22px; font-weight:bold; margin:15px 0;'>${existingName}</p>
-                            <p style='color:#495057; font-size:16px; margin:15px 0;'>Please go to Login instead.</p>
-                            <div style="margin-top:25px;">
-                                <a href="kioskLogin.php" style="text-decoration:none;">
-                                    <button style="padding:15px 30px; border:none; background:#dc3545; color:white; border-radius:8px; cursor:pointer; font-size:18px; font-weight:600; margin:5px;">
-                                        GO TO LOGIN
-                                    </button>
-                                </a>
-                                <button onclick="location.reload()" style="padding:15px 30px; border:2px solid #6c757d; background:white; color:#6c757d; border-radius:8px; cursor:pointer; font-size:18px; font-weight:600; margin:5px;">
-                                    Try Again
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Force visibility and scroll into view
-                    statusMessage.style.display = 'block';
-                    statusMessage.style.visibility = 'visible';
-                    statusMessage.style.opacity = '1';
-                    statusMessage.style.position = 'relative';
-                    statusMessage.style.zIndex = '1000';
-                    
-                    setTimeout(() => {
-                        statusMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 100);
-                    
-                    console.log('statusMessage innerHTML after update:', statusMessage.innerHTML);
-                } else {
-                    console.error('❌ statusMessage element not found!');
-                }
-                // Keep the already-registered UI visible — don't clear it immediately
+                const displayMessage = json?.message || 'This face is already registered in the system.';
+
+                showModal('already_registered', 'User Already Registered', displayMessage, {
+                    existingName: existingName,
+                    showLoginButton: true
+                });
+
                 resetCaptureState(true);
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
-            } else {
-                console.log('Not an already_registered error. HTTP Status:', resp.status, 'JSON Status:', json?.status);
             }
 
-            if (json && json.status === 'glasses') {
-                console.log('Glasses detected:', json);
-                if (statusMessage) {
-                    statusMessage.innerHTML = `
-                        <div style="text-align:center;">
-                            <p style='color:orange;'>⚠️ ${json.message}</p>
-                            <p>Please remove your ${json.type} and retake the Front View.</p>
-                        </div>
-                    `;
-                }
-                resetCaptureState(); // clear status so user can retake
+            // Accessory detection handling
+            if (json && json.status === 'accessory_detected') {
+                showModal(
+                    'warning',
+                    'Accessory Detected',
+                    json.message || 'Please remove glasses, hats, or masks and retake the Front View.'
+                );
+
+                resetCaptureState(true);
+
                 submitting = false;
                 if (captureBtn) captureBtn.disabled = false;
                 return;
             }
 
-            console.log('Other server error:', json);
-            if (statusMessage) {
-                statusMessage.innerHTML = `<p style='color:red;'>❌ Server error: ${json.message || resp.statusText}</p>`;
-            }
+            showModal('error', 'Server Error', json.message || resp.statusText);
             submitting = false;
             if (captureBtn) captureBtn.disabled = false;
             return;
@@ -466,88 +514,259 @@ async function submitRegistration(retryCount = 0) {
                 }
 
                 if (jr && jr.status === 'ok') {
-                    if (statusMessage) {
-                        statusMessage.innerHTML = `
-                            <div style="text-align:center;">
-                                <p style='color:green;'>✅ ${json.message} (saved to clients)</p>
-                                <p>You can now log in using face recognition.</p>
-                                <a href="kioskLogin.php">
-                                    <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
-                                        Go to Login
-                                    </button>
-                                </a>
-                            </div>
-                        `;
-                    }
+                    showModal('success', 'Registration Successful', `${json.message} (saved to clients). You can now log in using face recognition.`, {
+                        showLoginButton: true
+                    });
                 } else if (jr && jr.status === 'already_registered') {
-                    if (statusMessage) {
-                        statusMessage.innerHTML = `
-                            <div style="text-align:center;">
-                                <p style='color:orange;'>⚠️ ${jr.message}</p>
-                                <p>Existing record: <strong>${jr.existing_name || 'Unknown'}</strong></p>
-                                <p style='color:gray;'>If this is you, proceed to <a href="kioskLogin.php">Login</a>. Otherwise change the name/phone/email and try again.</p>
-                            </div>
-                        `;
-                    }
+                    showModal('warning', 'Already Registered', `${jr.message}. Existing record: ${jr.existing_name || 'Unknown'}. If this is you, proceed to Login. Otherwise change the name/phone/email and try again.`, {
+                        showLoginButton: true
+                    });
                 } else {
-                    if (statusMessage) {
-                        statusMessage.innerHTML = `
-                            <div style="text-align:center;">
-                                <p style='color:orange;'>⚠️ ${json.message} (registered on file system)</p>
-                                <p style='color:gray;'>Could not save to DB: ${jr && jr.message ? jr.message : 'unknown'}</p>
-                                <a href="kioskLogin.php">
-                                    <button style="padding:10px 20px; border:none; background:#007bff; color:white; border-radius:5px; cursor:pointer; margin-top:10px;">
-                                        Go to Login
-                                    </button>
-                                </a>
-                            </div>
-                        `;
-                    }
+                    showModal('warning', 'Partial Success', `${json.message} (registered on file system). Could not save to DB: ${jr && jr.message ? jr.message : 'unknown'}`, {
+                        showLoginButton: true
+                    });
                 }
             } catch (e) {
-                if (statusMessage) {
-                    statusMessage.innerHTML = `<p style='color:orange;'>Registered on file system but failed to save DB: ${e.message || e}</p>`;
-                }
+                showModal('warning', 'Partial Success', `Registered on file system but failed to save DB: ${e.message || e}`);
             }
 
-            // Keep the success message visible instead of wiping it immediately
             resetCaptureState(true);
             submitting = false;
             if (captureBtn) captureBtn.disabled = false;
             return;
         }
 
-        if (statusMessage) {
-            statusMessage.innerHTML = `<p style='color:orange;'>Unexpected response: ${JSON.stringify(json)}</p>`;
-        }
+        showModal('error', 'Unexpected Response', JSON.stringify(json));
         submitting = false;
         if (captureBtn) captureBtn.disabled = false;
 
     } catch (err) {
         console.error("Registration submit error:", err);
 
-        const statusMessage = ensureStatusMessage();
-
         if (retryCount < 1) {
-            if (statusMessage) {
-                statusMessage.innerHTML = `<p style='color:orange;'>Network error. Retrying...</p>`;
-            }
+            showModal('warning', 'Network Error', 'Network error. Retrying...');
             setTimeout(() => submitRegistration(retryCount + 1), 1000);
             submitting = false;
             return;
         }
 
-        if (statusMessage) {
-            statusMessage.innerHTML = `<p style='color:red;'>❌ Connection error: ${err.message || err}</p>`;
-        }
+        showModal('error', 'Connection Error', err.message || err);
         submitting = false;
         if (captureBtn) captureBtn.disabled = false;
     }
 }
 
+// Modal management functions (unchanged)
+function createModal() {
+    const existingModal = document.getElementById('registrationModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'registrationModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+    `;
+
+    modal.innerHTML = `
+        <div class="modal-content" style="
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        ">
+            <div class="modal-icon" style="font-size: 48px; margin-bottom: 20px;"></div>
+            <h2 class="modal-title" style="margin: 0 0 15px 0; font-size: 24px; color: #333;"></h2>
+            <p class="modal-message" style="margin: 0 0 25px 0; font-size: 16px; color: #666; line-height: 1.5;"></p>
+            <div class="modal-actions" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
+            <button class="modal-close" style="
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #999;
+                padding: 5px;
+            ">×</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('.modal-close').addEventListener('click', hideModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) hideModal();
+    });
+
+    return modal;
+}
+
+function showModal(type, title, message, options = {}) {
+    let modal = document.getElementById('registrationModal');
+    if (!modal) {
+        modal = createModal();
+    }
+
+    const iconEl = modal.querySelector('.modal-icon');
+    const titleEl = modal.querySelector('.modal-title');
+    const messageEl = modal.querySelector('.modal-message');
+    const actionsEl = modal.querySelector('.modal-actions');
+    const contentEl = modal.querySelector('.modal-content');
+
+    let icon = '', color = '';
+    switch (type) {
+        case 'success':
+            icon = '✅';
+            color = '#28a745';
+            break;
+        case 'error':
+            icon = '❌';
+            color = '#ff0019ff';
+            break;
+        case 'warning':
+            icon = '⚠️';
+            color = '#ffc107';
+            break;
+        case 'loading':
+            icon = '⏳';
+            color = '#17a2b8';
+            break;
+        case 'already_registered':
+            icon = '⚠️';
+            color = '#fd7e14';
+            break;
+        default:
+            icon = 'ℹ️';
+            color = '#6c757d';
+    }
+
+    iconEl.textContent = icon;
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    contentEl.style.borderTop = `4px solid ${color}`;
+
+    actionsEl.innerHTML = '';
+
+    if (type === 'loading') {
+        // No buttons for loading state
+    } else if (type === 'already_registered') {
+        actionsEl.innerHTML = `
+            <a href="kioskLogin.php" style="text-decoration: none;">
+                <button style="
+                    padding: 12px 24px;
+                    border: none;
+                    background: #dc3545;
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: 600;
+                ">GO TO LOGIN</button>
+            </a>
+            <button onclick="hideModal(); location.reload()" style="
+                padding: 12px 24px;
+                border: 2px solid #6c757d;
+                background: white;
+                color: #6c757d;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: 600;
+            ">Try Again</button>
+        `;
+    } else if (options.showLoginButton) {
+        actionsEl.innerHTML = `
+            <a href="kioskLogin.php" style="text-decoration: none;">
+                <button style="
+                    padding: 12px 24px;
+                    border: none;
+                    background: #007bff;
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: 600;
+                ">Go to Login</button>
+            </a>
+            <button onclick="hideModal()" style="
+                padding: 12px 24px;
+                border: 2px solid #6c757d;
+                background: white;
+                color: #6c757d;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: 600;
+            ">Close</button>
+        `;
+    } else {
+        actionsEl.innerHTML = `
+            <button onclick="hideModal()" style="
+                padding: 12px 24px;
+                border: none;
+                background: #6c757d;
+                color: white;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: 600;
+            ">OK</button>
+        `;
+    }
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function hideModal() {
+    const modal = document.getElementById('registrationModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Optional CSS for smooth animations (unchanged)
+const style = document.createElement('style');
+style.textContent = `
+    #registrationModal {
+        transition: opacity 0.3s ease;
+    }
+    #registrationModal .modal-content {
+        animation: modalSlideIn 0.3s ease-out;
+    }
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+`;
+document.head.appendChild(style);
+
 /* =========== Initialize =========== */
 document.addEventListener('DOMContentLoaded', function() {
-    // Set API base from global variable
     if (typeof window.PYTHON_API_BASE !== 'undefined') {
         apiBase = window.PYTHON_API_BASE;
         console.log('API Base set to:', apiBase);
@@ -555,13 +774,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('PYTHON_API_BASE not found in window object');
     }
 
-    // Visitor form event listeners
     ['visitorName', 'visitorPhone', 'visitorEmail'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', visitorSyncState, {passive: true});
     });
 
-    // Phone input formatting
     const phoneInput = document.getElementById('visitorPhone');
     if (phoneInput) {
         phoneInput.addEventListener('input', function() {
@@ -593,19 +810,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Camera capture button
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) {
         captureBtn.addEventListener('click', captureImage);
     }
 
-    // Initialize visitor form state
     visitorSyncState();
-    
-    // Initialize camera instructions
     updateAngleInstructions();
     resetCaptureState();
 });
 
-// Expose functions globally if needed
 window.captureImage = captureImage;

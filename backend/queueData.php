@@ -2,7 +2,15 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// ✅ Ensure timestamps use Philippine time
+date_default_timezone_set('Asia/Manila');
+
 include('../linya_db/config.php');
+
+// ✅ Ensure MySQL session uses PH time (+08:00)
+if (isset($conn) && $conn instanceof mysqli) {
+    @ $conn->query("SET time_zone = '+08:00'");
+}
 
 function getOfficeQueue($conn, $office) {
     $queue_data = [];
@@ -16,6 +24,7 @@ function getOfficeQueue($conn, $office) {
 
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+
             // fetch services for this queue
             $services = [];
             $sstmt = $conn->prepare("SELECT s.service_id, s.service_description 
@@ -103,6 +112,7 @@ function displayOnAir($conn,$window) {
 
     if ($result && $result->num_rows > 0) {
         $onAir = $result->fetch_assoc();
+
         // fetch services for this on-air queue
         $services = [];
         $sstmt = $conn->prepare("SELECT s.service_id, s.service_description
@@ -118,6 +128,7 @@ function displayOnAir($conn,$window) {
             }
             $sstmt->close();
         }
+
         $stmt->close();
         return [
             'queue_id' => (int)$onAir['queue_id'],
@@ -132,26 +143,34 @@ function displayOnAir($conn,$window) {
 
 function finishCurrentQueue($conn, $window) {
     $window = intval($window);
+
     // Find the most recent ongoing queue for this window
     $sql_select = "SELECT queue_id FROM queues WHERE status='ongoing' AND window_id=? ORDER BY queue_id DESC LIMIT 1";
     $stmt = $conn->prepare($sql_select);
     if (!$stmt) return false;
+
     $stmt->bind_param('i', $window);
     $stmt->execute();
     $res = $stmt->get_result();
+
     if ($res && $res->num_rows > 0) {
         $row = $res->fetch_assoc();
         $qid = (int)$row['queue_id'];
-        $sql_update = "UPDATE queues SET status='finished' WHERE queue_id = ?";
+
+        // ✅ Save real finish timestamp (Asia/Manila)
+        $finishedAt = date('Y-m-d H:i:s');
+
+        $sql_update = "UPDATE queues SET status='finished', finished_at=? WHERE queue_id = ?";
         $u = $conn->prepare($sql_update);
         if ($u) {
-            $u->bind_param('i', $qid);
+            $u->bind_param('si', $finishedAt, $qid);
             $ok = $u->execute();
             $u->close();
             $stmt->close();
             return (bool)$ok;
         }
     }
+
     $stmt->close();
     return false;
 }

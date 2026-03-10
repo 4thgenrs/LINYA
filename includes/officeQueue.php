@@ -28,31 +28,61 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Live Queue - Office <?php echo $office; ?></title>
-  <link rel="stylesheet" href="../css/officeQueue.css" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../css/officeQueue.css">
 </head>
-<body>
-  <div id="root" data-office="<?php echo $office; ?>">
+<body class="py-4">
+  <div class="container-fluid" id="root" data-office="<?php echo $office; ?>">
+
+    <!-- Header -->
     <header class="oq-header">
-      <div>
+      <div class="oq-header-copy">
+        <div class="oq-badge">
+          <i class="fa-solid fa-wave-square"></i>
+          Live Monitoring
+        </div>
         <div class="oq-title">Live Queue</div>
-        <div class="oq-sub">Auto-updates every 3s</div>
+        <div class="oq-sub">Track active windows, monitor pending queues, and stay synced with updates every 3 seconds.</div>
       </div>
 
-      <!-- office selector -->
-      <div>
-        <label for="officeSelect" class="oq-select-label">Office:</label>
-        <select id="officeSelect" class="oq-select"></select>
+      <div class="oq-header-side">
+        <div class="oq-status-pill">
+          <span class="oq-status-dot"></span>
+          Realtime feed
+        </div>
+
+        <div class="oq-select-wrap">
+          <label for="officeSelect" class="oq-select-label">Office</label>
+          <select id="officeSelect" class="oq-select"></select>
+        </div>
       </div>
     </header>
 
+    <!-- Main Layout -->
     <main class="oq-main">
-      <section class="oq-windows" id="windowsContainer" aria-label="Windows"></section>
+      <section id="windowsContainer">
+        <!-- JS inserts .window-card here -->
+      </section>
 
       <aside class="oq-pending">
-        <h3>Pending Queues</h3>
-        <div id="pendingList" class="pending-list"></div>
+        <div class="oq-pending-head">
+          <div>
+            <span class="oq-panel-eyebrow">Waiting List</span>
+            <h3>Pending Queues</h3>
+          </div>
+          <div class="oq-panel-icon">
+            <i class="fa-solid fa-hourglass-half"></i>
+          </div>
+        </div>
+        <div id="pendingList" class="pending-list">
+          <!-- JS inserts .pending-item here -->
+        </div>
       </aside>
     </main>
+    
   </div>
 
   <script src="../js/officeQueue.js" defer></script>

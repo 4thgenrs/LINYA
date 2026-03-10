@@ -1,0 +1,85 @@
+.floating-keyboard-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #2d2d2d;
+    padding: 10px;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 10000;
+    border-top: 2px solid #07bf85;
+}
+
+.floating-keyboard-container.active {
+    transform: translateY(0);
+}
+
+.keyboard-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+    gap: 4px;
+}
+
+.keyboard-key {
+    flex: 1;
+    min-width: 30px;
+    height: 50px;
+    background: linear-gradient(135deg, #444, #333);
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s ease;
+    box-shadow: 0 2px 0 #1a1a1a;
+    user-select: none;
+}
+
+.keyboard-key:active {
+    transform: translateY(2px);
+    box-shadow: none;
+    background: linear-gradient(135deg, #555, #444);
+}
+
+.keyboard-action {
+    background: linear-gradient(135deg, #555, #3a3a3a);
+    font-weight: bold;
+}
+
+.keyboard-space {
+    flex: 5;
+    background: linear-gradient(135deg, #555, #3a3a3a);
+}
+
+#shiftBtn.active {
+    background: linear-gradient(135deg, #07bf85, #0c9e3d);
+}
+
+/* For mobile devices */
+@media (max-width: 600px) {
+    .keyboard-key {
+        height: 45px;
+        font-size: 16px;
+        min-width: 25px;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 400px) {
+    .keyboard-key {
+        height: 40px;
+        font-size: 14px;
+    }
+}

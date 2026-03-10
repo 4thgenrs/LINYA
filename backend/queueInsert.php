@@ -1,10 +1,19 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+
+// ✅ FIX: Ensure PHP uses Philippine time
+date_default_timezone_set('Asia/Manila');
+
 include '../linya_db/config.php';
 
 if (!isset($conn)) {
     echo json_encode(['success'=>false, 'error'=>'DB connection missing']);
     exit;
+}
+
+// ✅ FIX: Ensure MySQL session uses PH time (affects NOW(), CURRENT_TIMESTAMP, etc.)
+if ($conn instanceof mysqli) {
+    @ $conn->query("SET time_zone = '+08:00'");
 }
 
 $office_id = isset($_POST['office_id']) ? intval($_POST['office_id']) : 0;
@@ -66,8 +75,10 @@ try {
 
     $queue_code = $office_code . '-' . str_pad($last, 3, '0', STR_PAD_LEFT);
 
-    // insert into queues including visitor info
+    // ✅ uses Asia/Manila because of date_default_timezone_set above
     $now = date('Y-m-d H:i:s');
+
+    // insert into queues including visitor info
     $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status, customer_name, customer_phone, customer_email) VALUES (?, ?, ?, 'pending', ?, ?, ?)");
     $qSt->bind_param("sissss", $queue_code, $office_id, $now, $customer_name, $customer_phone, $customer_email);
     $qSt->execute();
@@ -90,6 +101,7 @@ try {
 
     echo json_encode(['success'=>true, 'queue_id'=>intval($queue_id), 'queue_code'=>$queue_code]);
     exit;
+
 } catch (Exception $e) {
     $conn->rollback();
     echo json_encode(['success'=>false, 'error'=>$e->getMessage()]);

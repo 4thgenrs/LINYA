@@ -1,12 +1,365 @@
-:root{--bg:#f6f8fb;--card:#fff;--accent:#0f62fe;--muted:#6b7280}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#111}
-.adm-header{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--card);box-shadow:0 6px 18px rgba(15,23,42,0.04)}
-.brand{font-weight:800;color:var(--accent)}
-.adm-nav{display:flex;gap:8px;flex:1;flex-wrap:wrap}
-.adm-btn{background:transparent;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:var(--muted)}
-.adm-btn.active{background:var(--accent);color:#fff}
-.adm-right{display:flex;align-items:center;gap:12px}
-.btn-ghost{background:#f3f4f6;color:#111;border:1px solid rgba(11,18,48,0.04);padding:8px 10px;border-radius:8px}
-.adm-main{padding:12px}
-#moduleFrame{width:100%;height:calc(100vh - 92px);border-radius:8px;border:1px solid rgba(0,0,0,0.04);background:#fff}
+body {
+      margin: 0;
+      overflow-x: hidden;
+      display: flex;
+      background: #f8f9fa;
+      font-family: "Segoe UI", sans-serif;
+      transition: background 0.3s;
+    }
+
+    html, body {
+      overflow-x: hidden;
+    }
+
+    /* SIDEBAR (same as reference) */
+    #sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 300px;
+      min-width: 220px;
+      height: 100vh;
+      background: #0D4715;
+      color: white;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    #sidebar .brand-box {
+      text-align: center;
+      margin-bottom: 10px;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+
+    #sidebar img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+
+    #sidebar .brand-text {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 600;
+    }
+
+    .nav-section-title {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.7);
+      margin: 0 0.5rem 1rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .adm-nav {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin-bottom: 15px;
+      padding-right: 5px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 0.2rem;
+    }
+
+    .adm-nav::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .adm-nav::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .adm-nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+
+    .adm-nav::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .adm-nav .adm-btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #fff;
+      text-align: left;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 15px;
+      margin-bottom: 5px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .adm-btn:hover,
+    .adm-btn.active {
+      background: #198754;
+      font-weight: 600;
+      color: #fff;
+    }
+
+
+    .user-box {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      flex-shrink: 0;
+      position: sticky;
+      bottom: 0;
+    }
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 45px;
+      height: 45px;
+      background-color: #198754;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .user-info .fw-semibold {
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .user-info small {
+      color: rgba(255,255,255,0.7);
+      text-transform: capitalize;
+    }
+
+    /* MAIN CONTENT */
+    .adm-main {
+      margin-left: 300px;
+      width: calc(100% - 300px);
+      height: 100vh;
+    }
+
+    #moduleFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* LOGOUT BUTTON */
+    #adminLogout {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    /* #adminLogout:hover {
+      background: #ff4d4d;
+      color: white;
+      border-color: #ff4d4d;
+    } */
+    /* Make dropdown container act like a full-width sidebar button */
+      /* Dropdown container matches sidebar buttons */
+      .adm-dropdown {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Dropdown toggle styled like sidebar buttons */
+      .adm-dropdown .dropdown-toggle {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: white;
+        text-align: left;
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+        margin-bottom: 5px;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+
+      .adm-dropdown .dropdown-toggle:hover {
+        background: #198754;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      /* Full-width dropdown menu */
+      .adm-dropdown .dropdown-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        position: relative;
+        background: #145c2b;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 5px;
+      }
+
+      /* Show menu on hover */
+      .adm-dropdown:hover .dropdown-menu {
+        display: flex;
+      }
+
+      /* Dropdown items match sidebar buttons */
+      .adm-dropdown .dropdown-item {
+        background: transparent;
+        border: none;
+        color: white;
+        text-align: left;
+        padding: 0.45rem 1rem;
+        width: 100%;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.2s;
+      }
+
+      .adm-dropdown .dropdown-item:hover {
+        background: #198754;
+        color: #fff;
+        font-weight: 600;
+      }
+
+    /* MOBILE TOGGLE BUTTON */
+    #mobileToggle {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1100;
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      color: #2C3E50;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* MOBILE RESPONSIVE */
+    @media (max-width: 991.98px) {
+      #mobileToggle {
+        display: block;
+      }
+
+      #sidebar {
+        transform: translateX(-100%);
+      }
+
+      #sidebar.show {
+        transform: translateX(0);
+      }
+
+      .adm-main {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      #moduleFrame {
+        border-radius: 0;
+      }
+
+      /* Overlay when sidebar is open on mobile */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      body.sidebar-open::before {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #sidebar {
+        width: 240px;
+      }
+
+      #sidebar img {
+        width: 80px;
+        margin-bottom: 20px;
+      }
+
+      #sidebar .brand-text {
+        font-size: 12px;
+      }
+
+      .adm-btn, .adm-dropdown .dropdown-toggle, .adm-dropdown .dropdown-item {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 12px;
+      }
+
+      .user-card {
+        gap: 10px;
+      }
+
+      .user-info .fw-semibold {
+        font-size: 14px;
+      }
+
+      .user-info small {
+        font-size: 12px;
+      }
+
+      #adminLogout {
+        font-size: 13px;
+        padding: 6px;
+      }
+    }

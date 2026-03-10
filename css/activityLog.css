@@ -1,0 +1,329 @@
+:root{
+  --activity-bg:#f4f7fb;
+  --activity-card:#ffffff;
+  --activity-text:#16324f;
+  --activity-muted:#64748b;
+  --activity-accent:#157347;
+  --activity-accent-deep:#0f5d35;
+  --activity-accent-soft:#e8f5e9;
+  --activity-border:#dbe7df;
+  --activity-shadow:0 18px 40px rgba(15,23,42,0.07);
+  --activity-shadow-soft:0 12px 28px rgba(15,23,42,0.06);
+}
+
+html,body{
+  margin:0;
+  background:linear-gradient(180deg,#f4f7fb 0%,#eef6f1 100%);
+  color:var(--activity-text);
+  font-family:Inter,'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+
+.activity-log-shell{
+  display:grid;
+  gap:18px;
+  padding:24px 12px;
+}
+
+.activity-log-hero,
+.activity-log-toolbar,
+.activity-log-table-card{
+  border-radius:22px;
+}
+
+.activity-log-hero{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:22px 24px;
+  background:linear-gradient(135deg,#ffffff,#f3fbf6);
+  border:1px solid var(--activity-border);
+  box-shadow:var(--activity-shadow);
+}
+
+.activity-log-hero-copy{
+  max-width:760px;
+}
+
+.activity-log-hero-badge,
+.activity-log-status-pill,
+.activity-log-section-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  width:fit-content;
+  padding:7px 12px;
+  border-radius:999px;
+  background:var(--activity-accent-soft);
+  border:1px solid #cfe2d6;
+  color:var(--activity-accent);
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.activity-log-hero h1{
+  margin:10px 0 0;
+  font-size:34px;
+  letter-spacing:-.03em;
+  color:var(--activity-text);
+}
+
+.activity-log-hero-subtitle{
+  margin:10px 0 0;
+  color:var(--activity-muted);
+  font-size:15px;
+  line-height:1.6;
+}
+
+.activity-log-hero-side{
+  min-width:260px;
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+  padding:16px 18px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.8);
+  border:1px solid var(--activity-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.activity-log-status-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 0 0 rgba(34,197,94,.42);
+  animation:activityPulse 2s infinite;
+}
+
+.activity-log-status-copy,
+.activity-log-toolbar-copy p,
+.small-muted{
+  color:var(--activity-muted);
+  font-size:13px;
+  line-height:1.55;
+}
+
+.activity-log-toolbar,
+.activity-log-table-card{
+  overflow:hidden;
+  border:1px solid #e4ece7;
+  box-shadow:var(--activity-shadow-soft);
+}
+
+.activity-log-toolbar .card-body,
+.activity-log-table-card .card-body{
+  padding:20px;
+}
+
+.activity-log-toolbar-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.activity-log-toolbar-copy{
+  max-width:620px;
+}
+
+.activity-log-toolbar-copy h2{
+  margin:10px 0 6px;
+  font-size:24px;
+  font-weight:800;
+  color:var(--activity-text);
+}
+
+.activity-log-toolbar-copy p{
+  margin:0;
+}
+
+.activity-log-controls{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  align-items:flex-end;
+  gap:12px;
+}
+
+.activity-log-filter-group{
+  min-width:180px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.activity-log-range-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+}
+
+.activity-log-filter-group label{
+  color:var(--activity-text);
+  font-size:13px;
+  font-weight:600;
+}
+
+#officeFilter,
+#filterType,
+#filterDate,
+#filterMonth,
+#startDate,
+#endDate{
+  min-height:44px;
+  border-radius:14px;
+  border:1px solid #d8e6dd;
+  box-shadow:none;
+}
+
+#officeFilter:focus,
+#filterType:focus,
+#filterDate:focus,
+#filterMonth:focus,
+#startDate:focus,
+#endDate:focus{
+  border-color:#8ec5a0;
+  box-shadow:0 0 0 .2rem rgba(21,115,71,.12);
+}
+
+.activity-log-table-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 20px;
+  background:linear-gradient(135deg,#1b5e20,#157347);
+  border-bottom:none;
+}
+
+.activity-log-table-header h5{
+  font-size:20px;
+}
+
+.activity-log-section-eyebrow.is-light{
+  margin-bottom:8px;
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.2);
+  color:#ecfdf3;
+}
+
+.activity-log-table-icon{
+  width:48px;
+  height:48px;
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:16px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  font-size:18px;
+}
+
+.activity-log-table-wrap{
+  border:none;
+  box-shadow:none;
+  border-radius:18px;
+}
+
+@keyframes activityPulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.42)}
+  70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+
+@media (max-width:992px){
+  .activity-log-hero,
+  .activity-log-toolbar-row{
+    flex-direction:column;
+  }
+
+  .activity-log-hero-copy,
+  .activity-log-toolbar-copy{
+    max-width:none;
+  }
+
+  .activity-log-hero-side,
+  .activity-log-controls{
+    width:100%;
+    min-width:0;
+  }
+
+  .activity-log-controls{
+    justify-content:flex-start;
+  }
+}
+
+@media (max-width:768px){
+  .activity-log-shell{
+    gap:14px;
+    padding:16px 8px;
+  }
+
+  .activity-log-hero,
+  .activity-log-toolbar,
+  .activity-log-table-card{
+    border-radius:18px;
+  }
+
+  .activity-log-hero,
+  .activity-log-toolbar .card-body,
+  .activity-log-table-card .card-body,
+  .activity-log-table-header{
+    padding-left:16px;
+    padding-right:16px;
+  }
+
+  .activity-log-hero{
+    padding-top:18px;
+    padding-bottom:18px;
+  }
+
+  .activity-log-hero h1{
+    font-size:28px;
+  }
+
+  .activity-log-toolbar-copy h2{
+    font-size:22px;
+  }
+
+  .activity-log-hero-side{
+    padding:14px 16px;
+  }
+}
+
+@media (max-width:576px){
+  .activity-log-hero h1{
+    font-size:24px;
+  }
+
+  .activity-log-hero-subtitle,
+  .activity-log-status-copy,
+  .activity-log-toolbar-copy p,
+  .small-muted{
+    font-size:12px;
+  }
+
+  .activity-log-hero-badge,
+  .activity-log-status-pill,
+  .activity-log-section-eyebrow{
+    font-size:11px;
+    padding:6px 10px;
+  }
+
+  .activity-log-toolbar-copy h2,
+  .activity-log-table-header h5{
+    font-size:19px;
+  }
+
+  .activity-log-filter-group,
+  .activity-log-range-group{
+    width:100%;
+  }
+}

@@ -1,102 +1,333 @@
-/* Page styling */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f9f9f9;
-    text-align: center;
+:root{
+       --office-bg:#f4f7fb;
+       --office-card:#ffffff;
+       --office-text:#16324f;
+       --office-muted:#64748b;
+       --office-accent:#157347;
+       --office-accent-deep:#0f5d35;
+       --office-accent-soft:#e8f5e9;
+       --office-border:#dbe7df;
+       --office-shadow:0 18px 40px rgba(15,23,42,0.07);
+       --office-shadow-soft:0 12px 28px rgba(15,23,42,0.06);
 }
 
-h2 {
-    margin-bottom: 20px;
+html,body{
+       background:linear-gradient(180deg,#f4f7fb 0%,#eef6f1 100%);
+       color:var(--office-text);
 }
 
-/* Table Styling */
-table {
-    width: 70%;
-    border-collapse: collapse;
-    margin: 20px auto;
-    background: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+body.p-4{
+       padding:1.5rem!important;
 }
 
-th, td {
-    border: 1px solid #333;
-    padding: 10px;
-    text-align: center;
+.container-fluid{
+       display:grid;
+       gap:18px;
+       padding-left:12px;
+       padding-right:12px;
 }
 
-th {
-    background: #f2f2f2;
+.office-hero,
+.office-form-card,
+.office-table-card{
+       border-radius:22px;
 }
 
-/* Centered Form Styling */
-form#officeForm {
-    display: flex;
-    justify-content: center;   /* center contents horizontally */
-    align-items: center;
-    gap: 10px;                 /* spacing between inputs/buttons */
-    flex-wrap: wrap;           /* responsive wrapping */
-    width: fit-content;        /* shrink to fit content */
-    margin: 0 auto 20px auto;  /* center the whole form block */
-    text-align: center;        /* keep text alignment centered */
+.office-hero{
+       display:flex;
+       align-items:flex-start;
+       justify-content:space-between;
+       gap:18px;
+       padding:22px 24px;
+       background:linear-gradient(135deg,#ffffff,#f3fbf6);
+       border:1px solid var(--office-border);
+       box-shadow:var(--office-shadow);
 }
 
-/* Input Fields */
-input[type="text"] {
-    padding: 8px;
-    width: 180px;              /* fixed width works better for multiple inputs */
-    border: 1px solid #333;
-    border-radius: 3px;
-    box-sizing: border-box;
+.office-hero-copy{
+       max-width:760px;
 }
 
-/* Buttons */
-input[type="submit"], button {
-    padding: 8px 16px;
-    cursor: pointer;
-    border: none;
-    border-radius: 3px;
-    font-weight: bold;
+.office-hero-badge,
+.office-status-pill,
+.office-section-eyebrow{
+       display:inline-flex;
+       align-items:center;
+       gap:8px;
+       width:fit-content;
+       padding:7px 12px;
+       border-radius:999px;
+       background:var(--office-accent-soft);
+       border:1px solid #cfe2d6;
+       color:var(--office-accent);
+       font-size:12px;
+       font-weight:800;
+       letter-spacing:.04em;
+       text-transform:uppercase;
 }
 
-/* Add/Update Button */
-#submitBtn {
-    background-color: #2ecc71;
-    color: white;
-}
-#submitBtn:hover {
-    background-color: #27ae60;
+.office-hero h1{
+       margin:10px 0 0;
+       font-size:34px;
+       letter-spacing:-.03em;
+       color:var(--office-text);
 }
 
-/* Edit Button */
-.editBtn {
-    background-color: #f39c12;
-    color: white;
-}
-.editBtn:hover {
-    background-color: #e67e22;
+.office-hero-subtitle{
+       margin:10px 0 0;
+       color:var(--office-muted);
+       font-size:15px;
+       line-height:1.6;
 }
 
-/* Delete Button */
-input[name="delete_office"] {
-    background-color: #e74c3c;
-    color: white;
-}
-input[name="delete_office"]:hover {
-    background-color: #c0392b;
+.office-hero-side{
+       min-width:260px;
+       align-self:stretch;
+       display:flex;
+       flex-direction:column;
+       justify-content:center;
+       gap:8px;
+       padding:16px 18px;
+       border-radius:18px;
+       background:rgba(255,255,255,0.8);
+       border:1px solid var(--office-border);
+       box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
 }
 
-/* Responsive adjustments for small screens */
-@media screen and (max-width: 600px) {
-    form#officeForm {
-        flex-direction: column;
-        gap: 8px;
-    }
-    input[type="text"], input[type="submit"], button {
-        width: 90%;
-    }
-    table {
-        width: 95%;
-    }
+.office-status-dot{
+       width:8px;
+       height:8px;
+       border-radius:50%;
+       background:#22c55e;
+       box-shadow:0 0 0 0 rgba(34,197,94,.42);
+       animation:officePulse 2s infinite;
+}
+
+.office-status-copy,
+.office-section-heading p{
+       color:var(--office-muted);
+       font-size:13px;
+       line-height:1.55;
+}
+
+.office-form-card,
+.office-table-card{
+       overflow:hidden;
+       border:1px solid #e4ece7;
+       box-shadow:var(--office-shadow-soft);
+}
+
+.office-form-card .card-body,
+.office-table-card .card-body{
+       padding:20px;
+}
+
+.office-section-heading{
+       display:flex;
+       align-items:flex-start;
+       justify-content:space-between;
+       gap:16px;
+       margin-bottom:18px;
+}
+
+.office-section-heading h2{
+       margin:10px 0 6px;
+       font-size:24px;
+       font-weight:800;
+       color:var(--office-text);
+}
+
+.office-section-heading p{
+       margin:0;
+}
+
+.office-section-icon,
+.office-table-icon{
+       width:48px;
+       height:48px;
+       flex-shrink:0;
+       display:inline-flex;
+       align-items:center;
+       justify-content:center;
+       border-radius:16px;
+       background:var(--office-accent-soft);
+       border:1px solid #d7eadc;
+       color:var(--office-accent);
+       font-size:18px;
+}
+
+.office-form-card .form-label{
+       margin-bottom:8px;
+       color:var(--office-text);
+       font-size:13px;
+}
+
+.office-form-card .form-control,
+.office-form-card .form-select{
+       min-height:44px;
+       border-radius:14px;
+       border:1px solid #d8e6dd;
+       box-shadow:none;
+}
+
+.office-form-card .form-control:focus,
+.office-form-card .form-select:focus{
+       border-color:#8ec5a0;
+       box-shadow:0 0 0 .2rem rgba(21,115,71,.12);
+}
+
+#submitBtn,
+#cancelBtn{
+       min-height:44px;
+       border-radius:14px;
+       box-shadow:0 12px 24px rgba(15,23,42,.08);
+}
+
+#submitBtn{
+       background:linear-gradient(135deg,var(--office-accent),var(--office-accent-deep));
+       border:none;
+       box-shadow:0 12px 24px rgba(21,115,71,.18);
+}
+
+#submitBtn:hover,
+#submitBtn:focus{
+       background:linear-gradient(135deg,#14683f,#0d522f);
+}
+
+.office-table-header{
+       display:flex;
+       align-items:center;
+       justify-content:space-between;
+       gap:16px;
+       padding:18px 20px;
+       background:linear-gradient(135deg,#1b5e20,#157347);
+       border-bottom:none;
+}
+
+.office-table-header h5{
+       font-size:20px;
+}
+
+.office-section-eyebrow.is-light{
+       margin-bottom:8px;
+       background:rgba(255,255,255,.14);
+       border-color:rgba(255,255,255,.2);
+       color:#ecfdf3;
+}
+
+.office-table-icon{
+       background:rgba(255,255,255,.14);
+       border-color:rgba(255,255,255,.18);
+       color:#fff;
+}
+
+.editBtn,
+.toggleBtn,
+.deleteBtn{
+       min-width:38px;
+       min-height:38px;
+       border-radius:12px;
+       box-shadow:0 10px 18px rgba(15,23,42,.08);
+}
+
+.editBtn{
+       background:#facc15;
+       border-color:#facc15;
+       color:#5b3b00;
+}
+
+.editBtn:hover,
+.editBtn:focus{
+       background:#eab308;
+       border-color:#eab308;
+       color:#4a3100;
+}
+
+@keyframes officePulse{
+       0%{box-shadow:0 0 0 0 rgba(34,197,94,.42)}
+       70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
+       100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+
+@media (max-width:992px){
+       .office-hero,
+       .office-section-heading{
+              flex-direction:column;
+       }
+
+       .office-hero-copy{
+              max-width:none;
+       }
+
+       .office-hero-side{
+              width:100%;
+              min-width:0;
+       }
+}
+
+@media (max-width:768px){
+       body.p-4{
+              padding:1rem!important;
+       }
+
+       .container-fluid{
+              gap:14px;
+              padding-left:8px;
+              padding-right:8px;
+       }
+
+       .office-hero,
+       .office-form-card,
+       .office-table-card{
+              border-radius:18px;
+       }
+
+       .office-hero,
+       .office-form-card .card-body,
+       .office-table-card .card-body,
+       .office-table-header{
+              padding-left:16px;
+              padding-right:16px;
+       }
+
+       .office-hero{
+              padding-top:18px;
+              padding-bottom:18px;
+       }
+
+       .office-hero h1{
+              font-size:28px;
+       }
+
+       .office-section-heading h2{
+              font-size:22px;
+       }
+
+       .office-hero-side{
+              padding:14px 16px;
+       }
+}
+
+@media (max-width:576px){
+       .office-hero h1{
+              font-size:24px;
+       }
+
+       .office-hero-subtitle,
+       .office-status-copy,
+       .office-section-heading p{
+              font-size:12px;
+       }
+
+       .office-hero-badge,
+       .office-status-pill,
+       .office-section-eyebrow{
+              font-size:11px;
+              padding:6px 10px;
+       }
+
+       .office-section-heading h2,
+       .office-table-header h5{
+              font-size:19px;
+       }
 }

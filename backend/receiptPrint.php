@@ -1,5 +1,6 @@
 <?php
-// Generates a simple receipt PDF using FPDF and a QR image (Google Chart).
+// Generates a simple receipt PDF using FPDF and a QR image (Google Chart / QRServer fallback).
+// QR CONTENT (FIXED): Base64URL(JSON payload) — same format as your JS code.
 // Requires FPDF library available via include path. If you don't have it, install: composer require setasign/fpdf
 // or place fpdf.php in vendor or include folder and update the require path below.
 
@@ -23,7 +24,6 @@ foreach ($fpdf_paths as $path) {
 }
 
 if (!$fpdf_loaded) {
-    // Helpful error so you can fix path issues quickly
     header('Content-Type: text/plain; charset=utf-8', true, 500);
     die("FPDF library not found. Tried:\n" . implode("\n", $fpdf_paths) . "\n\nPlace fpdf.php in the backend folder or adjust the path in receiptPrint.php.");
 }
@@ -40,7 +40,7 @@ if (!$queueId) { die('Missing queue_id'); }
 $q = $conn->prepare("SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, q.customer_name, q.customer_phone, q.customer_email, o.office_description
                      FROM queues q JOIN offices o ON q.office_id = o.office_id
                      WHERE q.queue_id = ?");
-$q->bind_param('i',$queueId);
+$q->bind_param('i', $queueId);
 $q->execute();
 $res = $q->get_result();
 $queue = $res->fetch_assoc();
@@ -53,7 +53,7 @@ $qs = $conn->prepare("SELECT qs.service_id, s.service_description, qs.soft_copy
                       FROM queue_services qs
                       JOIN services s ON qs.service_id = s.service_id
                       WHERE qs.queue_id = ?");
-$qs->bind_param('i',$queueId);
+$qs->bind_param('i', $queueId);
 $qs->execute();
 $r2 = $qs->get_result();
 while ($row = $r2->fetch_assoc()) {
@@ -61,79 +61,132 @@ while ($row = $r2->fetch_assoc()) {
 }
 $qs->close();
 
-// Build the live queue URL for this office (used in QR)
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'];
-// Adjust the base path if your app isn't at /LINYA; this uses /LINYA as the application root
-$liveUrl = $scheme . '://' . $host . "/LINYA/includes/queueDisplay.php?office_id=" . urlencode($queue['office_id']);
+/**
+ * Base64URL encode UTF-8 string (matches JS toBase64Url)
+ * JS behavior: btoa(binary UTF-8) then replace +/ and strip =
+ */
+function base64url_encode_utf8(string $str): string {
+    $b64 = base64_encode($str);                 // base64 of UTF-8 bytes
+    return rtrim(strtr($b64, '+/', '-_'), '='); // base64url (no padding)
+}
 
-// Prepare QR image only for face-logged users
+/**
+ * Download remote image to a temporary PNG file.
+ * Returns filepath or false.
+ */
+function download_qr_to_temp(string $url) {
+    $tmp = tempnam(sys_get_temp_dir(), 'qr_');
+    if ($tmp === false) return false;
+    $tmpPng = $tmp . '.png';
+
+    $ctx = stream_context_create([
+        'http' => [
+            'timeout' => 8,
+            'header'  => "User-Agent: LINYA-Receipt/1.0\r\n",
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ],
+    ]);
+
+    $img = @file_get_contents($url, false, $ctx);
+
+    // Guard against empty response / HTML error page
+    if ($img === false || strlen($img) < 100) {
+        @unlink($tmp);
+        return false;
+    }
+
+    file_put_contents($tmpPng, $img);
+    @unlink($tmp);
+    return $tmpPng;
+}
+
+// --------------------------------------------------
+// ✅ FIXED QR: BASE64URL(JSON) FOR MOBILE APP
+// Same as your JS payload + base64url encoding
+// --------------------------------------------------
 $tmp = false;
+
 if ($face_logged) {
-    $chartUrl = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($liveUrl) . "&chld=L|1";
-    $tmp = tempnam(sys_get_temp_dir(), 'qr_') . '.png';  // Add .png extension
-    $img = @file_get_contents($chartUrl);
-    if ($img !== false) {
-        file_put_contents($tmp, $img);
-    } else {
-        // Try alternative QR code provider if Google Charts fails
-        $altUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($liveUrl);
-        $img = @file_get_contents($altUrl);
-        if ($img !== false) {
-            file_put_contents($tmp, $img);
-        } else {
-            @unlink($tmp);
-            $tmp = false;
+    $payload = [
+        'queue_id' => (int)$queue['queue_id'],
+        'queue_code' => $queue['queue_code'],
+        'office_id' => (int)$queue['office_id'],
+        'office_description' => $queue['office_description'],
+        'created_at' => $queue['created_at'],
+        'customer_name' => (!empty($queue['customer_name']) && trim($queue['customer_name']) !== '') ? $queue['customer_name'] : null,
+        'customer_phone' => (!empty($queue['customer_phone']) && trim($queue['customer_phone']) !== '') ? $queue['customer_phone'] : null,
+        'customer_email' => (!empty($queue['customer_email']) && trim($queue['customer_email']) !== '') ? $queue['customer_email'] : null,
+    ];
+
+    $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($payloadJson !== false) {
+        $payloadB64Url = base64url_encode_utf8($payloadJson);
+
+        // Primary QR provider (Google Chart)
+        $googleQr = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($payloadB64Url) . "&chld=L|1";
+        $tmp = download_qr_to_temp($googleQr);
+
+        // Fallback provider (qrserver)
+        if (!$tmp) {
+            $qrServer = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($payloadB64Url);
+            $tmp = download_qr_to_temp($qrServer);
         }
     }
 }
 
 // create PDF receipt (80mm width)
-$pdf = new FPDF('P','mm',array(80,200));
+$pdf = new FPDF('P', 'mm', array(80, 200));
 $pdf->SetAutoPageBreak(false);
 $pdf->AddPage();
-$pdf->SetMargins(6,6,6);
+$pdf->SetMargins(6, 6, 6);
 
-$pdf->SetFont('Arial','B',14);
-$pdf->Cell(0,6, 'LINYA', 0, 1, 'C');
+$pdf->SetFont('Arial', 'B', 14);
+$pdf->Cell(0, 6, 'LINYA', 0, 1, 'C');
 
-$pdf->SetFont('Arial','',9);
-$pdf->Cell(0,5, $queue['office_description'], 0, 1, 'C');
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(0, 5, $queue['office_description'], 0, 1, 'C');
 $pdf->Ln(4);
 
-$pdf->SetFont('Arial','B',12);
-$pdf->Cell(0,7, $queue['queue_code'], 0, 1, 'C');
+$pdf->SetFont('Arial', 'B', 12);
+$pdf->Cell(0, 7, $queue['queue_code'], 0, 1, 'C');
 $pdf->Ln(2);
 
-$pdf->SetFont('Arial','',9);
-$pdf->Cell(30,6,'Date:',0,0);
-$pdf->Cell(0,6, date('Y-m-d H:i', strtotime($queue['created_at'])), 0,1);
+$pdf->SetFont('Arial', '', 9);
+$pdf->Cell(30, 6, 'Date:', 0, 0);
+$pdf->Cell(0, 6, date('Y-m-d H:i', strtotime($queue['created_at'])), 0, 1);
 $pdf->Ln(2);
 
 // print visitor info if present
-$pdf->SetFont('Arial','',9);
-if (!empty($queue['customer_name'])) {
-    $pdf->Cell(30,6,'Name:',0,0);
-    $pdf->Cell(0,6, $queue['customer_name'], 0,1);
+$pdf->SetFont('Arial', '', 9);
+if (!empty($queue['customer_name']) && trim($queue['customer_name']) !== '') {
+    $pdf->Cell(30, 6, 'Name:', 0, 0);
+    $pdf->Cell(0, 6, $queue['customer_name'], 0, 1);
 }
-if (!empty($queue['customer_phone'])) {
-    $pdf->Cell(30,6,'Phone:',0,0);
-    $pdf->Cell(0,6, $queue['customer_phone'], 0,1);
+if (!empty($queue['customer_phone']) && trim($queue['customer_phone']) !== '') {
+    $pdf->Cell(30, 6, 'Phone:', 0, 0);
+    $pdf->Cell(0, 6, $queue['customer_phone'], 0, 1);
 }
-if (!empty($queue['customer_email'])) {
-    $pdf->Cell(30,6,'Email:',0,0);
-    $pdf->Cell(0,6, $queue['customer_email'], 0,1);
+if (!empty($queue['customer_email']) && trim($queue['customer_email']) !== '') {
+    $pdf->Cell(30, 6, 'Email:', 0, 0);
+    $pdf->Cell(0, 6, $queue['customer_email'], 0, 1);
 }
-if (!empty($queue['customer_name']) || !empty($queue['customer_phone']) || !empty($queue['customer_email'])) {
+if (
+    (!empty($queue['customer_name']) && trim($queue['customer_name']) !== '') ||
+    (!empty($queue['customer_phone']) && trim($queue['customer_phone']) !== '') ||
+    (!empty($queue['customer_email']) && trim($queue['customer_email']) !== '')
+) {
     $pdf->Ln(2);
 }
 
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,'Services:',0,1);
-$pdf->SetFont('Arial','',9);
+$pdf->SetFont('Arial', 'B', 10);
+$pdf->Cell(0, 6, 'Services:', 0, 1);
+$pdf->SetFont('Arial', '', 9);
 foreach ($services as $s) {
     $label = $s['service_description'] . (isset($s['soft_copy']) && $s['soft_copy'] ? ' (PDF)' : '');
-    $pdf->MultiCell(0,5, $label, 0, 'L');
+    $pdf->MultiCell(0, 5, $label, 0, 'L');
 }
 $pdf->Ln(6);
 
@@ -141,13 +194,13 @@ $pdf->Ln(6);
 if ($face_logged && $tmp && file_exists($tmp)) {
     $imgWidth = 40; // mm
     $x = ($pdf->GetPageWidth() - $imgWidth) / 2;
-    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth, 'PNG');  // Explicitly specify PNG type
+    $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth, 'PNG'); // explicit PNG
     @unlink($tmp);
     $pdf->Ln($imgWidth + 4);
 }
 
-$pdf->SetFont('Arial','I',8);
-$pdf->Cell(0,5,'Thank you. Present this at the counter when called.',0,1,'C');
+$pdf->SetFont('Arial', 'I', 8);
+$pdf->Cell(0, 5, 'Thank you. Present this at the counter when called.', 0, 1, 'C');
 
-$pdf->Output('I','receipt_'.$queue['queue_code'].'.pdf');
+$pdf->Output('I', 'receipt_' . $queue['queue_code'] . '.pdf');
 exit;
