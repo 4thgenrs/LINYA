@@ -23,6 +23,24 @@ include '../backend/queueDisplayData.php';
 
 <div class="container-fluid">
 
+<?php
+$queueRows = [];
+while ($row = $res->fetch_assoc()):
+    $qst = $conn->prepare("SELECT s.service_description 
+                           FROM queue_services qs 
+                           JOIN services s ON qs.service_id = s.service_id 
+                           WHERE qs.queue_id=?");
+    $qst->bind_param("i", $row['queue_id']);
+    $qst->execute();
+    $gr = $qst->get_result();
+    $svc = [];
+    while ($r2 = $gr->fetch_assoc()) $svc[] = $r2['service_description'];
+    $qst->close();
+    $row['service_list'] = implode(', ', $svc);
+    $queueRows[] = $row;
+endwhile;
+?>
+
     <section class="queue-display-hero">
         <div class="queue-display-hero-copy">
             <span class="queue-display-hero-badge">
@@ -96,7 +114,7 @@ include '../backend/queueDisplayData.php';
         </div>
 
         <div class="card-body">
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-md-block">
                 <table id="queueTable" class="table table-hover table-bordered align-middle nowrap w-100">
                     <thead class="table-success">
                         <tr>
@@ -108,31 +126,48 @@ include '../backend/queueDisplayData.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = $res->fetch_assoc()): ?>
-                            <?php
-                                $qst = $conn->prepare("SELECT s.service_description 
-                                                       FROM queue_services qs 
-                                                       JOIN services s ON qs.service_id = s.service_id 
-                                                       WHERE qs.queue_id=?");
-                                $qst->bind_param("i",$row['queue_id']);
-                                $qst->execute();
-                                $gr = $qst->get_result();
-                                $svc = [];
-                                while($r2 = $gr->fetch_assoc()) $svc[] = $r2['service_description'];
-                                $qst->close();
-                            ?>
+                        <?php foreach($queueRows as $row): ?>
                             <tr>
                                 <td><?= htmlspecialchars($row['queue_code']) ?></td>
                                 <td><?= htmlspecialchars($row['office_description']) ?></td>
-                                <td><?= htmlspecialchars(implode(', ', $svc)) ?></td>
+                                <td><?= htmlspecialchars($row['service_list']) ?></td>
                                 <td><?= htmlspecialchars($row['created_at']) ?></td>
                                 <td class="status <?= strtolower($row['status']) ?>">
                                     <?= htmlspecialchars($row['status']) ?>
                                 </td>
                             </tr>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="d-block d-md-none mt-2">
+                <div class="mobile-table-search">
+                    <input type="text" class="form-control" id="queueMobileSearch" placeholder="Search queues...">
+                </div>
+                <div id="queueMobileEmpty" class="mobile-table-empty" style="display:none;">No queues found.</div>
+                <div id="queueMobileList" class="mobile-table-list">
+                    <?php foreach($queueRows as $index => $row): ?>
+                        <?php $collapseId = 'queueMobile' . ($index + 1); ?>
+                        <div class="mobile-table-card" data-search-text="<?= htmlspecialchars(($row['queue_code'] ?? '') . ' ' . ($row['office_description'] ?? '') . ' ' . ($row['service_list'] ?? '') . ' ' . ($row['status'] ?? ''), ENT_QUOTES) ?>">
+                            <button class="mobile-table-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="false" aria-controls="<?= $collapseId ?>">
+                                <span class="mobile-table-icon"><i class="fa-solid fa-list-ol"></i></span>
+                                <span class="mobile-table-summary">
+                                    <span class="mobile-table-title"><?= htmlspecialchars($row['queue_code']) ?></span>
+                                    <span class="mobile-table-meta"><?= htmlspecialchars($row['office_description']) ?> · <?= htmlspecialchars($row['status']) ?></span>
+                                </span>
+                                <span class="mobile-table-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+                            </button>
+                            <div id="<?= $collapseId ?>" class="collapse mobile-table-body">
+                                <div class="mobile-table-grid">
+                                    <div class="mobile-table-field"><span class="mobile-table-label">Office</span><span class="mobile-table-value"><?= htmlspecialchars($row['office_description']) ?></span></div>
+                                    <div class="mobile-table-field"><span class="mobile-table-label">Services</span><span class="mobile-table-value"><?= htmlspecialchars($row['service_list']) ?: '—' ?></span></div>
+                                    <div class="mobile-table-field"><span class="mobile-table-label">Created</span><span class="mobile-table-value"><?= htmlspecialchars($row['created_at']) ?></span></div>
+                                    <div class="mobile-table-field"><span class="mobile-table-label">Status</span><span class="mobile-table-value"><span class="status <?= strtolower($row['status']) ?>"><?= htmlspecialchars($row['status']) ?></span></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -144,6 +179,7 @@ include '../backend/queueDisplayData.php';
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/tableMobileCards.js"></script>
 
 <script>
 // Initialize DataTable
@@ -160,6 +196,13 @@ $(document).ready(function() {
     });
 
     $('.dataTables_filter input').attr('placeholder', 'Search queues...');
+
+    if (window.mobileTableCards) {
+        window.mobileTableCards.register('queueMobileSearch', 'queueMobileList', 'queueMobileEmpty', {
+            emptyText: 'No queues found.',
+            emptySearchText: 'No queues match your search.'
+        });
+    }
 });
 
 function resetQueues() {

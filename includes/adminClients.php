@@ -45,6 +45,25 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
     .error { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #991b1b; }
     .success { background: linear-gradient(135deg, #ecfdf5, #dcfce7); color: #166534; }
     .empty { text-align: center; padding: 40px; color: #9ca3af; }
+    .mobile-search-wrap { margin-bottom: 14px; }
+    .mobile-client-list { display: grid; gap: 12px; }
+    .mobile-client-card { border: 1px solid #e4ece7; border-radius: 16px; background: linear-gradient(135deg, #ffffff, #f8fbf9); box-shadow: 0 10px 22px rgba(15,23,42,0.05); overflow: hidden; }
+    .mobile-client-toggle { width: 100%; border: 0; background: transparent; display: flex; align-items: center; gap: 12px; padding: 14px; text-align: left; }
+    .mobile-client-toggle:focus { outline: 0; box-shadow: inset 0 0 0 2px rgba(25, 135, 84, 0.18); }
+    .mobile-client-avatar { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #157347, #198754); color: #fff; box-shadow: 0 10px 18px rgba(25,135,84,0.22); }
+    .mobile-client-summary { min-width: 0; flex: 1; }
+    .mobile-client-title { font-size: 14px; font-weight: 700; color: #16324f; line-height: 1.45; word-break: break-word; }
+    .mobile-client-meta { display: block; margin-top: 4px; color: #64748b; font-size: 12px; }
+    .mobile-client-chevron { color: #157347; font-size: 14px; transition: transform 0.2s ease; }
+    .mobile-client-toggle[aria-expanded="true"] .mobile-client-chevron { transform: rotate(180deg); }
+    .mobile-client-body { border-top: 1px solid #edf3ef; padding: 14px; }
+    .mobile-client-detail { margin-bottom: 10px; }
+    .mobile-client-detail:last-child { margin-bottom: 0; }
+    .mobile-client-detail-label { display: block; margin-bottom: 4px; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .mobile-client-detail-value { color: #16324f; font-size: 13px; line-height: 1.5; word-break: break-word; }
+    .mobile-client-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .mobile-client-actions .btn-delete { width: 100%; justify-content: center; }
+    .mobile-empty { text-align: center; padding: 22px 16px; color: #94a3b8; border: 1px dashed #dbe7df; border-radius: 16px; background: #fbfdfb; }
     .modal-content { border: 0; border-radius: 18px; box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18); }
     .modal-header,
     .modal-footer { border-color: #e5e7eb; }
@@ -126,6 +145,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
       .table-container { padding: 0; }
       .table-header { padding: 16px; }
       .table-header-title { align-items: flex-start; }
+      .table-body { padding: 14px; }
       .dataTables_wrapper .dataTables_length,
       .dataTables_wrapper .dataTables_filter,
       .dataTables_wrapper .dataTables_info,
@@ -190,22 +210,31 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
     <div class="table-body">
       <div id="loadingMsg" class="loading">Loading clients...</div>
       <div id="emptyMsg" class="empty" style="display: none;">No clients registered yet.</div>
-      <div class="table-responsive">
-      <table id="clientsTable" class="table table-hover align-middle w-100" style="display: none;">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Safe Name</th>
-            <th>Created At</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="clientsBody">
-        </tbody>
-      </table>
+      <div class="d-none d-md-block">
+        <div class="table-responsive">
+        <table id="clientsTable" class="table table-hover align-middle w-100" style="display: none;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Safe Name</th>
+              <th>Created At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="clientsBody">
+          </tbody>
+        </table>
+        </div>
+      </div>
+      <div class="d-block d-md-none">
+        <div class="mobile-search-wrap">
+          <input type="text" class="form-control" id="mobileClientSearch" placeholder="Search clients..." onkeyup="filterMobileClients()">
+        </div>
+        <div id="mobileEmptyMsg" class="mobile-empty" style="display: none;">No clients registered yet.</div>
+        <div id="mobileClientsList" class="mobile-client-list"></div>
       </div>
     </div>
   </div>
@@ -238,6 +267,8 @@ function renderTable() {
   const tbody = document.getElementById('clientsBody');
   const loadingMsg = document.getElementById('loadingMsg');
   const emptyMsg = document.getElementById('emptyMsg');
+  const mobileEmptyMsg = document.getElementById('mobileEmptyMsg');
+  const mobileClientsList = document.getElementById('mobileClientsList');
   const statTotal = document.getElementById('statTotal');
 
   loadingMsg.style.display = 'none';
@@ -247,12 +278,15 @@ function renderTable() {
   if (clients.length === 0) {
     table.style.display = 'none';
     emptyMsg.style.display = 'block';
+    if (mobileEmptyMsg) mobileEmptyMsg.style.display = 'block';
+    if (mobileClientsList) mobileClientsList.innerHTML = '';
     statTotal.textContent = '0';
     return;
   }
 
   table.style.display = 'table';
   emptyMsg.style.display = 'none';
+  if (mobileEmptyMsg) mobileEmptyMsg.style.display = 'none';
   statTotal.textContent = clients.length;
 
   tbody.innerHTML = clients.map(client => `
@@ -265,11 +299,53 @@ function renderTable() {
       <td>${formatDate(client.created_at)}</td>
       <td>
         <button class="btn btn-danger btn-sm btn-delete" onclick="openDeleteConfirm(${client.client_id}, '${escapeAttr(client.name)}')">
-          <i class="fa-solid fa-trash-can me-1"></i>Delete
+          <i class="fa-solid fa-trash me-1"></i>Delete
         </button>
       </td>
     </tr>
   `).join('');
+
+  if (mobileClientsList) {
+    mobileClientsList.innerHTML = clients.map(client => {
+      const collapseId = `clientMobile${client.client_id}`;
+      const searchable = `${client.name || ''} ${client.email || ''} ${client.phone || ''} ${client.safe_name || ''}`;
+      return `
+        <div class="mobile-client-card" data-search-text="${escapeHtml(searchable).toLowerCase()}">
+          <button class="mobile-client-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+            <span class="mobile-client-avatar"><i class="fa-solid fa-user"></i></span>
+            <span class="mobile-client-summary">
+              <span class="mobile-client-title">${escapeHtml(client.name)}</span>
+              <span class="mobile-client-meta">${client.email ? escapeHtml(client.email) : 'No email provided'}</span>
+            </span>
+            <span class="mobile-client-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div id="${collapseId}" class="collapse mobile-client-body">
+            <div class="mobile-client-detail">
+              <span class="mobile-client-detail-label">Client ID</span>
+              <span class="mobile-client-detail-value">${client.client_id}</span>
+            </div>
+            <div class="mobile-client-detail">
+              <span class="mobile-client-detail-label">Phone</span>
+              <span class="mobile-client-detail-value">${client.phone ? escapeHtml(client.phone) : '—'}</span>
+            </div>
+            <div class="mobile-client-detail">
+              <span class="mobile-client-detail-label">Safe Name</span>
+              <span class="mobile-client-detail-value"><span class="badge badge-info">${escapeHtml(client.safe_name)}</span></span>
+            </div>
+            <div class="mobile-client-detail">
+              <span class="mobile-client-detail-label">Created At</span>
+              <span class="mobile-client-detail-value">${formatDate(client.created_at)}</span>
+            </div>
+            <div class="mobile-client-actions">
+              <button class="btn btn-danger btn-sm btn-delete" onclick="openDeleteConfirm(${client.client_id}, '${escapeAttr(client.name)}')">
+                <i class="fa-solid fa-trash-can me-1"></i>Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   initializeDataTable();
 }
@@ -413,6 +489,29 @@ function setInlineAlert(id, msg) {
 function hideInlineAlert(id) {
   const element = document.getElementById(id);
   element.style.display = 'none';
+}
+
+function filterMobileClients() {
+  const input = document.getElementById('mobileClientSearch');
+  const list = document.getElementById('mobileClientsList');
+  if (!input || !list) return;
+
+  const query = input.value.trim().toLowerCase();
+  const cards = list.querySelectorAll('.mobile-client-card');
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const text = card.getAttribute('data-search-text') || '';
+    const show = !query || text.includes(query);
+    card.style.display = show ? '' : 'none';
+    if (show) visibleCount += 1;
+  });
+
+  const mobileEmptyMsg = document.getElementById('mobileEmptyMsg');
+  if (mobileEmptyMsg) {
+    mobileEmptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    mobileEmptyMsg.textContent = query ? 'No clients match your search.' : 'No clients registered yet.';
+  }
 }
 
 // Load on page ready

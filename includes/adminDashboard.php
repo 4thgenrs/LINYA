@@ -98,7 +98,7 @@ if (isset($_SESSION['office_id']) && $_SESSION['office_id'] > 0) {
         <li class="adm-dropdown">
           <button class="dropdown-toggle" type="button" aria-expanded="false">
             <i class="fa-solid fa-gear"></i> Management
-            <i class="fa-solid fa-chevron-down ms-auto"></i>
+            <!-- <i class="fa-solid fa-chevron-down ms-auto"></i> -->
           </button>
 
           <div class="dropdown-menu">

@@ -94,7 +94,7 @@
       </div>
     </div>
     <div class="card-body">
-      <div class="table-responsive">
+      <div class="table-responsive d-none d-md-block">
         <table id="windowsTable" class="table table-bordered table-hover align-middle">
           <thead class="table-success">
             <tr>
@@ -110,6 +110,13 @@
           </tbody>
         </table>
       </div>
+      <div class="d-block d-md-none mt-2">
+        <div class="mobile-table-search">
+          <input type="text" class="form-control" id="windowsMobileSearch" placeholder="Search windows...">
+        </div>
+        <div id="windowsMobileEmpty" class="mobile-table-empty" style="display:none;">No windows found.</div>
+        <div id="windowsMobileList" class="mobile-table-list"></div>
+      </div>
     </div>
   </div>
 
@@ -120,6 +127,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="../js/tableMobileCards.js"></script>
 <script src="../js/assignStaff.js"></script>
 </body>
 </html>

@@ -96,27 +96,37 @@
                 </div>
             </div>
             <div class="card-body">
-                <section class="fq-table-wrap activity-log-table-wrap">
-                    <table id="activityTable" class="fq-table" aria-label="My processed queues">
-                        <thead>
-                            <tr>
-                                <th>Office</th>
-                                <th>Window</th>
-                                <th>Created At</th>
-                                <th>Finished At</th>
-                                <th>Services</th>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </section>
+                <div class="d-none d-md-block">
+                    <section class="fq-table-wrap activity-log-table-wrap">
+                        <table id="activityTable" class="fq-table" aria-label="My processed queues">
+                            <thead>
+                                <tr>
+                                    <th>Office</th>
+                                    <th>Window</th>
+                                    <th>Created At</th>
+                                    <th>Finished At</th>
+                                    <th>Services</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </section>
+                </div>
+                <div class="d-block d-md-none">
+                    <div class="mobile-table-search">
+                        <input type="text" class="form-control" id="activityMobileSearch" placeholder="Search activity...">
+                    </div>
+                    <div id="activityMobileEmpty" class="mobile-table-empty" style="display:none;">No activity records found.</div>
+                    <div id="activityMobileList" class="mobile-table-list"></div>
+                </div>
             </div>
         </section>
     </main>
 
+    <script src="../js/tableMobileCards.js"></script>
     <script src="../js/activityLog.js"></script>
 </body>
 </html>

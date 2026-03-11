@@ -28,6 +28,35 @@ body.py-4{
         padding-right:12px;
 }
 
+.accounts-topbar{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:wrap;
+}
+
+.accounts-page-title{
+        font-size:2.1rem;
+        font-weight:800;
+        letter-spacing:-.03em;
+        color:var(--accounts-text);
+}
+
+.accounts-add-btn{
+        min-height:48px;
+        padding:0 18px;
+        border:none;
+        border-radius:14px;
+        background:linear-gradient(135deg,var(--accounts-accent),var(--accounts-accent-deep));
+        box-shadow:0 14px 26px rgba(21,115,71,.18);
+}
+
+.accounts-add-btn:hover,
+.accounts-add-btn:focus{
+        background:linear-gradient(135deg,#14683f,#0d522f);
+}
+
 .accounts-hero,
 .accounts-form-card,
 .accounts-table-card{
@@ -201,12 +230,13 @@ body.py-4{
         justify-content:space-between;
         gap:16px;
         padding:18px 20px;
-        background:linear-gradient(135deg,#1b5e20,#157347);
+        background:linear-gradient(135deg,#1f8d51,#198754);
         border-bottom:none;
 }
 
 .accounts-table-header h5{
-        font-size:20px;
+        font-size:1.45rem;
+        font-weight:800;
 }
 
 .accounts-section-eyebrow.is-light{
@@ -247,6 +277,81 @@ body.py-4{
         box-shadow:0 10px 18px rgba(220,53,69,.16);
 }
 
+.accounts-modal-content{
+        border:0;
+        border-radius:22px;
+        overflow:hidden;
+        box-shadow:0 22px 50px rgba(15,23,42,.16);
+}
+
+.accounts-modal-dialog{
+        width:min(100% - 2rem, 860px);
+        max-width:860px;
+        margin:1rem auto;
+}
+
+.accounts-modal-header{
+        background:linear-gradient(135deg,#1f8d51,#198754);
+        border-bottom:none;
+        padding:18px 22px;
+}
+
+.accounts-modal-subtitle{
+        display:block;
+        margin-top:4px;
+        color:rgba(255,255,255,.8);
+}
+
+#accountsModal .modal-body{
+        padding:22px;
+}
+
+#accountsModal .modal-footer{
+        padding:16px 22px 22px;
+        border-top:1px solid #edf3ef;
+}
+
+#accountsModal .accounts-form-grid{
+        --bs-gutter-x:1rem;
+        --bs-gutter-y:1rem;
+}
+
+#accountsModal .form-control,
+#accountsModal .form-select{
+        min-height:46px;
+        border-radius:14px;
+        border:1px solid #d8e6dd;
+        width:100%;
+}
+
+#accountsModal .form-control:focus,
+#accountsModal .form-select:focus{
+        border-color:#8ec5a0;
+        box-shadow:0 0 0 .2rem rgba(21,115,71,.12);
+}
+
+.accounts-mobile-filters{
+        margin-bottom:0!important;
+}
+
+.mobile-account-card{
+        border-radius:18px;
+}
+
+.mobile-account-initial{
+        width:36px;
+        height:36px;
+        flex-shrink:0;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:999px;
+        background:linear-gradient(135deg,#198754,#157347);
+        color:#fff;
+        font-size:13px;
+        font-weight:800;
+}
+
 @keyframes accountsPulse{
         0%{box-shadow:0 0 0 0 rgba(34,197,94,.42)}
         70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
@@ -275,6 +380,11 @@ body.py-4{
                 padding-bottom:1rem!important;
         }
 
+        .accounts-modal-dialog{
+                width:min(100% - 1rem, 980px);
+                margin:.5rem auto;
+        }
+
         .container-fluid{
                 gap:14px;
                 padding-left:8px;
@@ -285,6 +395,10 @@ body.py-4{
         .accounts-form-card,
         .accounts-table-card{
                 border-radius:18px;
+        }
+
+        .accounts-page-title{
+                font-size:1.9rem;
         }
 
         .accounts-hero,
@@ -311,9 +425,48 @@ body.py-4{
         .accounts-hero-side{
                 padding:14px 16px;
         }
+
+        #accountsModal .modal-body,
+        #accountsModal .modal-footer,
+        .accounts-modal-header{
+                padding-left:16px;
+                padding-right:16px;
+        }
 }
 
 @media (max-width:576px){
+        .accounts-topbar{
+                align-items:flex-start;
+        }
+
+        .accounts-add-btn{
+                width:100%;
+                justify-content:center;
+        }
+
+        .accounts-page-title{
+                font-size:1.65rem;
+        }
+
+        .accounts-modal-content{
+                border-radius:18px;
+        }
+
+        #accountsModal .modal-body{
+                padding:14px;
+        }
+
+        #accountsModal .modal-footer{
+                padding:12px 14px 14px;
+                flex-direction:column-reverse;
+                gap:10px;
+        }
+
+        #accountsModal .modal-footer .btn,
+        #accountsModal .modal-footer #submitBtn{
+                width:100%;
+        }
+
         .accounts-hero h1{
                 font-size:24px;
         }

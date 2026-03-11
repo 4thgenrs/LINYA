@@ -8,6 +8,7 @@
   const startDate = document.getElementById('startDate');
   const endDate = document.getElementById('endDate');
   const tbody = document.querySelector('#activityTable tbody');
+  const mobileList = document.getElementById('activityMobileList');
 
   function formatCell(v){
     return (v === null || typeof v === 'undefined' || v === '') ? '—' : String(v);
@@ -15,13 +16,20 @@
 
   function renderRows(rows){
     tbody.innerHTML = '';
+    if (mobileList) mobileList.innerHTML = '';
     if (!rows || !rows.length) {
       const tr = document.createElement('tr');
       tr.innerHTML = `<td colspan="8" class="small-muted">No records</td>`;
       tbody.appendChild(tr);
+      if (window.mobileTableCards) {
+        window.mobileTableCards.register('activityMobileSearch', 'activityMobileList', 'activityMobileEmpty', {
+          emptyText: 'No activity records found.',
+          emptySearchText: 'No activity records match your search.'
+        });
+      }
       return;
     }
-    rows.forEach(r => {
+    rows.forEach((r, index) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${formatCell(r.office_description)}</td>
@@ -34,7 +42,41 @@
         <td>${formatCell(r.customer_email)}</td>
       `;
       tbody.appendChild(tr);
+
+      if (mobileList) {
+        const collapseId = `activityMobile${index}`;
+        const card = document.createElement('div');
+        card.className = 'mobile-table-card';
+        card.setAttribute('data-search-text', `${formatCell(r.office_description)} ${formatCell(r.services)} ${formatCell(r.customer_name)} ${formatCell(r.customer_phone)} ${formatCell(r.customer_email)}`);
+        card.innerHTML = `
+          <button class="mobile-table-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+            <span class="mobile-table-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+            <span class="mobile-table-summary">
+              <span class="mobile-table-title">${formatCell(r.office_description)} · Window ${formatCell(r.window_no && r.window_no > 0 ? r.window_no : (r.window_id && r.window_id > 0 ? r.window_id : '—'))}</span>
+              <span class="mobile-table-meta">${formatCell(r.customer_name)} · ${formatCell(r.finished_at)}</span>
+            </span>
+            <span class="mobile-table-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div id="${collapseId}" class="collapse mobile-table-body">
+            <div class="mobile-table-grid">
+              <div class="mobile-table-field"><span class="mobile-table-label">Created At</span><span class="mobile-table-value">${formatCell(r.created_at)}</span></div>
+              <div class="mobile-table-field"><span class="mobile-table-label">Finished At</span><span class="mobile-table-value">${formatCell(r.finished_at)}</span></div>
+              <div class="mobile-table-field"><span class="mobile-table-label">Services</span><span class="mobile-table-value">${formatCell(r.services)}</span></div>
+              <div class="mobile-table-field"><span class="mobile-table-label">Phone</span><span class="mobile-table-value">${formatCell(r.customer_phone)}</span></div>
+              <div class="mobile-table-field"><span class="mobile-table-label">Email</span><span class="mobile-table-value">${formatCell(r.customer_email)}</span></div>
+            </div>
+          </div>
+        `;
+        mobileList.appendChild(card);
+      }
     });
+
+    if (window.mobileTableCards) {
+      window.mobileTableCards.register('activityMobileSearch', 'activityMobileList', 'activityMobileEmpty', {
+        emptyText: 'No activity records found.',
+        emptySearchText: 'No activity records match your search.'
+      });
+    }
   }
 
   function populateOffices(list){

@@ -71,7 +71,7 @@
       </section>
 
       <div class="card-body finished-table-body">
-        <div class="table-responsive">
+        <div class="table-responsive d-none d-md-block">
           <table id="finishedTable" class="table table-hover table-bordered align-middle nowrap w-100">
             <thead class="table-success">
               <tr>
@@ -88,6 +88,13 @@
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+        <div class="d-block d-md-none mt-2">
+          <div class="mobile-table-search">
+            <input type="text" class="form-control" id="finishedMobileSearch" placeholder="Search finished queues...">
+          </div>
+          <div id="finishedMobileEmpty" class="mobile-table-empty" style="display:none;">No finished queues found.</div>
+          <div id="finishedMobileList" class="mobile-table-list"></div>
         </div>
       </div>
     </div>
@@ -155,6 +162,7 @@
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../js/tableMobileCards.js"></script>
   
   <!-- YOUR EXISTING JS -->
   <script src="../js/finishedQueue.js"></script>

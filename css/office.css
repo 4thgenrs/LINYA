@@ -27,6 +27,35 @@ body.p-4{
        padding-right:12px;
 }
 
+.office-topbar{
+       display:flex;
+       align-items:center;
+       justify-content:space-between;
+       gap:12px;
+       flex-wrap:wrap;
+}
+
+.office-page-title{
+       font-size:2.1rem;
+       font-weight:800;
+       letter-spacing:-.03em;
+       color:var(--office-text);
+}
+
+.office-add-btn{
+       min-height:48px;
+       padding:0 18px;
+       border:none;
+       border-radius:14px;
+       background:linear-gradient(135deg,var(--office-accent),var(--office-accent-deep));
+       box-shadow:0 14px 26px rgba(21,115,71,.18);
+}
+
+.office-add-btn:hover,
+.office-add-btn:focus{
+       background:linear-gradient(135deg,#14683f,#0d522f);
+}
+
 .office-hero,
 .office-form-card,
 .office-table-card{
@@ -200,12 +229,13 @@ body.p-4{
        justify-content:space-between;
        gap:16px;
        padding:18px 20px;
-       background:linear-gradient(135deg,#1b5e20,#157347);
+       background:linear-gradient(135deg,#1f8d51,#198754);
        border-bottom:none;
 }
 
 .office-table-header h5{
-       font-size:20px;
+       font-size:1.45rem;
+       font-weight:800;
 }
 
 .office-section-eyebrow.is-light{
@@ -243,6 +273,53 @@ body.p-4{
        color:#4a3100;
 }
 
+.office-modal-content{
+       border:0;
+       border-radius:22px;
+       overflow:hidden;
+       box-shadow:0 22px 50px rgba(15,23,42,.16);
+}
+
+#officeModal .modal-dialog{
+       width:min(100% - 2rem, 860px);
+       max-width:860px;
+       margin:1rem auto;
+}
+
+.office-modal-header{
+       background:linear-gradient(135deg,#1f8d51,#198754);
+       border-bottom:none;
+       padding:18px 22px;
+}
+
+.office-modal-subtitle{
+       display:block;
+       margin-top:4px;
+       color:rgba(255,255,255,.8);
+}
+
+#officeModal .modal-body{
+       padding:22px;
+}
+
+#officeModal .modal-footer{
+       padding:16px 22px 22px;
+       border-top:1px solid #edf3ef;
+}
+
+#officeModal .form-control,
+#officeModal .form-select{
+       min-height:46px;
+       border-radius:14px;
+       border:1px solid #d8e6dd;
+}
+
+#officeModal .form-control:focus,
+#officeModal .form-select:focus{
+       border-color:#8ec5a0;
+       box-shadow:0 0 0 .2rem rgba(21,115,71,.12);
+}
+
 @keyframes officePulse{
        0%{box-shadow:0 0 0 0 rgba(34,197,94,.42)}
        70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
@@ -268,6 +345,15 @@ body.p-4{
 @media (max-width:768px){
        body.p-4{
               padding:1rem!important;
+       }
+
+       #officeModal .modal-dialog{
+              width:min(100% - 1rem, 860px);
+              margin:.5rem auto;
+       }
+
+       .office-page-title{
+              font-size:1.9rem;
        }
 
        .container-fluid{
@@ -309,6 +395,38 @@ body.p-4{
 }
 
 @media (max-width:576px){
+       .office-topbar{
+              align-items:flex-start;
+       }
+
+       .office-modal-content{
+              border-radius:18px;
+       }
+
+       #officeModal .modal-body{
+              padding:14px;
+       }
+
+       #officeModal .modal-footer{
+              padding:12px 14px 14px;
+              flex-direction:column-reverse;
+              gap:10px;
+       }
+
+       #officeModal .modal-footer .btn,
+       #officeModal .modal-footer #submitBtn{
+              width:100%;
+       }
+
+       .office-add-btn{
+              width:100%;
+              justify-content:center;
+       }
+
+       .office-page-title{
+              font-size:1.65rem;
+       }
+
        .office-hero h1{
               font-size:24px;
        }

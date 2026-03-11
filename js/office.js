@@ -5,11 +5,29 @@ document.addEventListener("DOMContentLoaded", function () {
     const officeDescField = document.getElementById("office_description");
     const submitBtn = document.getElementById("submitBtn");
     const officeForm = document.getElementById("officeForm");
+    const formActionField = document.getElementById('form_action');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const modalElement = document.getElementById('officeModal');
+    const modalTitle = document.getElementById('officeModalTitle');
+    const openAddOfficeBtn = document.getElementById('openAddOfficeBtn');
+    const modalInstance = modalElement && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+    function setSubmitLabel(text) {
+        submitBtn.textContent = text;
+    }
+
+    function resetOfficeForm() {
+        officeForm.reset();
+        officeIdField.value = "";
+        formActionField.value = '';
+        setSubmitLabel('Add Office');
+        if (modalTitle) modalTitle.textContent = 'Add Office';
+    }
 
     // Handle Edit Button
     editButtons.forEach(btn => {
         btn.addEventListener("click", function () {
-            const row = this.closest("tr");
+            const row = this.closest("[data-id]");
             const id = row.getAttribute("data-id");
             const code = row.getAttribute("data-code");
             const description = row.getAttribute("data-description");
@@ -19,19 +37,29 @@ document.addEventListener("DOMContentLoaded", function () {
             officeDescField.value = description;
 
             // Switch to update mode
-            submitBtn.value = "Update Office";
-            submitBtn.setAttribute("name", "update_office");
+            formActionField.value = 'update';
+            setSubmitLabel('Update Office');
+            if (modalTitle) modalTitle.textContent = 'Edit Office';
+
+            if (modalInstance) {
+                modalInstance.show();
+            }
         });
     });
 
-    // Optional: Reset form to Add mode when manually cleared or after submission
-    officeForm.addEventListener("reset", function () {
-        officeIdField.value = "";
-        officeCodeField.value = "";
-        officeDescField.value = "";
-        submitBtn.value = "Add Office";
-        submitBtn.setAttribute("name", "add_office");
-    });
+    officeForm.addEventListener("reset", resetOfficeForm);
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', resetOfficeForm);
+    }
+
+    if (openAddOfficeBtn) {
+        openAddOfficeBtn.addEventListener('click', resetOfficeForm);
+    }
+
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', resetOfficeForm);
+    }
 });
 
 
@@ -53,42 +81,6 @@ $(document).ready(function() {
     });
 
     $('.dataTables_filter input').attr('placeholder', 'Search offices...');
-});
-
-// EDIT BUTTON JS
-document.querySelectorAll('.editBtn').forEach(button => {
-    button.addEventListener('click', function() {
-        const row = this.closest('tr');
-
-        document.getElementById('office_id').value = row.dataset.id;
-        document.getElementById('office_code').value = row.dataset.code;
-        document.getElementById('office_description').value = row.dataset.description;
-        document.getElementById('form_action').value = 'update';
-
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.textContent = 'Update Office';
-        
-        // Show cancel button
-        document.getElementById('cancelBtn').style.display = 'block';
-        
-        // Scroll to form
-        document.getElementById('officeForm').scrollIntoView({ behavior: 'smooth' });
-    });
-});
-
-// CANCEL BUTTON JS
-document.getElementById('cancelBtn').addEventListener('click', function() {
-    // Reset form
-    document.getElementById('officeForm').reset();
-    document.getElementById('office_id').value = '';
-    document.getElementById('form_action').value = '';
-    
-    // Reset submit button
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.textContent = 'Add Office';
-    
-    // Hide cancel button
-    this.style.display = 'none';
 });
 
 // Handle form submission
