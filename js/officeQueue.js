@@ -78,7 +78,7 @@
       newMap.set(key, w);
     });
 
-    // render
+    // render as modern grid cards
     windowsContainer.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'office-windows';
@@ -87,19 +87,16 @@
       card.className = 'window-card';
       card.dataset.key = key;
 
-      const top = document.createElement('div');
-      top.className = 'window-top';
-      const staffText = w.assigned_staff_name ? ('Staff: ' + escapeHtml(String(w.assigned_staff_name))) : 'Open';
-      top.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${staffText}</div>`;
-      card.appendChild(top);
+      // header (window number + staff)
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      const staffText = w.assigned_staff_name ? escapeHtml(String(w.assigned_staff_name)) : 'Open';
+      header.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${staffText}</div>`;
+      card.appendChild(header);
 
-      // status badge (Standby / Processing)
-      const statusBadge = document.createElement('div');
-      statusBadge.className = 'window-status';
-      card.appendChild(statusBadge);
-
-      const spot = document.createElement('div');
-      spot.className = 'queue-spot';
+      // main queue display (big number)
+      const display = document.createElement('div');
+      display.className = 'queue-display';
 
       if (w.current_queue) {
         const q = w.current_queue;
@@ -116,17 +113,48 @@
         if (!txnText) txnText = q.customer_name || '';
         txn.textContent = txnText;
 
-        spot.appendChild(code);
-        spot.appendChild(txn);
+        display.appendChild(code);
+        display.appendChild(txn);
 
-        // status: remain Standby until server marks 'processing'
-        statusBadge.textContent = (q.status && q.status === 'processing') ? 'Processing' : 'Standby';
+        // show service chips if present
+        if (q.services && q.services.length) {
+          const svcWrap = document.createElement('div');
+          svcWrap.style.marginTop = '8px';
+          renderServices(svcWrap, q.services || []);
+          display.appendChild(svcWrap);
+        }
       } else {
-        // no current queue: always show Standby
-        statusBadge.textContent = 'Standby';
+        const code = document.createElement('div');
+        code.className = 'queue-code';
+        code.textContent = '—';
+        const txn = document.createElement('div');
+        txn.className = 'queue-transaction';
+        txn.textContent = 'No current customer';
+        display.appendChild(code);
+        display.appendChild(txn);
       }
 
-      card.appendChild(spot);
+      card.appendChild(display);
+
+      // footer: status + small note
+      const footer = document.createElement('div');
+      footer.className = 'card-footer';
+      const statusBadge = document.createElement('div');
+      statusBadge.className = 'status-badge';
+      if (w.current_queue) {
+        const q = w.current_queue;
+        statusBadge.textContent = (q.status && q.status === 'processing') ? 'Processing' : 'Standby';
+      } else {
+        statusBadge.textContent = 'Standby';
+      }
+      footer.appendChild(statusBadge);
+
+      const smallNote = document.createElement('div');
+      smallNote.className = 'small-note';
+      smallNote.textContent = w.current_queue ? (w.current_queue.customer_name || '') : '';
+      footer.appendChild(smallNote);
+
+      card.appendChild(footer);
       wrap.appendChild(card);
 
       // detect changes vs previous
@@ -134,13 +162,11 @@
       const prevCode = prev && prev.current_queue ? (prev.current_queue.queue_code || '') : '';
       const newCode = w.current_queue ? (w.current_queue.queue_code || '') : '';
 
-      // mark updated when queue code changed (including from waiting -> code)
+      // highlight when the served code changed
       if (prev && prevCode !== newCode) {
-        // add visual update
         requestAnimationFrame(() => {
           card.classList.add('updated','pulse');
           setTimeout(()=>{ card.classList.remove('pulse'); }, 900);
-          // keep updated accent briefly then fade
           setTimeout(()=>{ card.classList.remove('updated'); }, 2600);
         });
       }
