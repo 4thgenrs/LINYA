@@ -9,10 +9,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const usernameFeedback = document.getElementById('usernameFeedback');
     const nameFeedback = document.getElementById('nameFeedback');
+    const accountsForm = document.getElementById('accountsForm');
+    const modalElement = document.getElementById('accountsModal');
+    const modalTitle = document.getElementById('accountsModalTitle');
+    const openAddAccountBtn = document.getElementById('openAddAccountBtn');
+    const modalInstance = modalElement && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+    function setSubmitLabel(text) {
+        if (!submitBtn) return;
+        if ('value' in submitBtn) {
+            submitBtn.value = text;
+        } else {
+            submitBtn.textContent = text;
+        }
+    }
+
+    function resetFormForAdd() {
+        if (!accountsForm) return;
+        accountsForm.reset();
+        updateIdInput.value = '';
+        setSubmitLabel('Add User');
+        if (modalTitle) modalTitle.textContent = 'Add User';
+        usernameFeedback.style.display = 'none';
+        nameFeedback.style.display = 'none';
+        setSubmitState(true);
+    }
 
     editButtons.forEach(btn => {
         btn.addEventListener('click', function() {
-            const row = btn.closest('tr');
+            const row = btn.closest('[data-id]');
 
             // Get data from row attributes
             const userId = row.getAttribute('data-id');
@@ -31,13 +56,30 @@ document.addEventListener('DOMContentLoaded', function() {
             updateIdInput.value = userId;
 
             // Change button text to Update
-            submitBtn.value = "Update Account";
+            setSubmitLabel('Update User');
+            if (modalTitle) modalTitle.textContent = 'Edit User';
 
             // clear feedback
             usernameFeedback.style.display = 'none';
             nameFeedback.style.display = 'none';
+
+            if (modalInstance) {
+                modalInstance.show();
+            }
         });
     });
+
+    if (openAddAccountBtn) {
+        openAddAccountBtn.addEventListener('click', function() {
+            resetFormForAdd();
+        });
+    }
+
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            resetFormForAdd();
+        });
+    }
 
     // helper: debounce
     function debounce(fn, wait) {
@@ -116,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setSubmitState(true);
 
     // SweetAlert confirmation for add/update form submission
-    const accountsForm = document.getElementById('accountsForm');
     if (accountsForm) {
         accountsForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -143,15 +184,54 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function applyMobileFilters() {
+        const searchInput = document.getElementById('accountsMobileSearch');
+        const roleFilter = document.getElementById('accountsMobileRoleFilter');
+        const officeFilter = document.getElementById('accountsMobileOfficeFilter');
+        const cards = document.querySelectorAll('.mobile-account-card');
+        const emptyState = document.getElementById('accountsMobileEmpty');
+
+        if (!cards.length || !emptyState) return;
+
+        const query = (searchInput?.value || '').trim().toLowerCase();
+        const roleValue = roleFilter?.value || '';
+        const officeValue = officeFilter?.value || '';
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const searchText = (card.getAttribute('data-search-text') || '').toLowerCase();
+            const matchesSearch = !query || searchText.includes(query);
+            const matchesRole = !roleValue || card.getAttribute('data-role') === roleValue;
+            const matchesOffice = !officeValue || card.getAttribute('data-office') === officeValue;
+            const shouldShow = matchesSearch && matchesRole && matchesOffice;
+            card.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleCount += 1;
+        });
+
+        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+        emptyState.textContent = query || roleValue || officeValue
+            ? 'No accounts match the selected filters.'
+            : 'No accounts found.';
+    }
+
+    ['accountsMobileSearch', 'accountsMobileRoleFilter', 'accountsMobileOfficeFilter'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener(id === 'accountsMobileSearch' ? 'input' : 'change', applyMobileFilters);
+        }
+    });
+
+    applyMobileFilters();
+
     // SweetAlert confirmation for delete action
     $(document).on('click', 'button[name="delete_account"]', function(e) {
         e.preventDefault();
         
         const deleteBtn = $(this);
         const form = deleteBtn.closest('form');
-        const row = deleteBtn.closest('tr');
-        const accountName = row.find('td:eq(3)').text().trim();
-        const accountUsername = row.find('td:eq(1)').text().trim();
+        const row = deleteBtn.closest('[data-id]');
+        const accountName = row.data('name') || '';
+        const accountUsername = row.data('username') || '';
         
         Swal.fire({
             title: 'Delete Account?',

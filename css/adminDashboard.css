@@ -2,7 +2,17 @@ body {
       margin: 0;
       overflow-x: hidden;
       display: flex;
-      background: #e9e6d5;
+      background: linear-gradient(180deg, #eef3f0 0%, #e6eeea 100%);
+      font-family: "Segoe UI", sans-serif;
+      transition: background 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      overflow-x: hidden;
     }
 
     /* SIDEBAR (same as reference) */
@@ -10,25 +20,33 @@ body {
       position: fixed;
       left: 0;
       top: 0;
-      width: 260px;
+      width: 300px;
+      min-width: 220px;
       height: 100vh;
-      background: #27693f;
+      background: #0D4715;
       color: white;
-      padding: 25px 15px;
+      padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
       box-shadow: 4px 0 12px rgba(0,0,0,0.15);
       z-index: 1000;
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     #sidebar .brand-box {
       text-align: center;
       margin-bottom: 10px;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
     }
 
     #sidebar img {
       width: 100px;
-      margin-bottom: 30px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 8px;
     }
 
     #sidebar .brand-text {
@@ -37,12 +55,31 @@ body {
       font-weight: 600;
     }
 
+    .nav-section-title {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.7);
+      margin: 0 0.5rem 1rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
     .adm-nav {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       margin-bottom: 15px;
       padding-right: 5px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 0.2rem;
     }
 
     .adm-nav::-webkit-scrollbar {
@@ -67,34 +104,35 @@ body {
       width: 100%;
       background: transparent;
       border: none;
-      color: white;
+      color: #fff;
       text-align: left;
-      padding: 12px 15px;
-      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0.7rem;
       font-size: 15px;
       margin-bottom: 5px;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      font-weight: 500;
     }
 
     .adm-btn:hover,
     .adm-btn.active {
-      background: #ffffffff;
+      background: #198754;
       font-weight: 600;
-      color: #000000ff;
+      color: #fff;
     }
 
 
     .user-box {
       margin-top: auto;
-      padding: 15px;
-      border-radius: 10px;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
       flex-shrink: 0;
       position: sticky;
       bottom: 0;
-      border-top: 2px solid rgba(255,255,255,0.1);
     }
     .user-card {
       display: flex;
@@ -104,7 +142,7 @@ body {
     .user-avatar {
       width: 45px;
       height: 45px;
-      background-color: #2e7d32;
+      background-color: #198754;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -124,36 +162,34 @@ body {
       margin-bottom: 2px;
     }
     .user-info small {
-      color: #d4d4d4;
+      color: rgba(255,255,255,0.7);
       text-transform: capitalize;
     }
 
     /* MAIN CONTENT */
     .adm-main {
-      margin-left: 260px;
-      width: calc(100% - 260px);
+      margin-left: 300px;
+      width: calc(100% - 300px);
       height: 100vh;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
     }
 
     #moduleFrame {
+      display: block;
       width: 100%;
       height: 100%;
       border: none;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      background: #ffffff;
+      border-radius: 0 18px 18px 0;
+      box-shadow: 0 20px 45px rgba(15,23,42,0.08);
     }
 
     /* LOGOUT BUTTON */
     #adminLogout {
       width: 100%;
-      background: transparent;
-      border: 1px solid #ffffffff;
-      color: #ffffffff;
       margin-top: 10px;
-      padding: 8px;
-      border-radius: 6px;
-      transition: 0.2s;
     }
 
     /* #adminLogout:hover {
@@ -176,8 +212,8 @@ body {
         border: none;
         color: white;
         text-align: left;
-        padding: 12px 15px;
-        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -188,8 +224,8 @@ body {
       }
 
       .adm-dropdown .dropdown-toggle:hover {
-        background: #fff;
-        color: #000;
+        background: #198754;
+        color: #fff;
         font-weight: 600;
       }
 
@@ -199,8 +235,8 @@ body {
         flex-direction: column;
         width: 100%;
         position: relative;
-        background: #1c7c36; /* darker green to match sidebar */
-        border-radius: 8px;
+        background: #145c2b;
+        border-radius: 6px;
         overflow: hidden;
         margin-bottom: 5px;
       }
@@ -216,7 +252,7 @@ body {
         border: none;
         color: white;
         text-align: left;
-        padding: 12px 25px;
+        padding: 0.45rem 1rem;
         width: 100%;
         font-size: 15px;
         display: flex;
@@ -226,37 +262,37 @@ body {
       }
 
       .adm-dropdown .dropdown-item:hover {
-        background: #fff;
-        color: #000;
+        background: #198754;
+        color: #fff;
         font-weight: 600;
       }
 
     /* MOBILE TOGGLE BUTTON */
     #mobileToggle {
       position: fixed;
-      top: 15px;
-      left: 15px;
+      top: 1rem;
+      left: 1rem;
       z-index: 1100;
-      background: #27693f;
+      background: #fff;
       border: none;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 20px;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      color: #2C3E50;
+      font-size: 1.3rem;
       cursor: pointer;
       display: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     /* MOBILE RESPONSIVE */
-    @media (max-width: 768px) {
+    @media (max-width: 991.98px) {
       #mobileToggle {
         display: block;
       }
 
       #sidebar {
         transform: translateX(-100%);
-        transition: transform 0.3s ease;
       }
 
       #sidebar.show {
@@ -266,10 +302,12 @@ body {
       .adm-main {
         margin-left: 0;
         width: 100%;
+        padding-top: 0;
       }
 
       #moduleFrame {
         border-radius: 0;
+        box-shadow: none;
       }
 
       /* Overlay when sidebar is open on mobile */
