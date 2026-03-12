@@ -8,6 +8,7 @@ const context = canvas.getContext('2d');
 // Global variables for camera management
 window.videoStream = null;
 window.autoCaptureCountdown = null;
+window.autoScanActive = false;
 
 /* ============================================
    DEBUG HELPERS
@@ -139,6 +140,11 @@ window.startCamera = function () {
       video.addEventListener('loadedmetadata', () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+
+        // Start scanning once camera is ready
+        if (typeof startCaptureFace === 'function') {
+          startCaptureFace();
+        }
       });
     })
     .catch(err => {
@@ -203,29 +209,18 @@ function captureImage() {
 function startCaptureFace() {
   dbg("▶️ startCaptureFace()");
 
-  const btn = document.getElementById('startCaptureBtn');
-  const statusEl = document.getElementById('statusMessage');
-
-  // Prevent multiple sessions
-  if (window.autoCaptureCountdown) {
+  // Already scanning
+  if (window.autoScanActive) {
     return;
   }
+  window.autoScanActive = true;
 
-  if (btn) {
-    btn.disabled = true;
-    btn.setAttribute('aria-disabled', 'true');
-  }
+  const statusEl = document.getElementById('statusMessage');
 
-  let remaining = 3;
-  const labelEl = btn ? btn.querySelector('.btn-label') : null;
-  const originalText = labelEl ? labelEl.textContent : 'Start Capture Face';
-
+  let remaining = 4; // seconds
   const updateUI = () => {
     if (statusEl) {
-      statusEl.innerHTML = `<p style="color:blue;">Preparing capture... ${remaining}</p>`;
-    }
-    if (labelEl) {
-      labelEl.textContent = `Capturing in ${remaining}...`;
+      statusEl.innerHTML = `<p style="color:blue;">Scanning in ${remaining}...</p>`;
     }
   };
 
@@ -237,17 +232,10 @@ function startCaptureFace() {
     if (remaining <= 0) {
       clearInterval(window.autoCaptureCountdown);
       window.autoCaptureCountdown = null;
-
-      if (labelEl) {
-        labelEl.textContent = originalText;
-      }
-      if (btn) {
-        btn.disabled = false;
-        btn.setAttribute('aria-disabled', 'false');
-      }
+      window.autoScanActive = false;
 
       if (statusEl) {
-        statusEl.innerHTML = '';
+        statusEl.innerHTML = '<p style="color:blue;">Scanning...</p>'; 
       }
 
       captureImage();
@@ -284,12 +272,10 @@ function resetCapture() {
     window.autoCaptureCountdown = null;
   }
 
-  const startBtn = document.getElementById('startCaptureBtn');
-  if (startBtn) {
-    const labelEl = startBtn.querySelector('.btn-label');
-    if (labelEl) labelEl.textContent = 'Start Capture Face';
-    startBtn.disabled = false;
-    startBtn.setAttribute('aria-disabled', 'false');
+  // Ensure scanning restarts after a reset
+  window.autoScanActive = false;
+  if (typeof startCaptureFace === 'function') {
+    setTimeout(startCaptureFace, 500);
   }
 
 }

@@ -243,15 +243,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div id="statusMessage" role="status" aria-live="polite" style="margin-bottom: 12px;"></div>
 
-            <div class="buttons-container">
-                <button type="button" id="startCaptureBtn" onclick="startCaptureFace()" aria-label="Start capture face">
-                    <!-- Camera SVG -->
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 5c-1.1 0-2 .9-2 2H7l-2 3v7c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-7l-2-3h-3c0-1.1-.9-2-2-2zM12 17a4 4 0 100-8 4 4 0 000 8z" />
-                    </svg>
-                    <span class="btn-label">Start Capture Face</span>
-                </button>
-            </div>
         </form>
     </div>
 
