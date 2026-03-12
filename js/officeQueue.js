@@ -78,7 +78,7 @@
       newMap.set(key, w);
     });
 
-    // render as modern grid cards
+    // render
     windowsContainer.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'office-windows';
@@ -87,16 +87,13 @@
       card.className = 'window-card';
       card.dataset.key = key;
 
-      // header (window number + staff)
-      const header = document.createElement('div');
-      header.className = 'card-header';
-      const staffText = w.assigned_staff_name ? escapeHtml(String(w.assigned_staff_name)) : 'Open';
-      header.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${staffText}</div>`;
-      card.appendChild(header);
+      const top = document.createElement('div');
+      top.className = 'window-top';
+      top.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${w.assigned_staff_id?('Staff ID: '+escapeHtml(String(w.assigned_staff_id))):'Open'}</div>`;
+      card.appendChild(top);
 
-      // main queue display (big number)
-      const display = document.createElement('div');
-      display.className = 'queue-display';
+      const spot = document.createElement('div');
+      spot.className = 'queue-spot';
 
       if (w.current_queue) {
         const q = w.current_queue;
@@ -104,57 +101,24 @@
         code.className = 'queue-code';
         code.textContent = q.queue_code || '';
 
-        const txn = document.createElement('div');
-        txn.className = 'queue-transaction';
-        let txnText = '';
-        if (q.services && q.services.length) {
-          txnText = q.services.map(s => s.service_description || '').filter(Boolean).join(', ');
-        }
-        if (!txnText) txnText = q.customer_name || '';
-        txn.textContent = txnText;
+        const name = document.createElement('div');
+        name.className = 'queue-name';
+        name.textContent = q.customer_name || '';
 
-        display.appendChild(code);
-        display.appendChild(txn);
+        spot.appendChild(code);
+        spot.appendChild(name);
 
-        // show service chips if present
-        if (q.services && q.services.length) {
-          const svcWrap = document.createElement('div');
-          svcWrap.style.marginTop = '8px';
-          renderServices(svcWrap, q.services || []);
-          display.appendChild(svcWrap);
-        }
+        const svcWrap = document.createElement('div');
+        renderServices(svcWrap, q.services || []);
+        spot.appendChild(svcWrap);
       } else {
-        const code = document.createElement('div');
-        code.className = 'queue-code';
-        code.textContent = '—';
-        const txn = document.createElement('div');
-        txn.className = 'queue-transaction';
-        txn.textContent = 'No current customer';
-        display.appendChild(code);
-        display.appendChild(txn);
+        const waiting = document.createElement('div');
+        waiting.className = 'waiting';
+        waiting.textContent = 'Waiting';
+        spot.appendChild(waiting);
       }
 
-      card.appendChild(display);
-
-      // footer: status + small note
-      const footer = document.createElement('div');
-      footer.className = 'card-footer';
-      const statusBadge = document.createElement('div');
-      statusBadge.className = 'status-badge';
-      if (w.current_queue) {
-        const q = w.current_queue;
-        statusBadge.textContent = (q.status && q.status === 'processing') ? 'Processing' : 'Standby';
-      } else {
-        statusBadge.textContent = 'Standby';
-      }
-      footer.appendChild(statusBadge);
-
-      const smallNote = document.createElement('div');
-      smallNote.className = 'small-note';
-      smallNote.textContent = w.current_queue ? (w.current_queue.customer_name || '') : '';
-      footer.appendChild(smallNote);
-
-      card.appendChild(footer);
+      card.appendChild(spot);
       wrap.appendChild(card);
 
       // detect changes vs previous
@@ -162,11 +126,13 @@
       const prevCode = prev && prev.current_queue ? (prev.current_queue.queue_code || '') : '';
       const newCode = w.current_queue ? (w.current_queue.queue_code || '') : '';
 
-      // highlight when the served code changed
+      // mark updated when queue code changed (including from waiting -> code)
       if (prev && prevCode !== newCode) {
+        // add visual update
         requestAnimationFrame(() => {
           card.classList.add('updated','pulse');
           setTimeout(()=>{ card.classList.remove('pulse'); }, 900);
+          // keep updated accent briefly then fade
           setTimeout(()=>{ card.classList.remove('updated'); }, 2600);
         });
       }

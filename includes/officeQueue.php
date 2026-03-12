@@ -30,8 +30,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
   <title>Live Queue - Office <?php echo $office; ?></title>
 
   <!-- Bootstrap -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="../css/officeQueue.css">
 </head>
 <body class="py-4">
@@ -39,14 +39,25 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
 
     <!-- Header -->
     <header class="oq-header">
-      <div>
+      <div class="oq-header-copy">
+        <div class="oq-badge">
+          <i class="fa-solid fa-wave-square"></i>
+          Live Monitoring
+        </div>
         <div class="oq-title">Live Queue</div>
-        <div class="oq-sub">Auto-updates every 3 seconds</div>
+        <div class="oq-sub">Track active windows, monitor pending queues, and stay synced with updates every 3 seconds.</div>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
-        <label for="officeSelect" class="oq-select-label">Office:</label>
-        <select id="officeSelect" class="oq-select"></select>
+      <div class="oq-header-side">
+        <div class="oq-status-pill">
+          <span class="oq-status-dot"></span>
+          Realtime feed
+        </div>
+
+        <div class="oq-select-wrap">
+          <label for="officeSelect" class="oq-select-label">Office</label>
+          <select id="officeSelect" class="oq-select"></select>
+        </div>
       </div>
     </header>
 
@@ -57,7 +68,15 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
       </section>
 
       <aside class="oq-pending">
-        <h3>Pending Queues</h3>
+        <div class="oq-pending-head">
+          <div>
+            <span class="oq-panel-eyebrow">Waiting List</span>
+            <h3>Pending Queues</h3>
+          </div>
+          <div class="oq-panel-icon">
+            <i class="fa-solid fa-hourglass-half"></i>
+          </div>
+        </div>
         <div id="pendingList" class="pending-list">
           <!-- JS inserts .pending-item here -->
         </div>

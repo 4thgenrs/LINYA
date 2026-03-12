@@ -6,10 +6,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const serviceForm = document.getElementById('serviceForm');
+    const modalElement = document.getElementById('servicesModal');
+    const modalTitle = document.getElementById('servicesModalTitle');
+    const openAddServiceBtn = document.getElementById('openAddServiceBtn');
+    const modalInstance = modalElement && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+    function setSubmitLabel(text) {
+        submitBtn.textContent = text;
+    }
+
+    function resetFormForAdd() {
+        serviceForm.reset();
+        updateIdInput.value = '';
+        setSubmitLabel('Add Service');
+        if (modalTitle) modalTitle.textContent = 'Add Service';
+    }
 
     editButtons.forEach(btn => {
         btn.addEventListener('click', function() {
-            const row = btn.closest('tr');
+            const row = btn.closest('[data-id]');
             const serviceId = row.getAttribute('data-id');
             const serviceDesc = row.getAttribute('data-description');
             const officeId = row.getAttribute('data-office');
@@ -20,28 +35,30 @@ document.addEventListener('DOMContentLoaded', function() {
             updateIdInput.value = serviceId;
 
             // Change button text to Update
-            submitBtn.textContent = "Update Service";
-            
-            // Show cancel button
-            cancelBtn.style.display = 'block';
-            
-            // Scroll to form
-            serviceForm.scrollIntoView({ behavior: 'smooth' });
+            setSubmitLabel('Update Service');
+            if (modalTitle) modalTitle.textContent = 'Edit Service';
+
+            if (modalInstance) {
+                modalInstance.show();
+            }
         });
     });
 
-    // CANCEL BUTTON JS
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
-            // Reset form
-            serviceForm.reset();
-            updateIdInput.value = '';
-            
-            // Reset submit button
-            submitBtn.textContent = 'Add Service';
-            
-            // Hide cancel button
-            this.style.display = 'none';
+            resetFormForAdd();
+        });
+    }
+
+    if (openAddServiceBtn) {
+        openAddServiceBtn.addEventListener('click', function() {
+            resetFormForAdd();
+        });
+    }
+
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            resetFormForAdd();
         });
     }
 
