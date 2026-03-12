@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const windowNo = document.getElementById('windowNo');
   const createForm = document.getElementById('createForm');
   const windowsTableBody = document.querySelector('#windowsTable tbody');
-  const windowsMobileList = document.getElementById('windowsMobileList');
   const refreshBtn = document.getElementById('refreshBtn');
 
   let dataTable = null; // DataTable instance
@@ -47,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadWindows() {
     windowsTableBody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-    if (windowsMobileList) windowsMobileList.innerHTML = '';
     
     // Destroy existing DataTable if it exists
     if (dataTable) {
@@ -58,33 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
     api('../backend/assignStaffData.php?action=list_windows').then(j => {
         if (!j.success) {
             windowsTableBody.innerHTML = '<tr><td colspan="5">Error loading</td></tr>';
-            if (windowsMobileList) windowsMobileList.innerHTML = '';
-            if (window.mobileTableCards) {
-              window.mobileTableCards.register('windowsMobileSearch', 'windowsMobileList', 'windowsMobileEmpty', {
-                emptyText: 'Unable to load windows.',
-                emptySearchText: 'No windows match your search.'
-              });
-            }
             return;
         }
         if (!j.windows.length) {
             windowsTableBody.innerHTML = '<tr><td colspan="5">No windows defined</td></tr>';
-            if (windowsMobileList) windowsMobileList.innerHTML = '';
-            if (window.mobileTableCards) {
-              window.mobileTableCards.register('windowsMobileSearch', 'windowsMobileList', 'windowsMobileEmpty', {
-                emptyText: 'No windows defined.',
-                emptySearchText: 'No windows match your search.'
-              });
-            }
             return;
         }
         windowsTableBody.innerHTML = '';
-        if (windowsMobileList) windowsMobileList.innerHTML = '';
         
         j.windows.forEach(w => {
             const tr = document.createElement('tr');
-            tr.setAttribute('data-office-name', w.office_description);
-            tr.setAttribute('data-window-number', w.window_no);
             if (parseInt(w.enabled, 10) === 0) tr.classList.add('row-disabled');
 
             tr.innerHTML = `
@@ -110,78 +91,22 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             windowsTableBody.appendChild(tr);
 
-            if (windowsMobileList) {
-              const card = document.createElement('div');
-              const collapseId = `windowMobile${w.window_id}`;
-              card.className = 'mobile-table-card';
-              card.setAttribute('data-window-card', 'true');
-              card.setAttribute('data-office-name', w.office_description);
-              card.setAttribute('data-window-number', w.window_no);
-              card.setAttribute('data-search-text', `${w.office_description} ${w.window_no} ${w.assigned_staff_name || ''} ${parseInt(w.enabled,10) === 1 ? 'Enabled' : 'Disabled'}`);
-              card.innerHTML = `
-                <button class="mobile-table-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
-                  <span class="mobile-table-icon"><i class="fa-solid fa-window-maximize"></i></span>
-                  <span class="mobile-table-summary">
-                    <span class="mobile-table-title">${w.office_description}</span>
-                    <span class="mobile-table-meta">Window ${w.window_no} · ${parseInt(w.enabled,10) === 1 ? 'Enabled' : 'Disabled'}</span>
-                  </span>
-                  <span class="mobile-table-chevron"><i class="fa-solid fa-chevron-down"></i></span>
-                </button>
-                <div id="${collapseId}" class="collapse mobile-table-body">
-                  <div class="mobile-table-grid">
-                    <div class="mobile-table-field">
-                      <span class="mobile-table-label">Window Number</span>
-                      <div class="mobile-table-value d-flex gap-2 align-items-center">
-                        <input class="window-no-input form-control form-control-sm" type="number" value="${w.window_no}" min="1" data-window="${w.window_id}" ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''} />
-                        <button class="btn btn-sm btn-success save-window-btn action-btn" data-window="${w.window_id}" ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''}>
-                          <i class="fa fa-floppy-disk me-1"></i>Save
-                        </button>
-                      </div>
-                    </div>
-                    <div class="mobile-table-field">
-                      <span class="mobile-table-label">Assigned Staff</span>
-                      <select class="assign-select form-select form-select-sm" data-window="${w.window_id}" ${parseInt(w.enabled,10) === 0 ? 'disabled' : ''}></select>
-                    </div>
-                    <div class="mobile-table-field"><span class="mobile-table-label">Status</span><span class="mobile-table-value">${parseInt(w.enabled,10) === 1 ? 'Enabled' : 'Disabled'}</span></div>
-                  </div>
-                  <div class="mobile-table-actions">
-                    <button class="btn btn-sm ${parseInt(w.enabled,10) === 1 ? 'btn-secondary' : 'btn-success'} toggle-btn action-btn" data-window="${w.window_id}" data-enabled="${w.enabled}">
-                      <i class="fa ${parseInt(w.enabled,10) === 1 ? 'fa-toggle-on' : 'fa-toggle-off'} me-1"></i>${parseInt(w.enabled,10) === 1 ? 'Disable' : 'Enable'}
-                    </button>
-                    <button class="btn btn-sm btn-danger delete-btn action-btn" data-window="${w.window_id}">
-                      <i class="fa fa-trash me-1"></i>Delete
-                    </button>
-                  </div>
-                </div>
-              `;
-              windowsMobileList.appendChild(card);
-            }
-
             // populate staff select filtered by office
             api(`../backend/assignStaffData.php?action=list_staffs&office_id=${encodeURIComponent(w.office_id)}`)
               .then(res => {
-                  const selects = document.querySelectorAll(`.assign-select[data-window="${w.window_id}"]`);
-                  selects.forEach(sel => {
-                    sel.innerHTML = '<option value="">-- unassigned --</option>';
-                    if (res.success) {
-                        res.staffs.forEach(s => {
-                            const o = document.createElement('option');
-                            o.value = s.user_id;
-                            o.textContent = `${s.name} (${s.user_name})`;
-                            if (String(s.user_id) === String(w.assigned_staff_id)) o.selected = true;
-                            sel.appendChild(o);
-                        });
-                    }
-                  });
+                  const sel = tr.querySelector('.assign-select');
+                  sel.innerHTML = '<option value="">-- unassigned --</option>';
+                  if (res.success) {
+                      res.staffs.forEach(s => {
+                          const o = document.createElement('option');
+                          o.value = s.user_id;
+                          o.textContent = `${s.name} (${s.user_name})`;
+                          if (String(s.user_id) === String(w.assigned_staff_id)) o.selected = true;
+                          sel.appendChild(o);
+                      });
+                  }
               });
         });
-
-        if (window.mobileTableCards) {
-          window.mobileTableCards.register('windowsMobileSearch', 'windowsMobileList', 'windowsMobileEmpty', {
-            emptyText: 'No windows defined.',
-            emptySearchText: 'No windows match your search.'
-          });
-        }
         
         // Initialize DataTable after table is populated
         setTimeout(() => {
@@ -331,10 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('.delete-btn')) {
       const btn = e.target.closest('.delete-btn');
       const windowId = btn.dataset.window;
-      const row = btn.closest('[data-office-name]');
-      const officeName = row?.getAttribute('data-office-name') || '';
-      const windowInput = row?.querySelector(`.window-no-input[data-window="${windowId}"]`);
-      const windowNum = windowInput ? windowInput.value : (row?.getAttribute('data-window-number') || '');
+      const row = btn.closest('tr');
+      const officeName = row.querySelector('td:first-child').textContent;
+      const windowNum = row.querySelector('.window-no-input').value;
       
       Swal.fire({
         title: 'Are you sure?',
@@ -401,10 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const current = parseInt(btn.dataset.enabled,10);
       const newState = current === 1 ? 0 : 1;
       const action = newState === 1 ? 'enable' : 'disable';
-      const row = btn.closest('[data-office-name]');
-      const officeName = row?.getAttribute('data-office-name') || '';
-      const windowInput = row?.querySelector(`.window-no-input[data-window="${windowId}"]`);
-      const windowNum = windowInput ? windowInput.value : (row?.getAttribute('data-window-number') || '');
+      const row = btn.closest('tr');
+      const officeName = row.querySelector('td:first-child').textContent;
+      const windowNum = row.querySelector('.window-no-input').value;
 
       Swal.fire({
         title: 'Are you sure?',
@@ -469,8 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('.save-window-btn')) {
       const btn = e.target.closest('.save-window-btn');
       const windowId = btn.dataset.window;
-      const scope = btn.closest('[data-window-card]') || btn.closest('tr') || document;
-      const input = scope.querySelector(`.window-no-input[data-window="${windowId}"]`) || document.querySelector(`.window-no-input[data-window="${windowId}"]`);
+      const input = document.querySelector(`.window-no-input[data-window="${windowId}"]`);
       if (!input) return;
       const newNo = parseInt(input.value,10);
       if (!newNo || newNo <= 0) {
@@ -533,12 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // initial
-  if (window.mobileTableCards) {
-    window.mobileTableCards.register('windowsMobileSearch', 'windowsMobileList', 'windowsMobileEmpty', {
-      emptyText: 'No windows defined.',
-      emptySearchText: 'No windows match your search.'
-    });
-  }
   loadOffices();
   loadWindows();
 });

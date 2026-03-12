@@ -24,6 +24,11 @@ $softs = isset($_POST['soft_copy']) ? $_POST['soft_copy'] : [];
 $customer_name = isset($_POST['customer_name']) ? trim($_POST['customer_name']) : '';
 $customer_phone = isset($_POST['customer_phone']) ? trim($_POST['customer_phone']) : '';
 $customer_email = isset($_POST['customer_email']) ? trim($_POST['customer_email']) : '';
+// optional student fields
+$student_number = isset($_POST['student_number']) ? trim($_POST['student_number']) : null;
+$course = isset($_POST['course']) ? trim($_POST['course']) : null;
+// optional client id (when face-login user)
+$client_id = isset($_POST['client_id']) ? intval($_POST['client_id']) : 0;
 
 if (!$office_id || !is_array($services) || empty($services)) {
     echo json_encode(['success'=>false, 'error'=>'Missing data']);
@@ -78,9 +83,107 @@ try {
     // ✅ uses Asia/Manila because of date_default_timezone_set above
     $now = date('Y-m-d H:i:s');
 
+    // -------------------------
+    // Duplicate / pending queue checks
+    // - If client_id provided: ensure there is no queue with status pending/ongoing/processing for that client_id
+    // - Otherwise: check for same customer_name OR customer_phone OR customer_email OR student_number existing in pending/ongoing/processing queues for this office
+    // -------------------------
+
+    $dupStmt = null;
+    if ($client_id && $client_id > 0) {
+        $dupSql = "SELECT queue_id, status FROM queues WHERE (status IN ('pending','ongoing','processing')) AND (customer_id = ? OR customer_email IS NOT NULL AND customer_email = (SELECT email FROM clients WHERE client_id = ? LIMIT 1)) LIMIT 1";
+        // Note: many installs may not have customer_id column; we'll attempt a safer fallback using client_id stored in clients table
+        // First try to check by a dedicated customer_id column
+        $hasCustomerIdCol = false;
+        $resC = $conn->query("SHOW COLUMNS FROM queues LIKE 'customer_id'");
+        if ($resC && $resC->num_rows > 0) {
+            $hasCustomerIdCol = true;
+        }
+
+        if ($hasCustomerIdCol) {
+            $dupStmt = $conn->prepare("SELECT queue_id, status FROM queues WHERE status IN ('pending','ongoing','processing') AND customer_id = ? LIMIT 1");
+            if ($dupStmt) {
+                $dupStmt->bind_param('i', $client_id);
+            }
+        } else {
+            // fallback: match by client email if available
+            $emailStmt = $conn->prepare('SELECT email FROM clients WHERE client_id = ? LIMIT 1');
+            $email = null;
+            if ($emailStmt) {
+                $emailStmt->bind_param('i', $client_id);
+                $emailStmt->execute();
+                $r = $emailStmt->get_result();
+                if ($r && $r->num_rows > 0) {
+                    $row = $r->fetch_assoc();
+                    $email = $row['email'];
+                }
+                $emailStmt->close();
+            }
+
+            if ($email) {
+                $dupStmt = $conn->prepare("SELECT queue_id, status FROM queues WHERE status IN ('pending','ongoing','processing') AND customer_email = ? LIMIT 1");
+                if ($dupStmt) $dupStmt->bind_param('s', $email);
+            }
+        }
+
+        if ($dupStmt) {
+            $dupStmt->execute();
+            $dupRes = $dupStmt->get_result();
+            if ($dupRes && $dupRes->num_rows > 0) {
+                $dupRow = $dupRes->fetch_assoc();
+                $dupStmt->close();
+                throw new Exception('duplicate_client_pending');
+            }
+            $dupStmt->close();
+        }
+
+    } else {
+        // Guest flow: check for duplicates by name/phone/email/student_number in pending/ongoing/processing for the same office
+        $conds = [];
+        $params = [];
+        $types = '';
+        if ($customer_name !== '') {
+            $conds[] = 'customer_name = ?'; $params[] = $customer_name; $types .= 's';
+        }
+        if ($customer_phone !== '') {
+            $conds[] = 'customer_phone = ?'; $params[] = $customer_phone; $types .= 's';
+        }
+        if ($customer_email !== '') {
+            $conds[] = 'customer_email = ?'; $params[] = $customer_email; $types .= 's';
+        }
+        if ($student_number !== null && $student_number !== '') {
+            $conds[] = 'student_number = ?'; $params[] = $student_number; $types .= 's';
+        }
+
+        if (count($conds) > 0) {
+            $where = implode(' OR ', $conds);
+            $sqlDup = "SELECT queue_id FROM queues WHERE status IN ('pending','ongoing','processing') AND office_id = ? AND (".$where.") LIMIT 1";
+            $dupStmt = $conn->prepare($sqlDup);
+            if ($dupStmt) {
+                // bind params: office_id first
+                $bindParams = array_merge([$office_id], $params);
+                $bindTypes = 'i' . $types;
+                // build references for bind_param
+                $refs = [];
+                $refs[] = & $bindTypes;
+                foreach ($bindParams as $k => $v) {
+                    $refs[] = & $bindParams[$k];
+                }
+                call_user_func_array([$dupStmt, 'bind_param'], $refs);
+                $dupStmt->execute();
+                $dupRes = $dupStmt->get_result();
+                if ($dupRes && $dupRes->num_rows > 0) {
+                    $dupStmt->close();
+                    throw new Exception('duplicate_guest_pending');
+                }
+                $dupStmt->close();
+            }
+        }
+    }
+
     // insert into queues including visitor info
-    $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status, customer_name, customer_phone, customer_email) VALUES (?, ?, ?, 'pending', ?, ?, ?)");
-    $qSt->bind_param("sissss", $queue_code, $office_id, $now, $customer_name, $customer_phone, $customer_email);
+    $qSt = $conn->prepare("INSERT INTO queues (queue_code, office_id, created_at, status, customer_name, customer_phone, customer_email, student_number, course) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?)");
+    $qSt->bind_param("sissssss", $queue_code, $office_id, $now, $customer_name, $customer_phone, $customer_email, $student_number, $course);
     $qSt->execute();
     $queue_id = $qSt->insert_id;
     $qSt->close();
@@ -104,6 +207,26 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    echo json_encode(['success'=>false, 'error'=>$e->getMessage()]);
+    $msg = $e->getMessage();
+    $error_code = null;
+    $error_message = $msg;
+
+    if ($msg === 'duplicate_client_pending') {
+        $error_code = 'duplicate_client_pending';
+        $error_message = 'You already have an existing queue (pending or in progress). Please wait until it is completed.';
+    } elseif ($msg === 'duplicate_guest_pending') {
+        $error_code = 'duplicate_guest_pending';
+        $error_message = 'A queue with the same name/phone/email/student number already exists. You cannot create a new queue until it is processed.';
+    } elseif ($msg === 'Failed to create queue') {
+        $error_code = 'create_failed';
+        $error_message = 'Failed to create queue. Please try again.';
+    }
+
+    // Return structured JSON error (use HTTP 200 to avoid browser showing a network error)
+    echo json_encode([
+        'success' => false,
+        'error' => $error_message,
+        'error_code' => $error_code
+    ]);
     exit;
 }

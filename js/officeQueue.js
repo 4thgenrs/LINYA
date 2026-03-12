@@ -89,8 +89,14 @@
 
       const top = document.createElement('div');
       top.className = 'window-top';
-      top.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${w.assigned_staff_id?('Staff ID: '+escapeHtml(String(w.assigned_staff_id))):'Open'}</div>`;
+      const staffText = w.assigned_staff_name ? ('Staff: ' + escapeHtml(String(w.assigned_staff_name))) : 'Open';
+      top.innerHTML = `<div class="window-no">Window ${escapeHtml(String(w.window_no||''))}</div><div class="window-staff">${staffText}</div>`;
       card.appendChild(top);
+
+      // status badge (Standby / Processing)
+      const statusBadge = document.createElement('div');
+      statusBadge.className = 'window-status';
+      card.appendChild(statusBadge);
 
       const spot = document.createElement('div');
       spot.className = 'queue-spot';
@@ -101,21 +107,23 @@
         code.className = 'queue-code';
         code.textContent = q.queue_code || '';
 
-        const name = document.createElement('div');
-        name.className = 'queue-name';
-        name.textContent = q.customer_name || '';
+        const txn = document.createElement('div');
+        txn.className = 'queue-transaction';
+        let txnText = '';
+        if (q.services && q.services.length) {
+          txnText = q.services.map(s => s.service_description || '').filter(Boolean).join(', ');
+        }
+        if (!txnText) txnText = q.customer_name || '';
+        txn.textContent = txnText;
 
         spot.appendChild(code);
-        spot.appendChild(name);
+        spot.appendChild(txn);
 
-        const svcWrap = document.createElement('div');
-        renderServices(svcWrap, q.services || []);
-        spot.appendChild(svcWrap);
+        // status: remain Standby until server marks 'processing'
+        statusBadge.textContent = (q.status && q.status === 'processing') ? 'Processing' : 'Standby';
       } else {
-        const waiting = document.createElement('div');
-        waiting.className = 'waiting';
-        waiting.textContent = 'Waiting';
-        spot.appendChild(waiting);
+        // no current queue: always show Standby
+        statusBadge.textContent = 'Standby';
       }
 
       card.appendChild(spot);

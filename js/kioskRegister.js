@@ -71,6 +71,13 @@ function isValidEmail(e) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
+function isValidStudentNumber(s) {
+    if (!s) return false;
+    // Allowed years 2000..2026 followed by 4 digits, hyphen and an uppercase letter (e.g. 20001234-S)
+    const re = /^(?:2000|2001|2002|2003|2004|2005|2006|2007|2008|2009|2010|2011|2012|2013|2014|2015|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025|2026)\d{4}-[A-Z]$/;
+    return re.test((s||'').trim().toUpperCase());
+}
+
 function visitorSyncState() {
     const nameEl = document.getElementById('visitorName');
     const phoneEl = document.getElementById('visitorPhone');
@@ -91,7 +98,19 @@ function visitorSyncState() {
     const emailHint = document.getElementById('visitorEmailHint');
     if (emailHint) emailHint.style.display = email === '' ? 'none' : (emailOk ? 'none' : 'block');
 
-    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk);
+    // Student-specific validation (only required if checkbox checked)
+    const isStudentEl = document.getElementById('visitorIsStudent');
+    const studentNumberEl = document.getElementById('visitorStudentNumber');
+    const courseEl = document.getElementById('visitorCourse');
+    const isStudent = isStudentEl ? isStudentEl.checked : false;
+    const studentNum = studentNumberEl ? studentNumberEl.value.trim() : '';
+    const courseVal = courseEl ? courseEl.value : '';
+    const studentOk = !isStudent || (isStudent && isValidStudentNumber(studentNum) && courseVal);
+
+    const studentNumberHint = document.getElementById('visitorStudentNumberHint');
+    if (studentNumberHint) studentNumberHint.style.display = (isStudent && studentNum !== '') ? (isValidStudentNumber(studentNum) ? 'none' : 'block') : 'none';
+
+    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk && studentOk);
 }
 
 function openVisitorConfirm() {
@@ -498,6 +517,13 @@ async function submitRegistration(retryCount = 0) {
                 fd.append('phone', phone);
                 fd.append('folder', folder);
                 fd.append('encoding', encoding);
+                // include optional student details (if present)
+                try {
+                    const studentNumber = document.getElementById('visitorStudentNumber') ? document.getElementById('visitorStudentNumber').value.trim() : '';
+                    const course = document.getElementById('visitorCourse') ? document.getElementById('visitorCourse').value : '';
+                    fd.append('student_number', studentNumber);
+                    fd.append('course', course);
+                } catch (e) { /* ignore if elements missing */ }
 
                 const r = await fetch('../backend/face_register_save.php', { method: 'POST', body: fd });
                 const respText = await r.text();
@@ -784,6 +810,38 @@ document.addEventListener('DOMContentLoaded', function() {
         phoneInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
+    }
+
+    // Student fields handling (optional)
+    const isStudentCheckbox = document.getElementById('visitorIsStudent');
+    const studentNumberField = document.getElementById('visitorStudentNumber');
+    const studentNumberWrapper = document.getElementById('visitorStudentNumberField');
+    const studentNumberHint = document.getElementById('visitorStudentNumberHint');
+    const courseSelect = document.getElementById('visitorCourse');
+    const courseWrapper = document.getElementById('visitorCourseField');
+
+    if (isStudentCheckbox) {
+        isStudentCheckbox.addEventListener('change', function() {
+            const checked = !!this.checked;
+            if (studentNumberWrapper) studentNumberWrapper.style.display = checked ? 'block' : 'none';
+            if (courseWrapper) courseWrapper.style.display = checked ? 'block' : 'none';
+            if (studentNumberField) studentNumberField.disabled = !checked;
+            if (courseSelect) courseSelect.disabled = !checked;
+            visitorSyncState();
+        }, {passive: true});
+    }
+
+    if (studentNumberField) {
+        studentNumberField.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^0-9A-Z\-]/g, '');
+            const ok = isValidStudentNumber(this.value || '');
+            if (studentNumberHint) studentNumberHint.style.display = this.value === '' ? 'none' : (ok ? 'none' : 'block');
+            visitorSyncState();
+        }, {passive: true});
+    }
+
+    if (courseSelect) {
+        courseSelect.addEventListener('change', visitorSyncState, {passive: true});
     }
 
     const proceedBtn = document.getElementById('visitorProceed');

@@ -11,24 +11,6 @@ $userName = htmlspecialchars($_SESSION['user_name']);
 $office_description = '';
 $office_code = '';
 
-$moduleMap = [
-  'landing' => '../includes/landing.php',
-  'accounts' => '../includes/accounts.php',
-  'adminClients' => '../includes/adminClients.php',
-  'assignStaff' => '../includes/assignStaff.php',
-  'finishedQueue' => '../includes/finishedQueue.php',
-  'office' => '../includes/office.php',
-  'services' => '../includes/services.php',
-  'queueDisplay' => '../includes/queueDisplay.php',
-  'officeQueue' => '../includes/officeQueue.php'
-];
-
-$currentModule = $_GET['module'] ?? 'landing';
-if (!array_key_exists($currentModule, $moduleMap)) {
-  $currentModule = 'landing';
-}
-$moduleSrc = $moduleMap[$currentModule];
-
 // Fetch office details if office_id exists in session
 if (isset($_SESSION['office_id']) && $_SESSION['office_id'] > 0) {
     $office_id = intval($_SESSION['office_id']);
@@ -65,95 +47,85 @@ if (isset($_SESSION['office_id']) && $_SESSION['office_id'] > 0) {
   </button>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header brand-box">
-      <img src="../resources/ucc.png" alt="Logo">
-      <h4 class="brand-text fw-bold">Live Interactive<br>Navigation of Your Appointment</h4>
-    </div>
-
-    <div class="nav-section-title">
-      <?php echo $office_description ? htmlspecialchars($office_description . ' (' . $office_code . ')') : 'Administrator'; ?>
+  <aside id="sidebar">
+    <div class="brand-box">
+      <img src="../logo.png" alt="Logo">
+      <div class="brand-text fw-bold">Live Interactive<br>Navigation of Your Appointment</div>
     </div>
 
     <nav class="adm-nav">
-      <ul class="sidebar-menu">
-        <li>
-          <button data-module="landing" class="adm-btn <?php echo $currentModule === 'landing' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-house"></i> Dashboard
-          </button>
-        </li>
 
-        <li>
-          <button data-module="adminClients" class="adm-btn <?php echo $currentModule === 'adminClients' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-users"></i> Face Clients
-          </button>
-        </li>
+      <button data-module="landing" class="adm-btn active">
+        <i class="fa-solid fa-house"></i> Dashboard
+      </button>
 
-        <li>
-          <button data-module="finishedQueue" class="adm-btn <?php echo $currentModule === 'finishedQueue' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-clipboard-check"></i> Finished Queues
-          </button>
-        </li>
+      <button data-module="adminClients" class="adm-btn">
+        <i class="fa-solid fa-users"></i> Face Clients
+      </button>
 
-        <li class="adm-dropdown">
-          <button class="dropdown-toggle" type="button" aria-expanded="false">
-            <i class="fa-solid fa-gear"></i> Management
-            <!-- <i class="fa-solid fa-chevron-down ms-auto"></i> -->
-          </button>
+      <button data-module="finishedQueue" class="adm-btn">
+        <i class="fa-solid fa-clipboard-check"></i> Finished Queues
+      </button>
 
-          <div class="dropdown-menu">
-            <button data-module="accounts" class="dropdown-item adm-btn <?php echo $currentModule === 'accounts' ? 'active' : ''; ?>">
-              <i class="fa-solid fa-user-gear"></i> Accounts
-            </button>
+      <button data-module="voidQueue" class="adm-btn">
+        <i class="fa-solid fa-ban"></i> Voided Queues
+      </button>
 
-            <button data-module="assignStaff" class="dropdown-item adm-btn <?php echo $currentModule === 'assignStaff' ? 'active' : ''; ?>">
-              <i class="fa-solid fa-user-tag"></i> Assign Staff
-            </button>
+      <div class="adm-dropdown">
+      <button class="dropdown-toggle" type="button" aria-expanded="false">
+        <i class="fa-solid fa-gear"></i> Management
+        <!-- <i class="fa-solid fa-chevron-down"></i> -->
+      </button>
 
-            <button data-module="office" class="dropdown-item adm-btn <?php echo $currentModule === 'office' ? 'active' : ''; ?>">
-              <i class="fa-solid fa-building"></i> Offices
-            </button>
+  <div class="dropdown-menu">
+    <button data-module="accounts" class="dropdown-item adm-btn">
+      <i class="fa-solid fa-user-gear"></i> Accounts
+    </button>
 
-            <button data-module="services" class="dropdown-item adm-btn <?php echo $currentModule === 'services' ? 'active' : ''; ?>">
-              <i class="fa-solid fa-briefcase"></i> Services
-            </button>
-          </div>
-        </li>
+    <button data-module="assignStaff" class="dropdown-item adm-btn">
+      <i class="fa-solid fa-user-tag"></i> Assign Staff
+    </button>
 
-        <li>
-          <button data-module="queueDisplay" class="adm-btn <?php echo $currentModule === 'queueDisplay' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-tv"></i> Queue Display
-          </button>
-        </li>
+    <button data-module="office" class="dropdown-item adm-btn">
+      <i class="fa-solid fa-building"></i> Offices
+    </button>
 
-        <li>
-          <button data-module="officeQueue" class="adm-btn <?php echo $currentModule === 'officeQueue' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-list-check"></i> Live Office Queue
-          </button>
-        </li>
-      </ul>
+    <button data-module="services" class="dropdown-item adm-btn">
+      <i class="fa-solid fa-briefcase"></i> Services
+    </button>
+  </div>
+</div>
+
+      <button data-module="queueDisplay" class="adm-btn">
+        <i class="fa-solid fa-tv"></i> Queue Display
+      </button>
+
+      <button data-module="officeQueue" class="adm-btn">
+        <i class="fa-solid fa-list-check"></i> Live Office Queue
+      </button>
+
     </nav>
 
 
-    <div class="user-box sidebar-footer">
+    <div class="user-box">
       <div class="user-card">
         <div class="user-avatar">
           <?php echo strtoupper(substr($userName, 0, 3)); ?>
         </div>
         <div class="user-info">
-          <div class="fw-semibold"><?php echo $userName; ?></div>
+          <div><strong><?php echo $userName; ?></strong></div>
           <small>
               <?php echo $office_description ? htmlspecialchars($office_description . ' (' . $office_code . ')') : '—'; ?>
           </small>
         </div>
       </div>
-      <button id="adminLogout" class="btn btn-light w-100 mt-2">Logout</button>
+      <button id="adminLogout" class="btn btn-sm mt-2 w-100">Logout</button>
     </div>
   </aside>
 
   <!-- MAIN -->
   <main class="adm-main">
-    <iframe id="moduleFrame" src="<?php echo htmlspecialchars($moduleSrc); ?>"></iframe>
+    <iframe id="moduleFrame" src="../includes/landing.php"></iframe>
   </main>
 
   <script>

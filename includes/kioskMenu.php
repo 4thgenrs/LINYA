@@ -177,6 +177,53 @@ session_start(); ?>
                     <div id="visitorEmailHint" class="vf-hint" style="display:none;color:#ff0000">Invalid email address</div>
                 </label>
 
+                <label class="vf-field">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="visitorIsStudent" onclick="console.log('inline visitorIsStudent click ->', this.checked)" />
+                        <div class="vf-label" style="margin:0">Are you a student?</div>
+                    </div>
+                </label>
+
+                <label class="vf-field" id="visitorStudentNumberField" style="display:none;">
+                    <div class="vf-label">Student Number</div>
+                    <input type="text" id="visitorStudentNumber" placeholder="20001234-S" maxlength="20" disabled />
+                    <div id="visitorStudentNumberHint" class="vf-hint" style="display:none;color:#ff0000">Format: 20001234-S (year 2000–2026)</div>
+                </label>
+
+                <label class="vf-field" id="visitorCourseField" style="display:none;">
+                    <div class="vf-label">Course</div>
+                    <select id="visitorCourse" disabled>
+                        <option value="">-- Select Course --</option>
+                        <option>BA COMM</option>
+                        <option>BA POS</option>
+                        <option>BPA</option>
+                        <option>BPA ECGE</option>
+                        <option>BECED</option>
+                        <option>BSA</option>
+                        <option>BSAIS</option>
+                        <option>BSBA FMGT</option>
+                        <option>BSBA HRM</option>
+                        <option>BSBA MKTG</option>
+                        <option>BSCS</option>
+                        <option>BS CRIM</option>
+                        <option>BSEMC</option>
+                        <option>BS ENTREP</option>
+                        <option>BSHM</option>
+                        <option>BSISM</option>
+                        <option>BSIS</option>
+                        <option>BSIT</option>
+                        <option>BS MATH</option>
+                        <option>BSOAD</option>
+                        <option>BS PSY</option>
+                        <option>BSSW</option>
+                        <option>BSTM</option>
+                        <option>BSE ENG</option>
+                        <option>BSE ENG-CHI</option>
+                        <option>BSE SCI</option>
+                        <option>BTLED HE</option>
+                    </select>
+                </label>
+
                 <div class="vf-actions">
                     <button id="visitorProceed" class="primary-btn" type="button" disabled>Proceed</button>
                     <a href="kioskSelect.php" class="back-btn" title="Go back to selection">
@@ -184,6 +231,52 @@ session_start(); ?>
                     </a>
                 </div>
             </form>
+            <script>
+                (function(){
+                    const chk = document.getElementById('visitorIsStudent');
+                    const snWrap = document.getElementById('visitorStudentNumberField');
+                    const sn = document.getElementById('visitorStudentNumber');
+                    const courseWrap = document.getElementById('visitorCourseField');
+                    const course = document.getElementById('visitorCourse');
+                    const proceed = document.getElementById('visitorProceed');
+                    const nameEl = document.getElementById('visitorName');
+                    const phoneEl = document.getElementById('visitorPhone');
+                    const emailEl = document.getElementById('visitorEmail');
+
+                    function isValidPhone(p){ return typeof p==='string' && /^\s*09\d{9}\s*$/.test(p); }
+                    function isValidEmail(e){ if(!e) return false; return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+                    function isValidStudentNumber(s){ if(!s) return false; const re = /^(?:2000|2001|2002|2003|2004|2005|2006|2007|2008|2009|2010|2011|2012|2013|2014|2015|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025|2026)\d{4}-[A-Z]$/; return re.test((s||'').trim().toUpperCase()); }
+
+                    function update() {
+                        const name = nameEl ? nameEl.value.trim() : '';
+                        const phone = phoneEl ? phoneEl.value.trim() : '';
+                        const email = emailEl ? emailEl.value.trim() : '';
+                        const isStudent = chk ? chk.checked : false;
+                        const studentNum = sn ? sn.value.trim() : '';
+                        const courseVal = course ? course.value : '';
+
+                        // show/hide wrappers
+                        if (snWrap) snWrap.style.display = isStudent ? '' : 'none';
+                        if (courseWrap) courseWrap.style.display = isStudent ? '' : 'none';
+                        if (sn) sn.disabled = !isStudent;
+                        if (course) course.disabled = !isStudent;
+
+                        // basic enable/disable proceed button
+                        const phoneOk = isValidPhone(phone);
+                        const emailOk = (email === '') ? true : isValidEmail(email);
+                        const studentOk = !isStudent || (isStudent && isValidStudentNumber(studentNum) && courseVal);
+                        if (proceed) proceed.disabled = !(name.length>0 && phoneOk && emailOk && studentOk);
+                    }
+
+                    if (chk) chk.addEventListener('change', function(){ console.log('inline handler change', this.checked); update(); });
+                    if (sn) sn.addEventListener('input', function(){ this.value = this.value.toUpperCase().replace(/[^0-9A-Z\-]/g,''); update(); });
+                    if (course) course.addEventListener('change', update);
+                    ['visitorName','visitorPhone','visitorEmail'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', update); });
+
+                    // init
+                    setTimeout(update, 50);
+                })();
+            </script>
         </div>
     </div>
 

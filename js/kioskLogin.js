@@ -4,11 +4,11 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const context = canvas.getContext('2d');
+const loginBtn = document.getElementById('loginBtn');
+const loginWrapper = document.getElementById('loginWrapper');
 
 // Global variables for camera management
 window.videoStream = null;
-window.autoCaptureCountdown = null;
-window.autoScanActive = false;
 
 /* ============================================
    DEBUG HELPERS
@@ -140,11 +140,6 @@ window.startCamera = function () {
       video.addEventListener('loadedmetadata', () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
-        // Start scanning once camera is ready
-        if (typeof startCaptureFace === 'function') {
-          startCaptureFace();
-        }
       });
     })
     .catch(err => {
@@ -189,61 +184,18 @@ function captureImage() {
   const dataURL = tmpCanvas.toDataURL('image/jpeg', 0.85);
   document.getElementById('imageInput').value = dataURL;
 
-  // Keep the live camera feed visible (scanning effect)
-  // The captured image is kept in the hidden input and used for verification.
-  const statusEl = document.getElementById('statusMessage');
-  if (statusEl) {
-    statusEl.innerHTML = '<p style="color:green;">✅ Face captured! Logging in...</p>';
+  // Enable login
+  if (loginBtn) {
+    loginBtn.disabled = false;
+    if (loginWrapper) loginWrapper.classList.remove('disabled');
+    loginBtn.setAttribute('aria-disabled', 'false');
   }
 
-  // Run the EXACT same verification flow the old Login button used to trigger
-  if (typeof handleLogin === 'function') {
-    handleLogin();
-  }
-}
+  // Show preview
+  video.style.display = 'none';
+  canvas.style.display = 'block';
 
-/* ============================================
-   AUTO-CAPTURE FLOW (START CAPTURE FACE)
-   ============================================ */
-
-function startCaptureFace() {
-  dbg("▶️ startCaptureFace()");
-
-  // Already scanning
-  if (window.autoScanActive) {
-    return;
-  }
-  window.autoScanActive = true;
-
-  const statusEl = document.getElementById('statusMessage');
-
-  let remaining = 4; // seconds
-  const updateUI = () => {
-    if (statusEl) {
-      statusEl.innerHTML = `<p style="color:blue;">Scanning in ${remaining}...</p>`;
-    }
-  };
-
-  updateUI();
-
-  window.autoCaptureCountdown = setInterval(() => {
-    remaining -= 1;
-
-    if (remaining <= 0) {
-      clearInterval(window.autoCaptureCountdown);
-      window.autoCaptureCountdown = null;
-      window.autoScanActive = false;
-
-      if (statusEl) {
-        statusEl.innerHTML = '<p style="color:blue;">Scanning...</p>'; 
-      }
-
-      captureImage();
-      return;
-    }
-
-    updateUI();
-  }, 1000);
+  alert("✅ Face captured! Click 'Login' to authenticate.\n(Remove glasses/hats/masks if prompted.)");
 }
 
 function resetCapture() {
@@ -266,18 +218,11 @@ function resetCapture() {
   const faceCheckError = document.getElementById('faceCheckError');
   if (faceCheckError) faceCheckError.remove();
 
-  // Cancel any in-progress auto-capture countdown
-  if (window.autoCaptureCountdown) {
-    clearInterval(window.autoCaptureCountdown);
-    window.autoCaptureCountdown = null;
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    if (loginWrapper) loginWrapper.classList.add('disabled');
+    loginBtn.setAttribute('aria-disabled', 'true');
   }
-
-  // Ensure scanning restarts after a reset
-  window.autoScanActive = false;
-  if (typeof startCaptureFace === 'function') {
-    setTimeout(startCaptureFace, 500);
-  }
-
 }
 
 /* ============================================
@@ -428,6 +373,11 @@ function applyServerCaptureReset() {
       window.startCamera();
     }
 
+    if (cfg.disableLogin && loginBtn) {
+      loginBtn.disabled = true;
+      loginBtn.setAttribute('aria-disabled', 'true');
+      if (loginWrapper) loginWrapper.classList.add('disabled');
+    }
 
     const faceCheckErrorEl = document.getElementById('faceCheckError');
     if (faceCheckErrorEl) faceCheckErrorEl.remove();

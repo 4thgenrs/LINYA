@@ -70,3 +70,21 @@ cURL response code: 200
 cURL error: 
 Python response: {"deleted_count":0,"prefix":"db_pictures/ricardo_salvador_iv/20251122_114713/encoding.npy","status":"ok"}
 
+2026-02-27 04:13:12 - Script started
+DB config loaded
+Python API config loaded
+Session started
+Raw input: {"client_id":21}
+Decoded data: Array
+(
+    [client_id] => 21
+)
+
+Client found: safe_name=ricardo_salvador_iv, face_path=gs://linya-api-bucket/db_pictures/ricardo_salvador_iv/20260224_070927/encoding.npy
+Python API URL: https://face-recognition-api-546052063562.asia-southeast1.run.app
+Delete URL: https://face-recognition-api-546052063562.asia-southeast1.run.app/admin/delete_user
+Payload: {"folder":"gs:\/\/linya-api-bucket\/db_pictures\/ricardo_salvador_iv\/20260224_070927\/encoding.npy"}
+cURL response code: 200
+cURL error: 
+Python response: {"deleted_count":1,"prefix":"db_pictures/ricardo_salvador_iv/20260224_070927/encoding.npy","status":"ok"}
+

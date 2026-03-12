@@ -5,9 +5,12 @@
 
   // track current on-air queue id for this window to prevent calling next while one is active
   let currentOnAirId = null;
+  let currentProcessStart = null; // ISO datetime string 'YYYY-MM-DD HH:MM:SS'
 
   function $(id){ return document.getElementById(id); }
   function qs(sel, root){ return (root||document).querySelector(sel); }
+  function escapeHtml(s){ if (s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function pickField(obj, keys){ if (!obj) return null; for (const k of keys){ if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k]; } return null; }
 
   // simple confirm modal that returns a Promise<boolean>
   function showConfirm(message, title = 'Confirm') {
@@ -87,22 +90,57 @@
     });
   }
 
-  function fetchState(office, window) {
-    return fetch(`${api}?action=state&office=${encodeURIComponent(office)}&window=${encodeURIComponent(window)}`, {credentials:'same-origin'})
-      .then(r => r.json());
+  async function fetchState(office, window) {
+    try {
+      const res = await fetch(`${api}?action=state&office=${encodeURIComponent(office)}&window=${encodeURIComponent(window)}`, {credentials:'same-origin'});
+      return await parseResponse(res);
+    } catch (e) {
+      console.error('fetchState network error', e);
+      return { success: false, message: 'Network error' };
+    }
   }
 
-  function postAction(action, office, window, extraParams = {}) {
-    const params = new URLSearchParams({ action, office, window, ...extraParams });
-    return fetch(`${api}?${params.toString()}`, { credentials:'same-origin' })
-      .then(r => r.json());
+  // safe response parser: always return an object and include raw text on parse errors
+  async function parseResponse(res) {
+    try {
+      const text = await res.text();
+      const trimmed = (text || '').trim();
+      // quick HTML detection - server returned markup (likely PHP warning/HTML)
+      if (trimmed && trimmed[0] === '<') {
+        console.error('parseResponse: server returned HTML instead of JSON', trimmed.slice(0,200));
+        // collect some header info for debugging
+        const headers = {};
+        try { for (const h of res.headers.entries()) headers[h[0]] = h[1]; } catch(e){}
+        return { success: false, message: 'Invalid JSON (HTML response)', raw: text, status: res.status, headers };
+      }
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error('parseResponse: invalid JSON', text);
+        return { success: false, message: 'Invalid JSON from server', raw: text, status: res.status };
+      }
+    } catch (e) {
+      console.error('parseResponse network error', e);
+      return { success: false, message: 'Network error' };
+    }
+  }
+
+  async function postAction(action, office, window, extraParams = {}) {
+    try {
+      const params = new URLSearchParams({ action, office, window, ...extraParams });
+      const res = await fetch(`${api}?${params.toString()}`, { credentials:'same-origin' });
+      return await parseResponse(res);
+    } catch (e) {
+      console.error('postAction network error', e);
+      return { success: false, message: 'Network error' };
+    }
   }
 
   function renderQueueList(list) {
     const container = $('queueListContainer');
     container.innerHTML = '';
     if (!list || !list.length) {
-      container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-inbox" style="display:block;font-size:22px;margin-bottom:8px;color:#94a3b8"></i>No pending queues</div>';
+      container.innerHTML = '<div class="queue-item small muted">No pending queues</div>';
       return;
     }
     list.forEach(q => {
@@ -133,6 +171,22 @@
         d.appendChild(svcWrap);
       }
 
+      // optional customer info
+      const infoLines = [];
+      if (q.customer_name || q.name) infoLines.push(q.customer_name || q.name);
+      if (q.customer_phone || q.phone) infoLines.push(q.customer_phone || q.phone);
+      if (q.customer_email || q.email) infoLines.push(q.customer_email || q.email);
+      const studentVal = q.student_number || q.studentNumber || null;
+      const courseVal = q.course || q.Course || null;
+      if (studentVal) infoLines.push('Student: ' + studentVal);
+      if (courseVal) infoLines.push('Course: ' + courseVal);
+      if (infoLines.length) {
+        const info = document.createElement('div');
+        info.className = 'queue-info small muted';
+        info.textContent = infoLines.join(' • ');
+        d.appendChild(info);
+      }
+
       container.appendChild(d);
     });
   }
@@ -140,21 +194,20 @@
   function updateOnAir(onAir) {
     const numberEl = $('number');
     const ongoingI = $('ongoingText');
-    const finishedBtn = $('finished');
+    const startBtn = $('startProcessing');
     const nextBtn = $('nextQueue');
-    const breakBtn = $('onBreak');
     const svcContainer = $('currentServices');
     const attachQueue = $('attachQueueId');
     const attachStatus = $('attachStatus');
     attachStatus.style.display = 'none';
 
-    if (onAir && onAir.queue_code) {
+    if (onAir && (onAir.queue_code || onAir.queue_id)) {
       currentOnAirId = onAir.queue_id || null; // set current on-air id
-      numberEl.textContent = onAir.queue_code;
+      numberEl.textContent = onAir.queue_code || (onAir.queue_no || ('#' + (onAir.queue_id || '')));
       ongoingI.textContent = 'Ongoing';
-      finishedBtn.disabled = false;
-      nextBtn.disabled = true; // prevent next while on-air
-      breakBtn.disabled = true;
+      if (startBtn) startBtn.disabled = false;
+      if (nextBtn) nextBtn.disabled = true; // prevent next while on-air
+      // break control removed
 
       // show services as chips
       svcContainer.innerHTML = '';
@@ -175,15 +228,50 @@
       }
       // set attach queue id
       attachQueue.value = onAir.queue_id;
+      // enable view details button when on-air
+      const viewBtn = $('viewDetailsBtn');
+      if (viewBtn) {
+        viewBtn.disabled = false;
+        viewBtn.dataset.queue = onAir.queue_id || onAir.queue_code || '';
+      }
     } else {
       currentOnAirId = null; // no on-air
-      numberEl.textContent = 'Waiting';
+      numberEl.textContent = 'Standby';
       ongoingI.textContent = '';
-      finishedBtn.disabled = true;
-      nextBtn.disabled = false;
-      breakBtn.disabled = false;
+
+      // Rebuild default controls (Start Processing + Call Next) so UI resets after finish/void
+      const rootEl = document.getElementById('boxRoot');
+      const officeAttr = rootEl ? parseInt(rootEl.getAttribute('data-office'),10) || 1 : 1;
+      const windowAttr = rootEl ? parseInt(rootEl.getAttribute('data-window'),10) || 1 : 1;
+      const controlsEl = document.querySelector('.controls');
+      if (controlsEl) {
+        controlsEl.innerHTML = '';
+        const startBtnNew = document.createElement('button');
+        startBtnNew.id = 'startProcessing';
+        startBtnNew.type = 'button';
+        startBtnNew.textContent = 'Start Processing';
+        startBtnNew.disabled = true;
+
+        const nextBtnNew = document.createElement('button');
+        nextBtnNew.id = 'nextQueue';
+        nextBtnNew.type = 'button';
+        nextBtnNew.textContent = 'Call Next';
+
+        controlsEl.appendChild(startBtnNew);
+        controlsEl.appendChild(nextBtnNew);
+
+        startBtnNew.addEventListener('click', () => startProcessing(windowAttr));
+        nextBtnNew.addEventListener('click', () => callNext(windowAttr, officeAttr));
+      }
+
+      // clear services and attach fields
       svcContainer.innerHTML = '';
       attachQueue.value = '';
+      const viewBtn = $('viewDetailsBtn');
+      if (viewBtn) {
+        viewBtn.disabled = true;
+        delete viewBtn.dataset.queue;
+      }
     }
   }
 
@@ -213,56 +301,133 @@
       });
   };
 
-  window.finishCurrent = function(windowNumber){
-    disableButtons(true);
-    postAction('finish', 0, windowNumber)
-      .then(json => {
-        if (json && json.success) {
-          loadAndRenderFromDom();
-        } else {
-          alert((json && json.message) ? json.message : 'Failed to finish the current queue');
-          disableButtons(false);
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Error finishing queue. See console.');
-        disableButtons(false);
-      });
+  // Start processing: record process_start and show Finish / Void buttons
+  window.startProcessing = function(windowNumber){
+    // record start timestamp in local variable (server will accept it on finalize)
+    const d = new Date();
+    // format to 'YYYY-MM-DD HH:MM:SS'
+    const iso = d.toISOString().slice(0,19).replace('T',' ');
+    currentProcessStart = iso;
+
+    // inform server that processing has started so public displays can update
+    try {
+      const root = document.getElementById('boxRoot');
+      const office = root ? parseInt(root.getAttribute('data-office'),10) || 0 : 0;
+      postAction('start', office, windowNumber, { process_start: iso })
+        .then(json => {
+          if (!json || !json.success) {
+            console.warn('startProcessing: server did not confirm processing start', json && json.message);
+          }
+        })
+        .catch(e => console.error('startProcessing error', e));
+    } catch (e) {
+      console.error('startProcessing announce error', e);
+    }
+
+    // Replace controls with Finish and Void buttons (keep Call Next)
+    const controls = document.querySelector('.controls');
+    if (!controls) return;
+    controls.innerHTML = '';
+
+    const finishBtn = document.createElement('button');
+    finishBtn.id = 'finishNow';
+    finishBtn.type = 'button';
+    finishBtn.textContent = 'Finish';
+    finishBtn.style.background = '#d32f2f';
+    finishBtn.style.color = '#fff';
+
+    const voidBtn = document.createElement('button');
+    voidBtn.id = 'voidNow';
+    voidBtn.type = 'button';
+    voidBtn.textContent = 'Void';
+    voidBtn.className = 'btn-ghost';
+
+    const nextBtn = document.createElement('button');
+    nextBtn.id = 'nextQueue';
+    nextBtn.type = 'button';
+    nextBtn.textContent = 'Call Next';
+
+    controls.appendChild(finishBtn);
+    controls.appendChild(voidBtn);
+    controls.appendChild(nextBtn);
+
+    finishBtn.addEventListener('click', () => finalizeProcessing(windowNumber, false));
+    voidBtn.addEventListener('click', () => finalizeProcessing(windowNumber, true));
+    nextBtn.addEventListener('click', () => callNext(windowNumber, parseInt(document.getElementById('boxRoot').dataset.office,10)||1));
   };
 
-  window.toggleBreak = function(windowNumber){
-    const breakBtn = $('onBreak');
-    const isBreak = breakBtn.dataset.break !== 'true';
+  // Show remarks modal and send finalize request
+  function showRemarksModal(promptText){
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.background = 'rgba(0,0,0,0.45)'; overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center'; overlay.style.zIndex = '9999';
+      const box = document.createElement('div'); box.style.background = '#fff'; box.style.padding = '14px'; box.style.borderRadius = '8px'; box.style.width = '420px'; box.style.maxWidth = '92%';
+      const title = document.createElement('div'); title.textContent = 'Remarks'; title.style.fontWeight = '700'; title.style.marginBottom = '8px';
+      const p = document.createElement('div'); p.textContent = promptText || ''; p.style.marginBottom = '8px';
+      const ta = document.createElement('textarea'); ta.style.width = '100%'; ta.style.height = '90px'; ta.style.marginBottom = '8px';
+      const row = document.createElement('div'); row.style.display = 'flex'; row.style.justifyContent = 'flex-end'; row.style.gap = '8px';
+      const cancel = document.createElement('button'); cancel.textContent = 'Cancel'; cancel.className = 'btn-ghost';
+      const ok = document.createElement('button'); ok.textContent = 'Submit'; ok.style.background = 'var(--accent)'; ok.style.color = '#fff';
+      row.appendChild(cancel); row.appendChild(ok);
+      box.appendChild(title); box.appendChild(p); box.appendChild(ta); box.appendChild(row);
+      overlay.appendChild(box); document.body.appendChild(overlay);
+
+      cancel.addEventListener('click', () => { try{ document.body.removeChild(overlay);}catch(e){} resolve(null); });
+      ok.addEventListener('click', () => { const v = ta.value.trim(); try{ document.body.removeChild(overlay);}catch(e){} resolve(v); });
+    });
+  }
+
+  async function finalizeProcessing(windowNumber, isVoid){
     disableButtons(true);
-    postAction('break', 0, windowNumber, { isBreak })
-      .then(json => {
-        if (json && json.success) {
-          // reload to reflect changes
-          loadAndRenderFromDom();
-        } else {
-          alert((json && json.message) ? json.message : 'Failed to update break status');
-          disableButtons(false);
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Error updating break status. See console.');
+    try {
+      const process_finished = (new Date()).toISOString().slice(0,19).replace('T',' ');
+      let processing_duration = null;
+      if (currentProcessStart) {
+        const s = Date.parse(currentProcessStart.replace(' ', 'T'));
+        const f = Date.parse(process_finished.replace(' ', 'T'));
+        const diff = Math.max(0, Math.floor((f - s) / 1000));
+        const hh = String(Math.floor(diff/3600)).padStart(2,'0');
+        const mm = String(Math.floor((diff%3600)/60)).padStart(2,'0');
+        const ss = String(diff%60).padStart(2,'0');
+        processing_duration = `${hh}:${mm}:${ss}`;
+      }
+
+      const remarks = await showRemarksModal('Enter remarks for this queue (optional)');
+      if (remarks === null) { disableButtons(false); return; }
+
+      const params = {
+        process_start: currentProcessStart,
+        process_finished: process_finished,
+        processing_duration: processing_duration,
+        remarks: remarks,
+        isVoid: isVoid ? 1 : 0
+      };
+
+      const json = await postAction('finish', 0, windowNumber, params);
+      if (json && json.success) {
+        currentProcessStart = null;
+        loadAndRenderFromDom();
+      } else {
+        alert((json && json.message) ? json.message : 'Failed to archive processing result');
         disableButtons(false);
-      });
-  };
+      }
+    } catch (e) {
+      console.error('finalizeProcessing error', e);
+      alert('Error finalizing processing. See console.');
+      disableButtons(false);
+    }
+  }
 
   function disableButtons(state){
-    ['finished','onBreak','nextQueue'].forEach(id => {
+    ['startProcessing','nextQueue','finishNow','voidNow'].forEach(id => {
       const b = $(id);
       if (b) b.disabled = !!state;
     });
   }
 
   function bindUI(office, window) {
-    const finishedBtn = $('finished');
+    const startBtn = $('startProcessing');
     const nextBtn = $('nextQueue');
-    const breakBtn = $('onBreak');
     const logoutBtn = $('logoutBtn');
     const attachBtn = $('attachBtn');
     const notifyBtn = $('notifyBtn');
@@ -270,9 +435,8 @@
     const attachForm = $('attachForm');
     const attachStatus = $('attachStatus');
 
-    finishedBtn.addEventListener('click', function(){ finishCurrent(window); });
-    nextBtn.addEventListener('click', function(){ callNext(window, office); });
-    breakBtn.addEventListener('click', function(){ toggleBreak(window); });
+    if (startBtn) startBtn.addEventListener('click', function(){ startProcessing(window); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ callNext(window, office); });
 
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function(){
@@ -280,8 +444,8 @@
           .then(confirmed => {
             if (!confirmed) return;
             disableButtons(true);
-            fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
-              .then(r => r.json())
+              fetch('../backend/logout.php', { method: 'POST', credentials:'same-origin' })
+              .then(r => parseResponse(r))
               .then(json => {
                 if (json && json.success) {
                   // load the login form HTML and replace the current document without a full page refresh
@@ -314,8 +478,8 @@
 
     if (attachBtn && attachInput) {
       attachBtn.addEventListener('click', () => {
-        attachStatus.style.display = 'none';
-        showAttachModal();
+        attachInput.value = '';
+        attachInput.click();
       });
 
       // modal elements
@@ -339,17 +503,14 @@
           row.style.display = 'flex';
           row.style.alignItems = 'center';
           row.style.justifyContent = 'space-between';
-          row.style.padding = '10px 12px';
-          row.style.border = '1px solid #e5e7eb';
-          row.style.borderRadius = '12px';
-          row.style.background = '#fff';
-          row.style.boxShadow = '0 8px 18px rgba(15,23,42,0.05)';
+          row.style.padding = '6px';
+          row.style.borderBottom = '1px solid #f3f3f3';
           const left = document.createElement('div');
           left.style.display = 'flex';
           left.style.alignItems = 'center';
           left.style.gap = '10px';
           const info = document.createElement('div');
-          info.innerHTML = `<strong style="font-size:13px;color:#0f172a">${f.name}</strong><div style="font-size:12px;color:#64748b">${(f.size/1024/1024).toFixed(2)} MB • ${f.type || 'unknown'}</div>`;
+          info.innerHTML = `<strong style="font-size:13px">${f.name}</strong><div style="font-size:12px;color:#666">${(f.size/1024/1024).toFixed(2)} MB • ${f.type || 'unknown'}</div>`;
           left.appendChild(info);
           // thumbnail for images
           if (f.type && f.type.startsWith('image/')) {
@@ -365,7 +526,7 @@
           }
           const removeBtn = document.createElement('button');
           removeBtn.className = 'btn-ghost';
-          removeBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Remove';
+          removeBtn.textContent = 'Remove';
           removeBtn.addEventListener('click', () => {
             // remove file from FileList by rebuilding list (cannot modify FileList directly)
             const newFiles = Array.from(attachInput.files).filter(x => x !== f);
@@ -474,7 +635,7 @@
           credentials: 'same-origin',
           body: form
         })
-        .then(r => r.json())
+        .then(r => parseResponse(r))
         .then(json => {
           if (json && json.success) {
             attachModalStatus.textContent = 'Sent: ' + (json.files ? json.files.join(', ') : 'attached');
@@ -500,6 +661,62 @@
       });
     }
 
+    // View Details modal: fetch and display the current on-air queue details
+    const viewBtn = $('viewDetailsBtn');
+    const detailsModal = document.getElementById('queueDetailsModal');
+    const detailsContent = document.getElementById('queueDetailsContent');
+    const detailsClose = document.getElementById('detailsCloseBtn');
+
+    if (viewBtn) {
+      viewBtn.addEventListener('click', async () => {
+        const q = viewBtn.dataset.queue;
+        if (!q) return;
+        viewBtn.disabled = true;
+        try {
+          const res = await fetch(`${api}?action=details&queue=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+          const json = await parseResponse(res);
+          if (!json || !json.success) {
+            detailsContent.innerHTML = `<div class="small muted">Failed to load details: ${escapeHtml((json && json.message) || 'unknown')}</div>`;
+          } else {
+            const d = json.data || {};
+            let html = '';
+            html += `<div style="margin-bottom:10px"><strong>Queue</strong>: ${escapeHtml(d.queue_code||d.queue_no||d.queue_id||'')}</div>`;
+            if (d.status) html += `<div style="margin-bottom:8px"><strong>Status</strong>: ${escapeHtml(d.status)}</div>`;
+            if (d.services && d.services.length) {
+              html += '<div style="margin-bottom:8px"><strong>Services</strong>:<ul>';
+              d.services.forEach(s=>{ html += '<li>' + escapeHtml(s.service_description || s) + ((s.soft_copy) ? ' <small>(PDF)</small>' : '') + '</li>'; });
+              html += '</ul></div>';
+            }
+            if (d.client_id || d.customer_name || d.name || (d.client && (d.client.name || d.client.student_number) ) || d.customer_phone || d.customer_email) {
+              html += '<div style="margin-bottom:8px"><strong>Customer</strong>:';
+              const custName = pickField(d, ['customer_name','name']) || (d.client ? pickField(d.client, ['name']) : null) || '(unknown)';
+              html += `<div>${escapeHtml(custName)}</div>`;
+              const phone = pickField(d, ['customer_phone','phone']) || (d.client ? pickField(d.client, ['phone']) : null);
+              const email = pickField(d, ['customer_email','email']) || (d.client ? pickField(d.client, ['email']) : null);
+              if (phone) html += `<div>Phone: ${escapeHtml(phone)}</div>`;
+              if (email) html += `<div>Email: ${escapeHtml(email)}</div>`;
+              const studentVal = pickField(d, ['student_number','studentNumber','StudentNumber']) || (d.client ? pickField(d.client, ['student_number','studentNumber']) : null);
+              const courseVal = pickField(d, ['course','Course']) || (d.client ? pickField(d.client, ['course','Course']) : null);
+              html += `<div>Student #: ${escapeHtml(studentVal === null || studentVal === undefined || studentVal === '' ? 'Not provided' : studentVal)}</div>`;
+              html += `<div>Course: ${escapeHtml(courseVal === null || courseVal === undefined || courseVal === '' ? 'Not provided' : courseVal)}</div>`;
+              html += '</div>';
+            }
+            // fallback: raw JSON view for debugging if empty
+            if (!html) html = `<pre>${escapeHtml(JSON.stringify(d, null, 2))}</pre>`;
+            detailsContent.innerHTML = html;
+          }
+        } catch (e) {
+          console.error(e);
+          detailsContent.innerHTML = '<div class="small muted">Error loading details</div>';
+        } finally {
+          viewBtn.disabled = false;
+          if (detailsModal) { detailsModal.style.display = 'flex'; detailsModal.setAttribute('aria-hidden','false'); }
+        }
+      });
+      if (detailsClose) detailsClose.addEventListener('click', ()=>{ if (detailsModal){ detailsModal.style.display='none'; detailsModal.setAttribute('aria-hidden','true'); } });
+      if (detailsModal) detailsModal.addEventListener('click', (ev)=>{ if (ev.target === detailsModal){ detailsModal.style.display='none'; detailsModal.setAttribute('aria-hidden','true'); } });
+    }
+
     if (notifyBtn) {
       // no-op as requested; keep button UI only
       notifyBtn.addEventListener('click', () => {
@@ -518,12 +735,7 @@
         const data = json.data || {};
         renderQueueList(data.queue_list || []);
         updateOnAir(data.on_air || null);
-        // reset break button text/state (server-side break persistence not implemented)
-        const breakBtn = $('onBreak');
-        if (breakBtn) {
-          breakBtn.dataset.break = 'false';
-          breakBtn.textContent = 'Break';
-        }
+        // no break button in this UI
       })
       .catch(err => {
         console.error('Failed to load state', err);

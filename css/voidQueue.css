@@ -1,0 +1,5 @@
+/* Minimal styles for voided queues table */
+body { font-family: Inter, sans-serif; }
+.table-responsive { font-size: 14px; }
+.table td { vertical-align: middle; }
+.table thead.table-danger th { background-color: #f8d7da; }

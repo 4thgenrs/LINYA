@@ -31,7 +31,7 @@ try {
     $r = $conn->query("SELECT COUNT(*) AS c FROM queues WHERE status = 'pending'");
     $totals['total_pending_queues'] = $r ? intval($r->fetch_assoc()['c']) : 0;
 
-    $r = $conn->query("SELECT COUNT(*) AS c FROM queues WHERE status = 'ongoing'");
+    $r = $conn->query("SELECT COUNT(*) AS c FROM queues WHERE status IN ('ongoing','processing')");
     $totals['total_ongoing_queues'] = $r ? intval($r->fetch_assoc()['c']) : 0;
 
     $r = $conn->query("SELECT COUNT(*) AS c FROM finished_queues");

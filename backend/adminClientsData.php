@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_type']) || intval($_S
 }
 
 try {
-    $stmt = $conn->prepare('SELECT client_id, name, email, phone, safe_name, created_at FROM clients ORDER BY created_at DESC');
+    $stmt = $conn->prepare('SELECT client_id, name, email, phone, safe_name, student_number, course, created_at FROM clients ORDER BY created_at DESC');
     if (!$stmt) {
         throw new Exception('DB prepare failed: ' . $conn->error);
     }

@@ -45,8 +45,8 @@ try {
         $oStmt->close();
     }
 
-    // fetch enabled windows for this office
-    $wStmt = $conn->prepare("SELECT window_id, window_no, assigned_staff_id, enabled FROM office_windows WHERE office_id = ? AND enabled = 1 ORDER BY window_no ASC");
+    // fetch enabled windows for this office (include assigned staff name)
+    $wStmt = $conn->prepare("SELECT ow.window_id, ow.window_no, ow.assigned_staff_id, ow.enabled, a.name AS assigned_staff_name FROM office_windows ow LEFT JOIN accounts a ON ow.assigned_staff_id = a.user_id WHERE ow.office_id = ? AND ow.enabled = 1 ORDER BY ow.window_no ASC");
     if (!$wStmt) throw new Exception('Failed to prepare windows statement');
     $wStmt->bind_param('i', $office);
     $wStmt->execute();
@@ -62,9 +62,10 @@ try {
     if (!$svcStmt) throw new Exception('Failed to prepare services statement');
 
     // --- improved queue lookup: exact by PK, fallback by window_no + office (prevents cross-office matches) ---
-    $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status = 'ongoing' LIMIT 1");
+    // accept both 'ongoing' and 'processing' as on-air for display
+    $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status IN ('ongoing','processing') LIMIT 1");
     if (!$qExact) throw new Exception('Failed to prepare exact queue statement');
-    $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status = 'ongoing' LIMIT 1");
+    $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status IN ('ongoing','processing') LIMIT 1");
     if (!$qFallback) throw new Exception('Failed to prepare fallback queue statement');
 
     $resultWindows = [];
@@ -116,6 +117,7 @@ try {
             'window_id' => $window_id,
             'window_no' => intval($w['window_no']),
             'assigned_staff_id' => $w['assigned_staff_id'] ? intval($w['assigned_staff_id']) : null,
+            'assigned_staff_name' => isset($w['assigned_staff_name']) && $w['assigned_staff_name'] !== null ? $w['assigned_staff_name'] : null,
             'enabled' => intval($w['enabled']) === 1 ? 1 : 0,
             'current_queue' => $current
         ];

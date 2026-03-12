@@ -57,6 +57,8 @@ $email  = isset($_POST['email'])  ? trim($_POST['email'])  : '';
 $phone  = isset($_POST['phone'])  ? trim($_POST['phone'])  : '';
 $folder = isset($_POST['folder']) ? trim($_POST['folder']) : '';
 $encoding_b64 = isset($_POST['encoding']) ? trim($_POST['encoding']) : '';
+$student_number = isset($_POST['student_number']) ? trim($_POST['student_number']) : '';
+$course = isset($_POST['course']) ? trim($_POST['course']) : '';
 
 if ($name === '') {
     echo json_encode(['status' => 'error', 'message' => 'Missing name']);
@@ -121,8 +123,8 @@ $chk->close();
 
 // ---- INSERT NEW CLIENT ----
 $stmt = $conn->prepare(
-    'INSERT INTO clients (name, safe_name, phone, email, face_data, face_path)
-     VALUES (?, ?, ?, ?, ?, ?)'
+    'INSERT INTO clients (name, safe_name, phone, email, student_number, course, face_data, face_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 );
 if (!$stmt) {
     slog("DB prepare error (insert)", ['err' => $conn->error]);
@@ -135,11 +137,13 @@ $null = null;
 // bind as blob if available
 if ($face_blob !== null) {
     // Use 'b' for blob and send_long_data
-    $stmt->bind_param('ssssbs', $name, $safe_name, $phone, $email, $null, $face_path_db);
-    $stmt->send_long_data(4, $face_blob);
+    // param order: name(0), safe_name(1), phone(2), email(3), student_number(4), course(5), face_data(6), face_path(7)
+    $stmt->bind_param('ssssssbs', $name, $safe_name, $phone, $email, $student_number, $course, $null, $face_path_db);
+    // send_long_data expects zero-based param index for the blob (face_data is param index 6)
+    $stmt->send_long_data(6, $face_blob);
 } else {
     // pass NULL for blob (face_blob and face_path_db can be null)
-    $stmt->bind_param('ssssss', $name, $safe_name, $phone, $email, $face_blob, $face_path_db);
+    $stmt->bind_param('ssssssss', $name, $safe_name, $phone, $email, $student_number, $course, $face_blob, $face_path_db);
 }
 
 if (!$stmt->execute()) {

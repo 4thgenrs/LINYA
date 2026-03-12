@@ -9,7 +9,7 @@ $r = $conn->query("SELECT office_id, office_description, office_code FROM office
 while ($o = $r->fetch_assoc()) $offices[] = $o;
 
 // Build main queue query
-$sql = "SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, o.office_description
+$sql = "SELECT q.queue_id, q.queue_code, q.office_id, q.created_at, q.status, q.customer_name, q.customer_phone, q.customer_email, q.student_number, q.course, o.office_description
         FROM queues q
         JOIN offices o ON q.office_id = o.office_id";
 if ($officeFilter) $sql .= " WHERE q.office_id = " . intval($officeFilter);

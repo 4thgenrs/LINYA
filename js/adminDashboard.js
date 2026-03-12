@@ -9,6 +9,7 @@
     adminClients: '../includes/adminClients.php',
     assignStaff: '../includes/assignStaff.php',
     finishedQueue: '../includes/finishedQueue.php',
+      voidQueue: '../includes/voidQueue.php',
     office: '../includes/office.php',
     services: '../includes/services.php',
     queueDisplay: '../includes/queueDisplay.php',
@@ -16,15 +17,9 @@
   };
 
   buttons.forEach(b => b.addEventListener('click', () => {
-    const m = b.dataset.module;
-    if (!m) return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set('module', m);
-    window.history.replaceState({}, '', url.toString());
-
     buttons.forEach(x => x.classList.remove('active'));
     b.classList.add('active');
+    const m = b.dataset.module;
     frame.src = mapping[m] || mapping.landing;
   }));
 

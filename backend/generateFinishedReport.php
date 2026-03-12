@@ -19,12 +19,18 @@ $sql = "SELECT f.finished_id,
                f.window_id,
                f.window_id AS window_no,
                f.processed_by,
-               f.created_at,
-               f.finished_at,
-               f.services,
-               f.customer_name,
-               f.customer_phone,
-               f.customer_email
+           f.created_at,
+           f.finished_at,
+           f.process_start,
+           f.process_finished,
+           f.processing_duration,
+           f.remarks,
+           f.services,
+           f.customer_name,
+           f.customer_phone,
+           f.customer_email,
+           f.student_number,
+           f.course
         FROM finished_queues f
         LEFT JOIN offices o ON f.office_id = o.office_id";
 
@@ -73,8 +79,8 @@ $pdf->Ln(4);
 
 // Table header
 $pdf->SetFont('Arial','B',9);
-$headers = ['Office','Window','Processed By','Created At','Finished At','Services','Name','Phone','Email'];
-$widths = [25,18,35,30,30,80,40,30,50];
+$headers = ['Office','Window','Processed By','Created At','Finished At','Process Start','Process Finished','Processing Duration','Remarks','Services','Name','Phone','Email','Student #','Course','Original Queue ID','Record ID'];
+$widths = [25,18,30,28,28,28,28,20,60,80,40,30,60,30,30,22,18];
 foreach ($headers as $i => $h) {
     $pdf->Cell($widths[$i],6,$h,1,0,'C');
 }
@@ -92,12 +98,20 @@ foreach ($rows as $r) {
         $r['office_description'],
         $r['window_no'] ? $r['window_no'] : '—',
         $r['processed_by'],
-        mb_substr($r['created_at'],0,19),
-        mb_substr($r['finished_at'],0,19),
-        preg_replace('/\s+/',' ', $r['services']),
-        $r['customer_name'],
-        $r['customer_phone'],
-        $r['customer_email']
+        mb_substr($r['created_at'] ?? '',0,19),
+        mb_substr($r['finished_at'] ?? '',0,19),
+        mb_substr($r['process_start'] ?? '',0,19),
+        mb_substr($r['process_finished'] ?? '',0,19),
+        $r['processing_duration'] ?? '',
+        $r['remarks'] ?? '',
+        preg_replace('/\s+/',' ', $r['services'] ?? ''),
+        $r['customer_name'] ?? '',
+        $r['customer_phone'] ?? '',
+        $r['customer_email'] ?? '',
+        $r['student_number'] ?? '',
+        $r['course'] ?? '',
+        $r['original_queue_id'] ?? '',
+        $r['finished_id'] ?? ''
     ];
 
     // calculate number of lines needed for each cell

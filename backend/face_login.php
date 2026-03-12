@@ -150,6 +150,60 @@ if (!$client) {
     respond(['status' => 'error', 'code' => 'client_not_found', 'message' => 'Client not found', 'request_id' => $rid], 404);
 }
 
+// Before creating session, ensure client has no pending/ongoing/processing queue
+$hasPending = false;
+try {
+    $resC = $conn->query("SHOW COLUMNS FROM queues LIKE 'customer_id'");
+    $hasCustomerIdCol = ($resC && $resC->num_rows > 0);
+
+    if ($hasCustomerIdCol) {
+        $checkSt = $conn->prepare("SELECT queue_id FROM queues WHERE status IN ('pending','ongoing','processing') AND customer_id = ? LIMIT 1");
+        if ($checkSt) {
+            $checkSt->bind_param('i', $client['client_id']);
+            $checkSt->execute();
+            $r = $checkSt->get_result();
+            if ($r && $r->num_rows > 0) $hasPending = true;
+            $checkSt->close();
+        }
+    } else {
+        $email = $client['email'] ?? '';
+        $phone = $client['phone'] ?? '';
+        $conds = [];
+        $params = [];
+        $types = '';
+        if ($email !== '') { $conds[] = 'customer_email = ?'; $params[] = $email; $types .= 's'; }
+        if ($phone !== '') { $conds[] = 'customer_phone = ?'; $params[] = $phone; $types .= 's'; }
+
+        if (count($conds) > 0) {
+            $sql = "SELECT queue_id FROM queues WHERE status IN ('pending','ongoing','processing') AND (" . implode(' OR ', $conds) . ") LIMIT 1";
+            $checkSt = $conn->prepare($sql);
+            if ($checkSt) {
+                if (count($params) === 1) {
+                    $checkSt->bind_param($types, $params[0]);
+                } elseif (count($params) === 2) {
+                    $checkSt->bind_param($types, $params[0], $params[1]);
+                }
+                $checkSt->execute();
+                $r = $checkSt->get_result();
+                if ($r && $r->num_rows > 0) $hasPending = true;
+                $checkSt->close();
+            }
+        }
+    }
+} catch (Exception $e) {
+    slog($rid, "Pending check failed", ['err' => $e->getMessage()]);
+}
+
+if ($hasPending) {
+    slog($rid, "Client has pending queue, rejecting login", ['client_id' => $client['client_id']]);
+    respond([
+        'status' => 'error',
+        'code' => 'duplicate_client_pending',
+        'message' => 'You already have an existing queue (pending or in progress). Please wait until it is completed.',
+        'request_id' => $rid
+    ], 200);
+}
+
 // store client data in session
 $_SESSION['client'] = [
     'client_id' => $client['client_id'],

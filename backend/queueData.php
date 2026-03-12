@@ -15,7 +15,7 @@ if (isset($conn) && $conn instanceof mysqli) {
 function getOfficeQueue($conn, $office) {
     $queue_data = [];
     $office = intval($office);
-    $sql = "SELECT queue_id, queue_code, created_at FROM queues WHERE status='pending' AND office_id = ? ORDER BY queue_id ASC";
+    $sql = "SELECT queue_id, queue_code, created_at, customer_name, customer_phone, customer_email, student_number, course FROM queues WHERE status='pending' AND office_id = ? ORDER BY queue_id ASC";
     $stmt = $conn->prepare($sql);
     if (!$stmt) return $queue_data;
     $stmt->bind_param('i', $office);
@@ -58,8 +58,8 @@ function getNextLine($conn, $office, $window) {
     $office = intval($office);
     $window = intval($window);
 
-    // Do not assign next if this window already has an ongoing queue
-    $chkStmt = $conn->prepare("SELECT queue_id FROM queues WHERE status='ongoing' AND window_id = ? LIMIT 1");
+    // Do not assign next if this window already has an ongoing or processing queue
+    $chkStmt = $conn->prepare("SELECT queue_id FROM queues WHERE status IN ('ongoing','processing') AND window_id = ? LIMIT 1");
     if ($chkStmt) {
         $chkStmt->bind_param('i', $window);
         $chkStmt->execute();
@@ -103,7 +103,8 @@ function getNextLine($conn, $office, $window) {
 
 function displayOnAir($conn,$window) {
     $window = intval($window);
-    $sql = "SELECT queue_id, queue_code, created_at FROM queues WHERE status='ongoing' AND window_id=? ORDER BY queue_id DESC LIMIT 1";
+    // include both ongoing and processing as on-air
+    $sql = "SELECT queue_id, queue_code, created_at, customer_name, customer_phone, customer_email, student_number, course FROM queues WHERE status IN ('ongoing','processing') AND window_id=? ORDER BY queue_id DESC LIMIT 1";
     $stmt = $conn->prepare($sql);
     if (!$stmt) return null;
     $stmt->bind_param('i', $window);
@@ -145,7 +146,7 @@ function finishCurrentQueue($conn, $window) {
     $window = intval($window);
 
     // Find the most recent ongoing queue for this window
-    $sql_select = "SELECT queue_id FROM queues WHERE status='ongoing' AND window_id=? ORDER BY queue_id DESC LIMIT 1";
+    $sql_select = "SELECT queue_id FROM queues WHERE status IN ('ongoing','processing') AND window_id=? ORDER BY queue_id DESC LIMIT 1";
     $stmt = $conn->prepare($sql_select);
     if (!$stmt) return false;
 
@@ -186,8 +187,8 @@ function setWindowBreak($conn, $window, $isBreak = true) {
     if ($isBreak) {
         // Move the ongoing queue for this window (if any) back to pending and clear window_id
         $sql = "UPDATE queues 
-                SET status = 'pending', window_id = 0 
-                WHERE status = 'ongoing' AND window_id = ?";
+            SET status = 'pending', window_id = 0 
+            WHERE status IN ('ongoing','processing') AND window_id = ?";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             return false;

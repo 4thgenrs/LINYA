@@ -14,64 +14,37 @@
 
   <!-- DATATABLES CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-  <link rel="stylesheet" href="../css/finishedQueue.css">
-  <link rel="stylesheet" href="../css/table-unified.css">
+<!-- 
+  <link rel="stylesheet" href="../css/finishedQueue.css"> -->
 </head>
 
 <body class="py-4">
 
   <main class="container-fluid">
 
-    <div class="card shadow-sm border-0 finished-table-card">
-      <section class="finished-hero finished-topbar">
-        <div class="finished-hero-copy finished-topbar-copy">
-          <div class="finished-hero-badge">
-            <i class="fa-solid fa-check-double"></i>
-            Queue Archive
-          </div>
-          <h1 class="mb-0"><i class="fa-solid fa-check-double me-2"></i>Finished Queues</h1>
-          <p class="finished-hero-subtitle mb-0">Review completed transactions, filter archived records by office, and export summary reports from one organized workspace.</p>
-          <div class="finished-topbar-tablecopy">
-            <span class="finished-panel-eyebrow">Archive Table</span>
-            <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Finished Queue List</h5>
-          </div>
-        </div>
+    <div class="mb-2">
+        <h1 class="mb-0"><i class="fa-solid fa-check-double me-2"></i>Finished Queues</h1>
+      </div>
 
-        <div class="finished-hero-side finished-topbar-side">
-          <div>
-            <div class="finished-status-pill">
-              <span class="finished-status-dot"></span>
-              Live archive view
-            </div>
-            <span class="finished-status-label">Records update when you refresh the table</span>
-          </div>
+    <div class="d-flex align-items-center justify-content-end mb-2 mt-2">
+      <label for="officeFilter" class="me-2 fw-semibold">Office:</label>
+      <select id="officeFilter" class="form-select form-select-sm me-3" style="width:160px;">
+        <option value="0">All</option>
+      </select>
 
-          <div class="finished-toolbar-controls">
-            <div class="finished-filter-group">
-              <label for="officeFilter" class="fw-semibold mb-0">Office</label>
-              <select id="officeFilter" class="form-select form-select-sm">
-                <option value="0">All</option>
-              </select>
-            </div>
+      <button id="refreshBtn" type="button" class="btn btn-sm btn-success">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button>
+    </div>
 
-            <div class="finished-action-group">
-              <button id="refreshBtn" type="button" class="btn btn-sm btn-success finished-refresh-btn">
-                <i class="fa-solid fa-rotate"></i>
-                <span>Refresh</span>
-              </button>
-              <button id="exportCSVBtn" type="button" class="btn btn-success finished-export-btn">
-                <i class="fa-solid fa-file-csv me-1"></i>Export to CSV
-              </button>
-              <button id="openReportBtn" type="button" class="btn btn-success finished-report-btn">
-                <i class="fa-solid fa-file-export me-1"></i>Generate Report
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <!-- TABLE CARD -->
+    <div class="card shadow-sm border-0">
+      <div class="card-header text-white" style="background-color:#1b5e20;">
+        <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Finished Queue List</h5>
+      </div>
 
-      <div class="card-body finished-table-body">
-        <div class="table-responsive d-none d-md-block">
+      <div class="card-body">
+        <div class="table-responsive">
           <table id="finishedTable" class="table table-hover table-bordered align-middle nowrap w-100">
             <thead class="table-success">
               <tr>
@@ -89,29 +62,27 @@
             <tbody></tbody>
           </table>
         </div>
-        <div class="d-block d-md-none mt-2">
-          <div class="mobile-table-search">
-            <input type="text" class="form-control" id="finishedMobileSearch" placeholder="Search finished queues...">
-          </div>
-          <div id="finishedMobileEmpty" class="mobile-table-empty" style="display:none;">No finished queues found.</div>
-          <div id="finishedMobileList" class="mobile-table-list"></div>
+
+        <div class="text-end mt-3">
+          <button id="exportCSVBtn" type="button" class="btn btn-success me-2">
+            <i class="fa-solid fa-file-csv me-1"></i>Export to CSV
+          </button>
+          <button id="openReportBtn" type="button" class="btn btn-success">
+            <i class="fa-solid fa-file-export me-1"></i>Generate Report
+          </button>
         </div>
       </div>
     </div>
 
     <!-- REPORT MODAL -->
     <div id="reportModal" class="modal fade" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header finished-modal-header">
-            <div>
-              <span class="finished-modal-eyebrow">Report Builder</span>
-              <h5 class="modal-title" id="reportModalLabel">Generate Report</h5>
-            </div>
+          <div class="modal-header">
+            <h5 class="modal-title" id="reportModalLabel">Generate Report</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body finished-modal-body">
-            <p class="finished-modal-copy">Select an office, processed-by staff member, and date range to generate a printable finished queue report.</p>
+          <div class="modal-body">
             <form id="reportForm" method="POST" target="_blank" action="../backend/generateFinishedReport.php">
 
               <div class="row g-2 mb-3">
@@ -144,7 +115,7 @@
 
             </form>
           </div>
-          <div class="modal-footer finished-modal-footer">
+          <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             <button type="submit" form="reportForm" class="btn btn-success">
               <i class="fa-solid fa-file-export me-1"></i>Generate
@@ -162,7 +133,6 @@
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="../js/tableMobileCards.js"></script>
   
   <!-- YOUR EXISTING JS -->
   <script src="../js/finishedQueue.js"></script>
