@@ -36,12 +36,22 @@ $response = [
 
 try {
     // My Activity (finished_queues processed by this staff)
-    $stmt = $conn->prepare("SELECT finished_id, original_queue_id, office_id, window_id, processed_by, finished_at, created_at, status, services, customer_name, customer_phone, customer_email FROM finished_queues WHERE processed_by = ? ORDER BY finished_at DESC LIMIT 500");
+    $stmt = $conn->prepare("SELECT f.finished_id, f.original_queue_id, f.office_id, f.window_id, f.processed_by, f.finished_at, f.created_at, f.status, f.services, f.customer_name, f.customer_phone, f.customer_email, q.queue_code AS live_queue_code, COALESCE(o_num.office_code, o_name.office_code) AS resolved_office_code FROM finished_queues f LEFT JOIN queues q ON q.queue_id = f.original_queue_id LEFT JOIN offices o_num ON o_num.office_id = f.office_id LEFT JOIN offices o_name ON o_name.office_description = CAST(f.office_id AS CHAR) WHERE f.processed_by = ? ORDER BY f.finished_at DESC LIMIT 500");
     if ($stmt) {
         $stmt->bind_param('s', $user_name);
         $stmt->execute();
         $res = $stmt->get_result();
         while ($r = $res->fetch_assoc()) {
+            $queueCode = isset($r['live_queue_code']) ? trim((string)$r['live_queue_code']) : '';
+            if ($queueCode === '') {
+                $officeCode = isset($r['resolved_office_code']) ? trim((string)$r['resolved_office_code']) : '';
+                $originalQueueId = isset($r['original_queue_id']) ? intval($r['original_queue_id']) : 0;
+                if ($officeCode !== '' && $originalQueueId > 0) {
+                    $queueCode = $officeCode . '-' . str_pad((string)$originalQueueId, 3, '0', STR_PAD_LEFT);
+                }
+            }
+            $r['queue_code'] = $queueCode;
+            unset($r['live_queue_code'], $r['resolved_office_code']);
             $response['activity'][] = $r;
         }
         $stmt->close();
@@ -82,9 +92,8 @@ try {
         // prepare service stmt
         $svcStmt = $conn->prepare("SELECT s.service_description, qs.soft_copy FROM queue_services qs JOIN services s ON qs.service_id = s.service_id WHERE qs.queue_id = ?");
         // prefer an exact PK match first, fallback to matching by window_no but only within same office
-        // include both ongoing and processing as on-air
-        $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status IN ('ongoing','processing') LIMIT 1");
-        $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status IN ('ongoing','processing') LIMIT 1");
+        $qExact = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND status = 'ongoing' LIMIT 1");
+        $qFallback = $conn->prepare("SELECT queue_id, queue_code, customer_name, customer_email, status, office_id, window_id FROM queues WHERE window_id = ? AND office_id = ? AND status = 'ongoing' LIMIT 1");
 
         foreach ($windows as $w) {
             $window_id = intval($w['window_id']);

@@ -2,7 +2,7 @@
 $server = "localhost";
 $user   = "root";
 $pass   = "";
-$dbname = "linya1_db";
+$dbname = "linya_db";
 
 $conn = new mysqli($server, $user, $pass, $dbname);
 
