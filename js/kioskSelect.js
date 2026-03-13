@@ -1,8 +1,11 @@
-// Add click feedback and smooth transitions
+// Function to show camera instructions modal
 function showKioskLoginInstructions(href) {
-    // Create modal if it doesn't exist
-    if (document.getElementById('kioskLoginInstructionsModal')) {
-        return;
+    console.log('Showing instructions modal'); // Debug log
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('kioskLoginInstructionsModal');
+    if (existingModal) {
+        existingModal.remove();
     }
 
     const modalHTML = `
@@ -10,9 +13,9 @@ function showKioskLoginInstructions(href) {
         <div class="kiosk-instructions-content">
           <h2>PLEASE LOOK DIRECTLY AT THE CAMERA</h2>
           <ul>
-            <li>• ENSURE GOOD LIGHTING</li>
-            <li>• REMOVE SUNGLASSES OR HATS</li>
-            <li>• KEEP A NEUTRAL EXPRESSION</li>
+            <li>ENSURE GOOD LIGHTING</li>
+            <li>REMOVE SUNGLASSES OR HATS</li>
+            <li>KEEP A NEUTRAL EXPRESSION</li>
           </ul>
           <div class="kiosk-instructions-actions">
             <button id="kioskInstructionsCancel" class="kiosk-instructions-btn cancel">Cancel</button>
@@ -24,42 +27,74 @@ function showKioskLoginInstructions(href) {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
+    // Prevent scrolling on body when modal is open
+    document.body.style.overflow = 'hidden';
+
+    const modal = document.getElementById('kioskLoginInstructionsModal');
+    
+    // Close modal function
     const closeModal = () => {
-        const modal = document.getElementById('kioskLoginInstructionsModal');
-        if (modal) modal.remove();
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = 'auto';
+        }
     };
 
-    document.getElementById('kioskInstructionsCancel').addEventListener('click', () => {
-        closeModal();
+    // Cancel button click
+    const cancelBtn = document.getElementById('kioskInstructionsCancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+        });
+    }
+
+    // OK button click
+    const okBtn = document.getElementById('kioskInstructionsOk');
+    if (okBtn) {
+        okBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+            window.location.href = href;
+        });
+    }
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
     });
-    document.getElementById('kioskInstructionsOk').addEventListener('click', () => {
-        closeModal();
-        window.location.href = href;
-    });
+
+    // Handle escape key
+    const handleEsc = function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleEsc);
+        }
+    };
+    document.addEventListener('keydown', handleEsc);
 }
 
+// Initialize kiosk select page
 function initKioskSelect() {
-    document.querySelectorAll('.kiosk-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            // Add a small delay for visual feedback
-            e.preventDefault();
-            const href = this.getAttribute('href');
-            
-            // Visual feedback
-            this.style.transform = 'scale(0.98)';
-            
-            setTimeout(() => {
-                if (href && href.includes('kioskLogin.php')) {
-                    showKioskLoginInstructions(href);
-                } else {
-                    window.location.href = href;
-                }
-            }, 150);
-        });
+    console.log('Initializing kiosk select'); // Debug log
+    
+    // Get all kiosk buttons
+    const buttons = document.querySelectorAll('.kiosk-btn');
+    console.log('Found buttons:', buttons.length); // Debug log
+    
+    buttons.forEach(btn => {
+        // Remove any existing listeners
+        btn.removeEventListener('click', handleButtonClick);
+        
+        // Add new listener
+        btn.addEventListener('click', handleButtonClick);
     });
 
     // Preload hover states for better performance
-    const buttons = document.querySelectorAll('.kiosk-btn');
     buttons.forEach(btn => {
         btn.addEventListener('mouseenter', function() {
             this.style.willChange = 'transform, box-shadow';
@@ -67,20 +102,58 @@ function initKioskSelect() {
         
         btn.addEventListener('mouseleave', function() {
             this.style.willChange = 'auto';
+            this.style.transform = 'scale(1)';
         });
     });
 }
 
-document.addEventListener('DOMContentLoaded', initKioskSelect);
-document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('.kiosk-btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('mouseenter', function() {
-            this.style.willChange = 'transform, box-shadow';
-        });
-        
-        btn.addEventListener('mouseleave', function() {
-            this.style.willChange = 'auto';
-        });
+// Separate click handler function
+function handleButtonClick(e) {
+    e.preventDefault();
+    
+    const btn = this;
+    const href = btn.getAttribute('href');
+    
+    console.log('Button clicked:', href); // Debug log
+    
+    // Visual feedback - scale down
+    btn.style.transform = 'scale(0.98)';
+    btn.style.transition = 'transform 0.15s ease';
+    
+    // Check if it's the login button
+    if (href && href.includes('kioskLogin.php')) {
+        console.log('Login button detected, showing modal'); // Debug log
+        setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+            showKioskLoginInstructions(href);
+        }, 150);
+    } else {
+        // For other buttons, redirect after visual feedback
+        console.log('Other button, redirecting'); // Debug log
+        setTimeout(() => {
+            window.location.href = href;
+        }, 150);
+    }
+}
+
+// Make sure DOM is fully loaded before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initKioskSelect();
+        // Re-run after a short delay to catch dynamically loaded content
+        setTimeout(initKioskSelect, 100);
     });
+} else {
+    initKioskSelect();
+    setTimeout(initKioskSelect, 100);
+}
+
+// Also run after window load for any late-loading elements
+window.addEventListener('load', function() {
+    initKioskSelect();
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    document.body.style.overflow = 'auto';
 });

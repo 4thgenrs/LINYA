@@ -22,7 +22,7 @@
         </div>
 
         <div class="button-group">
-            <a href="../kiosk/kioskLogin.php" class="kiosk-btn btn-login">
+            <a href="../kiosk/kioskLogin.php" class="kiosk-btn btn-login" id="loginBtn">
                 <span class="btn-icon"><i class="fas fa-user-circle"></i></span>
                 <span class="btn-text">
                     Login with Face

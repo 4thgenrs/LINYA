@@ -228,15 +228,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div id="faceOutline"></div>
         </div>
 
-        <div class="verification-text">
-            <p>PLEASE LOOK DIRECTLY AT THE CAMERA</p>
-            <div class="instructions">
-                <p>• ENSURE GOOD LIGHTING</p>
-                <p>• REMOVE SUNGLASSES OR HATS</p>
-                <p>• KEEP A NEUTRAL EXPRESSION</p>
-            </div>
-        </div>
-
         <form method="POST" action="kioskLogin.php" id="loginForm">
             <input type="hidden" name="image" id="imageInput">
             <input type="hidden" name="check_glasses" id="checkGlasses" value="true">
