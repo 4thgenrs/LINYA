@@ -477,11 +477,6 @@
     }
 
     if (attachBtn && attachInput) {
-      attachBtn.addEventListener('click', () => {
-        attachInput.value = '';
-        attachInput.click();
-      });
-
       // modal elements
       const attachModal = document.getElementById('attachModal');
       const attachPreviewList = document.getElementById('attachPreviewList');
@@ -490,6 +485,11 @@
       const attachCancelBtn = document.getElementById('attachCancelBtn');
       const attachAddBtn = document.getElementById('attachAddBtn');
       const attachModalStatus = document.getElementById('attachModalStatus');
+
+      if (!attachModal || !attachPreviewList || !attachCloseBtn || !attachSendBtn || !attachCancelBtn || !attachAddBtn || !attachModalStatus) {
+        console.error('Attachment modal elements are missing from the page.');
+        return;
+      }
 
       function showAttachModal() {
         attachPreviewList.innerHTML = '';
@@ -543,6 +543,10 @@
         attachModal.style.display = 'flex';
         attachModal.setAttribute('aria-hidden', 'false');
       }
+
+      attachBtn.addEventListener('click', () => {
+        showAttachModal();
+      });
 
       // Add extra files: open ephemeral file picker, validate and merge into attachInput.files
       if (attachAddBtn) {

@@ -187,34 +187,6 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
     </div>
   </div>
 
-  <div id="attachModal" class="attach-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px)">
-    <div class="attach-modal-card" style="width:92%;max-width:720px;background:#fff;border-radius:18px;padding:20px;box-shadow:0 24px 60px rgba(15,23,42,0.22);border:1px solid rgba(226,232,240,0.9);">
-      <div class="attach-modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div>
-          <strong class="attach-modal-title">Attachments Preview</strong>
-          <div class="attach-modal-subtitle">Review files before sending them to the active queue.</div>
-        </div>
-        <button id="attachCloseBtn" class="btn-ghost" type="button">Back</button>
-      </div>
-      <div class="attach-modal-note" style="font-size:13px;color:#666;margin-bottom:8px">
-        Allowed file types: PDF and images. Max size per file: 10 MB.
-      </div>
-      <div id="attachPreviewList" class="attach-preview-list" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;background:#f8fafc"></div>
-      <div class="attach-modal-actions row g-2 justify-content-end mx-0" style="display:flex;justify-content:flex-end;gap:8px">
-        <div class="col-12 col-sm-auto px-0">
-          <button id="attachAddBtn" class="btn-ghost w-100" type="button">Add file</button>
-        </div>
-        <div class="col-12 col-sm-auto px-0">
-          <button id="attachSendBtn" class="w-100" type="button">Send</button>
-        </div>
-        <div class="col-12 col-sm-auto px-0">
-          <button id="attachCancelBtn" class="btn-ghost w-100" type="button">Cancel</button>
-        </div>
-      </div>
-      <div id="attachModalStatus" class="attach-modal-status" style="margin-top:8px;color:#666;font-size:13px"></div>
-    </div>
-  </div>
-
   <div id="queueDetailsModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)">
     <div style="width:92%;max-width:820px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
