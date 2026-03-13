@@ -201,8 +201,8 @@
     const attachStatus = $('attachStatus');
     attachStatus.style.display = 'none';
 
-    if (onAir && (onAir.queue_code || onAir.queue_id)) {
-      currentOnAirId = onAir.queue_id || null; // set current on-air id
+    if (onAir && (onAir.queue_code || onAir.queue_id || onAir.queue_no)) {
+      currentOnAirId = onAir.queue_id || onAir.queue_no || null; // set current on-air id (fallback to queue_no when queue_id missing)
       numberEl.textContent = onAir.queue_code || (onAir.queue_no || ('#' + (onAir.queue_id || '')));
       ongoingI.textContent = 'Ongoing';
       if (startBtn) startBtn.disabled = false;
@@ -227,12 +227,12 @@
         });
       }
       // set attach queue id
-      attachQueue.value = onAir.queue_id;
+      attachQueue.value = onAir.queue_id || onAir.queue_no || '';
       // enable view details button when on-air
       const viewBtn = $('viewDetailsBtn');
       if (viewBtn) {
         viewBtn.disabled = false;
-        viewBtn.dataset.queue = onAir.queue_id || onAir.queue_code || '';
+        viewBtn.dataset.queue = onAir.queue_id || onAir.queue_code || onAir.queue_no || '';
       }
     } else {
       currentOnAirId = null; // no on-air

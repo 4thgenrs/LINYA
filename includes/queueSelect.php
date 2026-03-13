@@ -82,85 +82,149 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['user_type']) && intval($_SES
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="container-fluid queue-layout-shell px-0">
+    <div class="row g-4 align-items-start queue-layout-row">
+      <div class="col-12 col-xl-8">
+        <div class="box" role="group" aria-label="Window Control" id="boxRoot"
+             data-office="<?php echo $office; ?>"
+             data-window="<?php echo $window_attr; ?>"
+             data-window-no="<?php echo $window_no; ?>">
 
-    <div class="box" role="group" aria-label="Window Control" id="boxRoot"
-         data-office="<?php echo $office; ?>"
-         data-window="<?php echo $window_attr; ?>"
-         data-window-no="<?php echo $window_no; ?>">
+          <div class="panel-badge">
+            <i class="fa-solid fa-wave-square"></i>
+            Active Window Station
+          </div>
 
-      <div class="box-top">
-        <div id="window" class="window">Window <?php echo $window_no; ?></div>
-        <div class="signed">
-          <div class="muted small">Signed in as</div>
-          <div class="strong"><?php echo $user_name; ?></div>
+          <div class="box-top d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+            <div class="top-primary d-flex flex-column gap-1">
+              <div id="window" class="window">Window <?php echo $window_no; ?></div>
+              <div class="window-subtitle">
+                <i class="fa-solid fa-building me-1"></i>
+                Office queue control panel
+              </div>
+            </div>
+            <div class="signed text-sm-end">
+              <div class="muted small">Signed in as</div>
+              <div class="strong"><?php echo $user_name; ?></div>
+            </div>
+          </div>
+
+          <div class="hero-panel text-center">
+            <div class="hero-ring"></div>
+            <div id="number" class="number">Loading…</div>
+            <div class="status-line"><i id="ongoingText"></i></div>
+            <div id="currentServices" class="service-chips"></div>
+          </div>
+
+          <div class="controls row g-2 justify-content-center mx-0">
+            <div class="col-12 col-sm-auto px-0">
+              <button id="startProcessing" class="w-100" type="button" disabled><i class="fa-solid fa-check me-2"></i>Start Processing</button>
+            </div>
+            <div class="col-12 col-sm-auto px-0">
+              <button id="nextQueue" class="w-100" type="button"><i class="fa-solid fa-forward-step me-2"></i>Call Next</button>
+            </div>
+          </div>
+
+          <div class="action-caption text-center mx-auto">Use the controls below to manage the active queue and customer attachments.</div>
+
+          <div class="right-controls row g-2 justify-content-center mx-0">
+            <div class="col-12 col-sm-auto px-0">
+              <button id="attachBtn" class="btn-ghost w-100" type="button"><i class="fa-solid fa-paperclip"></i> Attach</button>
+            </div>
+            <div class="col-12 col-sm-auto px-0">
+              <button id="notifyBtn" class="btn-ghost w-100" type="button"><i class="fa-solid fa-bell"></i> Notify</button>
+            </div>
+          </div>
+
+          <div style="text-align:center;margin-top:12px">
+            <button id="viewDetailsBtn" class="btn-ghost" type="button" disabled>View Details</button>
+          </div>
+
+          <form id="attachForm" style="display:none" enctype="multipart/form-data" method="post" action="../backend/queueAttach.php">
+            <input type="file" id="attachmentInput" name="attachments[]" accept=".pdf,image/*" multiple />
+            <input type="hidden" name="queue_id" id="attachQueueId" value="" />
+          </form>
+
+          <div id="attachModal" class="attach-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px)">
+            <div class="attach-modal-card" style="width:92%;max-width:720px;background:#fff;border-radius:18px;padding:20px;box-shadow:0 24px 60px rgba(15,23,42,0.22);border:1px solid rgba(226,232,240,0.9);">
+              <div class="attach-modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div>
+                  <strong class="attach-modal-title">Attachments Preview</strong>
+                  <div class="attach-modal-subtitle">Review files before sending them to the active queue.</div>
+                </div>
+                <button id="attachCloseBtn" class="btn-ghost" type="button">Back</button>
+              </div>
+              <div class="attach-modal-note" style="font-size:13px;color:#666;margin-bottom:8px">
+                Allowed file types: PDF and images. Max size per file: 10 MB.
+              </div>
+              <div id="attachPreviewList" class="attach-preview-list" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;background:#f8fafc"></div>
+              <div class="attach-modal-actions row g-2 justify-content-end mx-0" style="display:flex;justify-content:flex-end;gap:8px">
+                <div class="col-12 col-sm-auto px-0">
+                  <button id="attachAddBtn" class="btn-ghost w-100" type="button">Add file</button>
+                </div>
+                <div class="col-12 col-sm-auto px-0">
+                  <button id="attachSendBtn" class="w-100" type="button">Send</button>
+                </div>
+                <div class="col-12 col-sm-auto px-0">
+                  <button id="attachCancelBtn" class="btn-ghost w-100" type="button">Cancel</button>
+                </div>
+              </div>
+              <div id="attachModalStatus" class="attach-modal-status" style="margin-top:8px;color:#666;font-size:13px"></div>
+            </div>
+          </div>
+
+          <div id="attachStatus" class="small muted" style="margin-top:8px;display:none"></div>
         </div>
       </div>
 
-      <div id="number" class="number">Loading…</div>
-      <div><i id="ongoingText"></i></div>
-
-      <div id="currentServices" class="service-chips"></div>
-
-      <div style="text-align:center;margin-top:6px">
-        <button id="viewDetailsBtn" class="btn-ghost" type="button" disabled>View Details</button>
-      </div>
-
-      <div class="controls">
-        <button id="startProcessing" type="button" disabled>Start Processing</button>
-        <button id="nextQueue" type="button">Call Next</button>
-      </div>
-
-        <div class="right-controls justify-content-center">
-          <button id="attachBtn" class="btn-ghost" type="button"><i class="fa-solid fa-paperclip"></i> Attach</button>
-          <button id="notifyBtn" class="btn-ghost" type="button"><i class="fa-solid fa-bell"></i> Notify</button>
-        </div>
-
-      <form id="attachForm" style="display:none" enctype="multipart/form-data" method="post" action="../backend/queueAttach.php">
-        <input type="file" id="attachmentInput" name="attachments[]" accept=".pdf,image/*" multiple />
-        <input type="hidden" name="queue_id" id="attachQueueId" value="" />
-      </form>
-
-      <div id="attachModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)">
-        <div style="width:92%;max-width:720px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <strong>Attachments Preview</strong>
-            <button id="attachCloseBtn" class="btn-ghost" type="button">Back</button>
-          </div>
-          <div style="font-size:13px;color:#666;margin-bottom:8px">
-            Allowed file types: PDF and images. Max size per file: 10 MB.
-          </div>
-          <div id="attachPreviewList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding:6px;border:1px solid #f0f0f0;border-radius:6px;margin-bottom:12px"></div>
-          <div style="display:flex;justify-content:flex-end;gap:8px">
-            <button id="attachAddBtn" class="btn-ghost" type="button">Add file</button>
-            <button id="attachSendBtn" type="button">Send</button>
-            <button id="attachCancelBtn" class="btn-ghost" type="button">Cancel</button>
-          </div>
-          <div id="attachModalStatus" style="margin-top:8px;color:#666;font-size:13px"></div>
+      <div class="col-12 col-xl-4">
+        <div class="queue-box" aria-label="Queue List">
+          <div class="queue-title"><i class="fa-solid fa-list-ul me-2"></i>Queue List</div>
+          <div class="queue-subtitle">Pending queues assigned to this office window.</div>
+          <div id="queueListContainer"></div>
         </div>
       </div>
-
-      <div id="attachStatus" class="small muted" style="margin-top:8px;display:none"></div>
-
-      <div id="queueDetailsModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)">
-        <div style="width:92%;max-width:820px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <strong>Queue Details</strong>
-            <button id="detailsCloseBtn" class="btn-ghost" type="button">Close</button>
-          </div>
-          <div id="queueDetailsContent" style="font-size:14px;color:#111;max-height:60vh;overflow:auto;padding:6px;border:1px solid #f0f0f0;border-radius:6px;margin-bottom:12px">
-            <!-- populated dynamically -->
-          </div>
-        </div>
-      </div>
-
     </div>
+  </div>
 
-    <div class="queue-box" aria-label="Queue List">
-      <div class="queue-title">Queue List</div>
-      <div id="queueListContainer"></div>
+  <div id="attachModal" class="attach-modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px)">
+    <div class="attach-modal-card" style="width:92%;max-width:720px;background:#fff;border-radius:18px;padding:20px;box-shadow:0 24px 60px rgba(15,23,42,0.22);border:1px solid rgba(226,232,240,0.9);">
+      <div class="attach-modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <strong class="attach-modal-title">Attachments Preview</strong>
+          <div class="attach-modal-subtitle">Review files before sending them to the active queue.</div>
+        </div>
+        <button id="attachCloseBtn" class="btn-ghost" type="button">Back</button>
+      </div>
+      <div class="attach-modal-note" style="font-size:13px;color:#666;margin-bottom:8px">
+        Allowed file types: PDF and images. Max size per file: 10 MB.
+      </div>
+      <div id="attachPreviewList" class="attach-preview-list" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;background:#f8fafc"></div>
+      <div class="attach-modal-actions row g-2 justify-content-end mx-0" style="display:flex;justify-content:flex-end;gap:8px">
+        <div class="col-12 col-sm-auto px-0">
+          <button id="attachAddBtn" class="btn-ghost w-100" type="button">Add file</button>
+        </div>
+        <div class="col-12 col-sm-auto px-0">
+          <button id="attachSendBtn" class="w-100" type="button">Send</button>
+        </div>
+        <div class="col-12 col-sm-auto px-0">
+          <button id="attachCancelBtn" class="btn-ghost w-100" type="button">Cancel</button>
+        </div>
+      </div>
+      <div id="attachModalStatus" class="attach-modal-status" style="margin-top:8px;color:#666;font-size:13px"></div>
     </div>
+  </div>
 
+  <div id="queueDetailsModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)">
+    <div style="width:92%;max-width:820px;background:#fff;border-radius:10px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Queue Details</strong>
+        <button id="detailsCloseBtn" class="btn-ghost" type="button">Close</button>
+      </div>
+      <div id="queueDetailsContent" style="font-size:14px;color:#111;max-height:60vh;overflow:auto;padding:6px;border:1px solid #f0f0f0;border-radius:6px;margin-bottom:12px">
+        <!-- populated dynamically -->
+      </div>
+    </div>
   </div>
 
   <script src="../js/queueSelect.js"></script>

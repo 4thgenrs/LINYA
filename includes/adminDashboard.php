@@ -95,6 +95,11 @@ if (isset($_SESSION['office_id']) && $_SESSION['office_id'] > 0) {
             <i class="fa-solid fa-clipboard-check"></i> Finished Queues
           </button>
         </li>
+        <li>
+          <button data-module="voidQueue" class="adm-btn <?php echo $currentModule === 'voidQueue' ? 'active' : ''; ?>">
+            <i class="fa-solid fa-clipboard-check"></i> Voided Queues
+          </button>
+        </li>
 
         <li class="adm-dropdown">
           <button class="dropdown-toggle" type="button" aria-expanded="false">
