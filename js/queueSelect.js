@@ -257,8 +257,18 @@
         nextBtnNew.type = 'button';
         nextBtnNew.textContent = 'Call Next';
 
-        controlsEl.appendChild(startBtnNew);
-        controlsEl.appendChild(nextBtnNew);
+        const startCol = document.createElement('div');
+        startCol.className = 'col-12 col-sm-auto px-0';
+        startBtnNew.classList.add('w-100');
+        startCol.appendChild(startBtnNew);
+
+        const nextCol = document.createElement('div');
+        nextCol.className = 'col-12 col-sm-auto px-0';
+        nextBtnNew.classList.add('w-100');
+        nextCol.appendChild(nextBtnNew);
+
+        controlsEl.appendChild(startCol);
+        controlsEl.appendChild(nextCol);
 
         startBtnNew.addEventListener('click', () => startProcessing(windowAttr));
         nextBtnNew.addEventListener('click', () => callNext(windowAttr, officeAttr));
@@ -347,9 +357,24 @@
     nextBtn.type = 'button';
     nextBtn.textContent = 'Call Next';
 
-    controls.appendChild(finishBtn);
-    controls.appendChild(voidBtn);
-    controls.appendChild(nextBtn);
+    const finishCol = document.createElement('div');
+    finishCol.className = 'col-12 col-sm-auto px-0';
+    finishBtn.classList.add('w-100');
+    finishCol.appendChild(finishBtn);
+
+    const voidCol = document.createElement('div');
+    voidCol.className = 'col-12 col-sm-auto px-0';
+    voidBtn.classList.add('w-100');
+    voidCol.appendChild(voidBtn);
+
+    const nextCol = document.createElement('div');
+    nextCol.className = 'col-12 col-sm-auto px-0';
+    nextBtn.classList.add('w-100');
+    nextCol.appendChild(nextBtn);
+
+    controls.appendChild(finishCol);
+    controls.appendChild(voidCol);
+    controls.appendChild(nextCol);
 
     finishBtn.addEventListener('click', () => finalizeProcessing(windowNumber, false));
     voidBtn.addEventListener('click', () => finalizeProcessing(windowNumber, true));

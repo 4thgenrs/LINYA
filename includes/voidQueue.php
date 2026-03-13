@@ -15,55 +15,67 @@
   <!-- DATATABLES CSS -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
   <link rel="stylesheet" href="../css/voidQueue.css">
+  <link rel="stylesheet" href="../css/table-unified.css">
 </head>
 
 <body class="py-4">
 
   <main class="container-fluid">
 
-    <div class="mb-2">
-        <h1 class="mb-0"><i class="fa-solid fa-ban me-2"></i>Voided Queues</h1>
-      </div>
+    <div class="card shadow-sm border-0 void-table-card">
+      <section class="void-hero void-topbar">
+        <div class="void-hero-copy void-topbar-copy">
+          <div class="void-hero-badge">
+            <i class="fa-solid fa-ban"></i>
+            Exception Archive
+          </div>
+          <h1 class="mb-0"><i class="fa-solid fa-ban me-2"></i>Voided Queues</h1>
+          <p class="void-hero-subtitle mb-0">Monitor cancelled transactions, review the affected customer record, and inspect processing history from a cleaner archive view.</p>
+          <div class="void-topbar-tablecopy">
+            <span class="void-panel-eyebrow">Archive Table</span>
+            <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Voided Queue List</h5>
+          </div>
+        </div>
 
-    <div class="d-flex align-items-center justify-content-end mb-2 mt-2">
-      <label for="officeFilter" class="me-2 fw-semibold">Office:</label>
-      <select id="officeFilter" class="form-select form-select-sm me-3" style="width:160px;">
-        <option value="0">All</option>
-      </select>
+        <div class="void-hero-side void-topbar-side">
+          <div>
+            <div class="void-status-pill">
+              <span class="void-status-dot"></span>
+              Voided records view
+            </div>
+            <span class="void-status-label">Use the office filter and DataTable search to narrow down archived queue records.</span>
+          </div>
 
-      <button id="refreshBtn" type="button" class="btn btn-sm btn-danger">
-        <i class="fa-solid fa-rotate"></i> Refresh
-      </button>
-    </div>
+          <div class="void-toolbar-controls">
+            <div class="void-filter-group">
+              <label for="officeFilter" class="fw-semibold mb-0">Office</label>
+              <select id="officeFilter" class="form-select form-select-sm">
+                <option value="0">All</option>
+              </select>
+            </div>
 
-    <!-- TABLE CARD -->
-    <div class="card shadow-sm border-0">
-      <div class="card-header text-white" style="background-color:#b71c1c;">
-        <h5 class="mb-0"><i class="fa-solid fa-list me-2"></i>Voided Queue List</h5>
-      </div>
+            <div class="void-action-group">
+              <button id="refreshBtn" type="button" class="btn btn-sm btn-success void-refresh-btn">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div class="card-body">
+      <div class="card-body void-table-body">
         <div class="table-responsive">
           <table id="voidTable" class="table table-hover table-bordered align-middle nowrap w-100">
-            <thead class="table-danger">
+            <thead class="table-success">
               <tr>
+                <th>Original Queue ID</th>
                 <th>Office</th>
-                <th>Window</th>
-                <th>Processed By</th>
-                <th>Created At</th>
-                <th>Voided At</th>
-                <th>Process Start</th>
-                <th>Process Finished</th>
-                <th>Processing Duration</th>
-                <th>Remarks</th>
-                <th>Services</th>
                 <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
                 <th>Student #</th>
                 <th>Course</th>
-                <th>Original Queue ID</th>
-                <th>Record ID</th>
+                <th>Processed By</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -74,6 +86,20 @@
     </div>
 
   </main>
+
+  <div class="modal fade" id="voidDetailsModal" tabindex="-1" aria-labelledby="voidDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header void-modal-header text-white">
+          <h5 class="modal-title" id="voidDetailsModalLabel">
+            <i class="fa-solid fa-circle-info me-2"></i>Voided Queue Details
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="voidDetailsContent"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- JS LIBRARIES -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
