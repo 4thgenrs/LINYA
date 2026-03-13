@@ -97,7 +97,7 @@ if (isset($_SESSION['office_id']) && $_SESSION['office_id'] > 0) {
         </li>
         <li>
           <button data-module="voidQueue" class="adm-btn <?php echo $currentModule === 'voidQueue' ? 'active' : ''; ?>">
-            <i class="fa-solid fa-clipboard-check"></i> Voided Queues
+            <i class="fa-solid fa-ban"></i> Voided Queues
           </button>
         </li>
 
