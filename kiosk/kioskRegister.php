@@ -45,53 +45,6 @@ require_once __DIR__ . '/../config.php';
                     <div id="visitorEmailHint" class="vf-hint" style="display:none;">Please enter a valid email address</div>
                 </label>
 
-                <label class="vf-field">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <input type="checkbox" id="visitorIsStudent" />
-                        <div class="vf-label" style="margin:0">Are you a student?</div>
-                    </div>
-                </label>
-
-                <label class="vf-field" id="visitorStudentNumberField" style="display:none;">
-                    <div class="vf-label">Student Number</div>
-                    <input type="text" id="visitorStudentNumber" placeholder="20001234-S" maxlength="20" disabled />
-                    <div id="visitorStudentNumberHint" class="vf-hint" style="display:none;">Format: 20001234-S (year 2000–2026)</div>
-                </label>
-
-                <label class="vf-field" id="visitorCourseField" style="display:none;">
-                    <div class="vf-label">Course</div>
-                    <select id="visitorCourse" disabled>
-                        <option value="">-- Select Course --</option>
-                        <option>BA COMM</option>
-                        <option>BA POS</option>
-                        <option>BPA</option>
-                        <option>BPA ECGE</option>
-                        <option>BECED</option>
-                        <option>BSA</option>
-                        <option>BSAIS</option>
-                        <option>BSBA FMGT</option>
-                        <option>BSBA HRM</option>
-                        <option>BSBA MKTG</option>
-                        <option>BSCS</option>
-                        <option>BS CRIM</option>
-                        <option>BSEMC</option>
-                        <option>BS ENTREP</option>
-                        <option>BSHM</option>
-                        <option>BSISM</option>
-                        <option>BSIS</option>
-                        <option>BSIT</option>
-                        <option>BS MATH</option>
-                        <option>BSOAD</option>
-                        <option>BS PSY</option>
-                        <option>BSSW</option>
-                        <option>BSTM</option>
-                        <option>BSE ENG</option>
-                        <option>BSE ENG-CHI</option>
-                        <option>BSE SCI</option>
-                        <option>BTLED HE</option>
-                    </select>
-                </label>
-
                 <div class="vf-actions">
                     <button id="visitorProceed" class="primary-btn" type="button" disabled>Proceed to Face Capture</button>
                     <!-- Back Button -->

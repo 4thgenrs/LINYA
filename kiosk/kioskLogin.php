@@ -241,38 +241,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="hidden" name="image" id="imageInput">
             <input type="hidden" name="check_glasses" id="checkGlasses" value="true">
 
-            <div class="buttons-container">
-                <button type="button" onclick="captureImage()" aria-label="Capture face">
-                    <!-- Camera SVG -->
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 5c-1.1 0-2 .9-2 2H7l-2 3v7c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-7l-2-3h-3c0-1.1-.9-2-2-2zM12 17a4 4 0 100-8 4 4 0 000 8z" />
-                    </svg>
-                    Capture Face
-                </button>
+            <div id="statusMessage" role="status" aria-live="polite" style="margin-bottom: 12px;"></div>
 
-                <div class="btn-wrapper disabled" id="loginWrapper">
-                    <button type="button" id="loginBtn" disabled aria-disabled="true" onclick="handleLogin()">
-                        <!-- Lock SVG -->
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 17a2 2 0 110-4 2 2 0 010 4zm6-7h-1V7a5 5 0 00-10 0v3H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2zm-7-3a3 3 0 116 0v3H11V7z" />
-                        </svg>
-                        Login
-                        <!-- Stop SVG hidden by default, shown on hover via wrapper -->
-                        <svg class="stop-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M6 6h12v12H6z" />
-                        </svg>
-                    </button>
-                    <div class="btn-tooltip" role="tooltip">Capture a photo first to enable Login</div>
-                </div>
-
-                <button type="button" onclick="resetCapture()" aria-label="Reset">
-                    <!-- Reset/refresh SVG -->
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 6V4l4 4-4 4V8c-3.31 0-6 2.69-6 6 0 1.31.42 2.52 1.13 3.5l-1.46 1.46C5.16 18.03 4 16.14 4 14c0-4.42 3.58-8 8-8zM18.87 6.5L20.33 5.04C18.84 3.24 15.81 2 12 2 7.58 2 4 5.58 4 10c0 1.86.68 3.57 1.81 4.9L7 13.71C6.44 12.95 6 11.99 6 11c0-3.31 2.69-6 6-6 2.76 0 5.08 1.78 5.87 4.5z" />
-                    </svg>
-                    Reset
-                </button>
-            </div>
         </form>
     </div>
 
@@ -574,14 +544,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             setTimeout(() => {
                                 window.location.href = '../includes/kioskMenu.php';
                             }, 500);
-                        } else if (j && (j.code === 'duplicate_client_pending' || j.status === 'duplicate_client_pending')) {
-                            console.warn('🔐 Duplicate pending queue:', j);
-                            const modal = document.getElementById('welcomeModal');
-                            if (modal) modal.remove();
-                            // Inform user and redirect back to selection
-                            alert(j.message || 'You already have an existing queue. Redirecting to selection.');
-                            window.location.href = '../includes/kioskSelect.php';
-                            return;
                         } else {
                             console.error('🔐 ❌ Login failed:', j && j.message ? j.message : 'unknown');
                             alert('Login failed: ' + (j && j.message ? j.message : (raw || 'unknown')));

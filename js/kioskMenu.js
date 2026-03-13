@@ -87,210 +87,6 @@ function changePage(type, newPage) {
     }
 }
 
-// Resolve and navigate to kioskSelect robustly (works when this script is included from different folders)
-function forceNavigate(url) {
-    console.log('[kioskMenu] forceNavigate ->', url);
-    // First attempt: create and submit a hidden form (often succeeds where location assignments are blocked)
-    try {
-        const f = document.createElement('form');
-        f.action = url;
-        f.method = 'GET';
-        f.style.display = 'none';
-        document.body.appendChild(f);
-        f.submit();
-        return;
-    } catch (e) {
-        console.warn('[kioskMenu] form submit fallback failed', e);
-    }
-
-    try { window.location.assign(url); } catch (e) { console.warn('[kioskMenu] assign failed', e); }
-
-    // retries using different methods — some environments may block one of these
-    setTimeout(() => {
-        try { window.location.href = url; } catch (e) { console.warn('[kioskMenu] href assignment failed', e); }
-    }, 150);
-
-    setTimeout(() => {
-        try {
-            const a = document.createElement('a');
-            a.href = url;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => a.remove(), 50);
-        } catch (e) { console.warn('[kioskMenu] anchor click failed', e); }
-    }, 300);
-
-    setTimeout(() => {
-        try { top.location.href = url; } catch (e) { console.warn('[kioskMenu] top.location failed', e); }
-    }, 450);
-
-    setTimeout(() => {
-        try { window.location.replace(url); } catch (e) { console.warn('[kioskMenu] replace failed', e); }
-    }, 600);
-}
-
-function redirectToKioskSelect() {
-    console.log('[kioskMenu] redirectToKioskSelect() called');
-    try {
-        const anchor = document.querySelector('a[href*="kioskSelect.php"]');
-        if (anchor && anchor.href) {
-            console.log('[kioskMenu] redirect via anchor.href ->', anchor.href);
-            forceNavigate(anchor.href);
-            return;
-        }
-    } catch (e) {
-        console.warn('[kioskMenu] redirect anchor check failed', e);
-    }
-
-    // Compute site root (first path segment) and build includes path
-    try {
-        const parts = window.location.pathname.split('/').filter(Boolean);
-        let root = 'LINYA';
-        if (parts.length > 0) root = parts[0];
-        const origin = window.location.origin || '';
-        const target = origin + '/' + root + '/includes/kioskSelect.php';
-        console.log('[kioskMenu] redirect via computed path ->', target);
-        forceNavigate(target);
-        return;
-    } catch (e) {
-        console.warn('[kioskMenu] computed redirect failed', e);
-    }
-
-    // final fallback
-    forceNavigate('kioskSelect.php');
-}
-
-// Simple built-in duplicate modal fallback (works when SweetAlert unavailable)
-function showDuplicateModal(message) {
-    try {
-        if (document.getElementById('customDuplicateModal')) return;
-
-        const overlay = document.createElement('div');
-        overlay.id = 'customDuplicateModal';
-        overlay.style.position = 'fixed';
-        overlay.style.left = '0';
-        overlay.style.top = '0';
-        overlay.style.right = '0';
-        overlay.style.bottom = '0';
-        overlay.style.background = 'rgba(0,0,0,0.45)';
-        overlay.style.display = 'flex';
-        overlay.style.alignItems = 'center';
-        overlay.style.justifyContent = 'center';
-        overlay.style.zIndex = 20000;
-
-        const card = document.createElement('div');
-        card.style.background = '#fff';
-        card.style.borderRadius = '8px';
-        card.style.padding = '20px';
-        card.style.maxWidth = '520px';
-        card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
-        card.style.fontFamily = 'Segoe UI, Roboto, Arial, sans-serif';
-
-        const title = document.createElement('h3');
-        title.textContent = 'Unable to join queue';
-        title.style.margin = '0 0 8px 0';
-
-        const p = document.createElement('p');
-        p.textContent = message || 'A duplicate queue exists.';
-        p.style.margin = '0 0 18px 0';
-        p.style.color = '#333';
-
-        const btn = document.createElement('button');
-        btn.textContent = 'OK';
-        btn.style.background = '#0b74de';
-        btn.style.color = '#fff';
-        btn.style.border = 'none';
-        btn.style.padding = '10px 18px';
-        btn.style.borderRadius = '6px';
-        btn.style.cursor = 'pointer';
-
-        btn.addEventListener('click', function() {
-            console.log('[kioskMenu] duplicate-ok clicked');
-            try { document.body.removeChild(overlay); } catch (e) { console.warn('[kioskMenu] remove overlay failed', e); }
-            try {
-                redirectToKioskSelect();
-            } catch (e) {
-                console.warn('[kioskMenu] redirectToKioskSelect failed', e);
-                try { window.location.href = '/LINYA/includes/kioskSelect.php'; } catch (e2) { console.warn('[kioskMenu] href assign failed', e2); try { window.location.href = 'kioskSelect.php'; } catch (e3) { console.error('[kioskMenu] final redirect failed', e3); } }
-            }
-            // final fallback: try again shortly after (some environments need a short delay)
-            setTimeout(() => {
-                try { window.location.href = '/LINYA/includes/kioskSelect.php'; } catch (e) {}
-            }, 200);
-        });
-
-        card.appendChild(title);
-        card.appendChild(p);
-        card.appendChild(btn);
-        overlay.appendChild(card);
-        document.body.appendChild(overlay);
-    } catch (e) {
-        console.error('[kioskMenu] showDuplicateModal failed', e);
-        try { window.location.href = '/LINYA/includes/kioskSelect.php'; } catch (e2) { window.location.href = 'kioskSelect.php'; }
-    }
-}
-
-// Generic modal used for non-duplicate errors. `onOk` is optional.
-function showGenericModal(message, onOk) {
-    try {
-        if (document.getElementById('customGenericModal')) return;
-
-        const overlay = document.createElement('div');
-        overlay.id = 'customGenericModal';
-        overlay.style.position = 'fixed';
-        overlay.style.left = '0';
-        overlay.style.top = '0';
-        overlay.style.right = '0';
-        overlay.style.bottom = '0';
-        overlay.style.background = 'rgba(0,0,0,0.45)';
-        overlay.style.display = 'flex';
-        overlay.style.alignItems = 'center';
-        overlay.style.justifyContent = 'center';
-        overlay.style.zIndex = 20000;
-
-        const card = document.createElement('div');
-        card.style.background = '#fff';
-        card.style.borderRadius = '8px';
-        card.style.padding = '20px';
-        card.style.maxWidth = '520px';
-        card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
-        card.style.fontFamily = 'Segoe UI, Roboto, Arial, sans-serif';
-
-        const title = document.createElement('h3');
-        title.textContent = 'Error';
-        title.style.margin = '0 0 8px 0';
-
-        const p = document.createElement('p');
-        p.textContent = message || 'An error occurred.';
-        p.style.margin = '0 0 18px 0';
-        p.style.color = '#333';
-
-        const btn = document.createElement('button');
-        btn.textContent = 'OK';
-        btn.style.background = '#0b74de';
-        btn.style.color = '#fff';
-        btn.style.border = 'none';
-        btn.style.padding = '10px 18px';
-        btn.style.borderRadius = '6px';
-        btn.style.cursor = 'pointer';
-
-        btn.addEventListener('click', function() {
-            try { document.body.removeChild(overlay); } catch (e) {}
-            try { if (typeof onOk === 'function') onOk(); } catch (e) {}
-        });
-
-        card.appendChild(title);
-        card.appendChild(p);
-        card.appendChild(btn);
-        overlay.appendChild(card);
-        document.body.appendChild(overlay);
-    } catch (e) {
-        console.error('[kioskMenu] showGenericModal failed', e);
-        try { if (typeof onOk === 'function') onOk(); } catch (e2) {}
-    }
-}
-
 function renderOfficePage() {
     const grid = document.getElementById('officeGrid');
     if (!grid) return;
@@ -370,12 +166,6 @@ function isValidEmail(e) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
-function isValidStudentNumber(s) {
-    if (!s) return false;
-    const re = /^(?:2000|2001|2002|2003|2004|2005|2006|2007|2008|2009|2010|2011|2012|2013|2014|2015|2016|2017|2018|2019|2020|2021|2022|2023|2024|2025|2026)\d{4}-[A-Z]$/;
-    return re.test((s||'').trim().toUpperCase());
-}
-
 function visitorSyncState() {
     const nameEl = document.getElementById('visitorName');
     const phoneEl = document.getElementById('visitorPhone');
@@ -396,19 +186,7 @@ function visitorSyncState() {
     const emailHint = document.getElementById('visitorEmailHint');
     if (emailHint) emailHint.style.display = email === '' ? 'none' : (emailOk ? 'none' : 'block');
 
-    // student-specific
-    const isStudentEl = document.getElementById('visitorIsStudent');
-    const studentNumberEl = document.getElementById('visitorStudentNumber');
-    const courseEl = document.getElementById('visitorCourse');
-    const isStudent = isStudentEl ? isStudentEl.checked : false;
-    const studentNum = studentNumberEl ? studentNumberEl.value.trim() : '';
-    const courseVal = courseEl ? courseEl.value : '';
-    const studentOk = !isStudent || (isStudent && isValidStudentNumber(studentNum) && courseVal);
-
-    const studentNumberHint = document.getElementById('visitorStudentNumberHint');
-    if (studentNumberHint) studentNumberHint.style.display = (isStudent && studentNum !== '') ? (isValidStudentNumber(studentNum) ? 'none' : 'block') : 'none';
-
-    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk && studentOk);
+    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk);
 }
 
 function openVisitorConfirm() {
@@ -434,11 +212,6 @@ function acceptVisitorAndEnter() {
     window.visitorInfo.name = document.getElementById('visitorName').value.trim();
     window.visitorInfo.phone = document.getElementById('visitorPhone').value.trim();
     window.visitorInfo.email = document.getElementById('visitorEmail').value.trim();
-    // student details (optional)
-    try {
-        window.visitorInfo.student_number = document.getElementById('visitorStudentNumber') ? document.getElementById('visitorStudentNumber').value.trim() : '';
-        window.visitorInfo.course = document.getElementById('visitorCourse') ? document.getElementById('visitorCourse').value : '';
-    } catch (e) { window.visitorInfo.student_number = ''; window.visitorInfo.course = ''; }
 
     closeVisitorConfirm();
 
@@ -684,43 +457,23 @@ function postQueue(services){
         form.append('customer_name', window.visitorInfo.name || '');
         form.append('customer_phone', window.visitorInfo.phone || '');
         form.append('customer_email', window.visitorInfo.email || '');
-        if (window.visitorInfo.client_id && parseInt(window.visitorInfo.client_id) > 0) {
-            form.append('client_id', window.visitorInfo.client_id);
-        }
-        // optional student info
-        if (window.visitorInfo.student_number) form.append('student_number', window.visitorInfo.student_number);
-        if (window.visitorInfo.course) form.append('course', window.visitorInfo.course);
     }
 
-    (async function(){
-        try {
-            const resp = await fetch('../backend/queueInsert.php', { method: 'POST', body: form });
-            const text = await resp.text();
-            let json = null;
-            try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
-
-            const code = json && json.error_code ? json.error_code : (json && json.error ? json.error : null);
-            const message = (json && (json.error || json.message)) ? (json.error || json.message) : (text && text.trim() ? text.trim() : `HTTP ${resp.status}`);
-            const isDuplicate = code === 'duplicate_client_pending' || code === 'duplicate_guest_pending' || /duplicate|already have|already an existing|already exists|already have an/i.test((message||'').toLowerCase());
-
-            if (resp.ok && json && json.success) {
+    fetch('../backend/queueInsert.php', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(json => {
+            if (json && json.success) {
                 window.location.href = `../includes/receipt.php?queue_id=${encodeURIComponent(json.queue_id)}`;
-                return;
-            }
-
-            // show friendly modal and redirect on duplicate (use built-in modal only)
-            if (isDuplicate) {
-                showDuplicateModal(message);
             } else {
-                // non-duplicate error: show generic modal and re-enable button when OK pressed
-                showGenericModal(message, () => { if (btn) btn.disabled = false; });
+                alert('Error: ' + (json && json.error ? json.error : 'unknown'));
+                if (btn) btn.disabled = false;
             }
-        } catch (err) {
-            console.error('[kioskMenu] postQueue fetch error', err);
-            const errMsg = 'A server error occurred. Please try again.';
-            showGenericModal(errMsg, () => { if (btn) btn.disabled = false; });
-        }
-    })();
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Server error');
+            if (btn) btn.disabled = false;
+        });
 }
 
 function goBack(){
@@ -770,11 +523,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.SKIP_VISITOR_FORM === true) {
         try {
             if (window.__CLIENT_SESSION) {
-                window.visitorInfo = {
-                    client_id: window.__CLIENT_SESSION.client_id || 0,
-                    name: window.__CLIENT_SESSION.name || '',
-                    phone: window.__CLIENT_SESSION.phone || '',
-                    email: window.__CLIENT_SESSION.email || ''
+                window.visitorInfo = { 
+                    name: window.__CLIENT_SESSION.name || '', 
+                    phone: window.__CLIENT_SESSION.phone || '', 
+                    email: window.__CLIENT_SESSION.email || '' 
                 };
             }
             
@@ -840,39 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', visitorSyncState, {passive:true});
         });
-
-        // Student fields: checkbox, student number, course
-        const isStudentCheckbox = document.getElementById('visitorIsStudent');
-        const studentNumberField = document.getElementById('visitorStudentNumber');
-        const studentNumberWrapper = document.getElementById('visitorStudentNumberField');
-        const studentNumberHint = document.getElementById('visitorStudentNumberHint');
-        const courseSelect = document.getElementById('visitorCourse');
-        const courseWrapper = document.getElementById('visitorCourseField');
-
-        if (isStudentCheckbox) {
-            isStudentCheckbox.addEventListener('change', function() {
-                const checked = !!this.checked;
-                console.log('visitorIsStudent change ->', checked);
-                if (studentNumberWrapper) studentNumberWrapper.style.display = checked ? '' : 'none';
-                if (courseWrapper) courseWrapper.style.display = checked ? '' : 'none';
-                if (studentNumberField) studentNumberField.disabled = !checked;
-                if (courseSelect) courseSelect.disabled = !checked;
-                visitorSyncState();
-            }, {passive:true});
-        }
-
-        if (studentNumberField) {
-            studentNumberField.addEventListener('input', function() {
-                this.value = this.value.toUpperCase().replace(/[^0-9A-Z\-]/g, '');
-                const ok = isValidStudentNumber(this.value || '');
-                if (studentNumberHint) studentNumberHint.style.display = this.value === '' ? 'none' : (ok ? 'none' : 'block');
-                visitorSyncState();
-            }, {passive:true});
-        }
-
-        if (courseSelect) {
-            courseSelect.addEventListener('change', visitorSyncState, {passive:true});
-        }
 
         const proceedBtn = document.getElementById('visitorProceed');
         if (proceedBtn) proceedBtn.addEventListener('click', (e) => {
