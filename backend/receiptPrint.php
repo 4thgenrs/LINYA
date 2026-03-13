@@ -1,6 +1,6 @@
 <?php
 // Generates a simple receipt PDF using FPDF and a QR image (Google Chart / QRServer fallback).
-// QR CONTENT (FIXED): Base64URL(JSON payload) — same format as your JS code.
+// QR content points to a public queue details page for the issued receipt.
 // Requires FPDF library available via include path. If you don't have it, install: composer require setasign/fpdf
 // or place fpdf.php in vendor or include folder and update the require path below.
 
@@ -61,13 +61,21 @@ while ($row = $r2->fetch_assoc()) {
 }
 $qs->close();
 
-/**
- * Base64URL encode UTF-8 string (matches JS toBase64Url)
- * JS behavior: btoa(binary UTF-8) then replace +/ and strip =
- */
-function base64url_encode_utf8(string $str): string {
-    $b64 = base64_encode($str);                 // base64 of UTF-8 bytes
-    return rtrim(strtr($b64, '+/', '-_'), '='); // base64url (no padding)
+function build_queue_details_url(int $queueId): string {
+    $httpsOn = !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+    $isHttps = $httpsOn || (isset($_SERVER['SERVER_PORT']) && intval($_SERVER['SERVER_PORT']) === 443);
+    $scheme = $isHttps ? 'https' : 'http';
+    $host = isset($_SERVER['HTTP_HOST']) ? trim((string)$_SERVER['HTTP_HOST']) : '';
+    $scriptDir = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])) : '';
+    $scriptDir = rtrim($scriptDir, '/');
+    $publicRoot = preg_replace('#/backend$#', '', $scriptDir);
+    $path = ($publicRoot !== '' ? $publicRoot : '') . '/queueDetails.php?queue_id=' . rawurlencode((string)$queueId);
+
+    if ($host === '') {
+        return $path;
+    }
+
+    return $scheme . '://' . $host . $path;
 }
 
 /**
@@ -104,36 +112,21 @@ function download_qr_to_temp(string $url) {
 }
 
 // --------------------------------------------------
-// ✅ FIXED QR: BASE64URL(JSON) FOR MOBILE APP
-// Same as your JS payload + base64url encoding
+// QR points to the receipt queue details page.
 // --------------------------------------------------
 $tmp = false;
 
 if ($face_logged) {
-    $payload = [
-        'queue_id' => (int)$queue['queue_id'],
-        'queue_code' => $queue['queue_code'],
-        'office_id' => (int)$queue['office_id'],
-        'office_description' => $queue['office_description'],
-        'created_at' => $queue['created_at'],
-        'customer_name' => (!empty($queue['customer_name']) && trim($queue['customer_name']) !== '') ? $queue['customer_name'] : null,
-        'customer_phone' => (!empty($queue['customer_phone']) && trim($queue['customer_phone']) !== '') ? $queue['customer_phone'] : null,
-        'customer_email' => (!empty($queue['customer_email']) && trim($queue['customer_email']) !== '') ? $queue['customer_email'] : null,
-    ];
+    $detailsUrl = build_queue_details_url((int)$queue['queue_id']);
 
-    $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if ($payloadJson !== false) {
-        $payloadB64Url = base64url_encode_utf8($payloadJson);
+    // Primary QR provider (Google Chart)
+    $googleQr = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($detailsUrl) . "&chld=L|1";
+    $tmp = download_qr_to_temp($googleQr);
 
-        // Primary QR provider (Google Chart)
-        $googleQr = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($payloadB64Url) . "&chld=L|1";
-        $tmp = download_qr_to_temp($googleQr);
-
-        // Fallback provider (qrserver)
-        if (!$tmp) {
-            $qrServer = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($payloadB64Url);
-            $tmp = download_qr_to_temp($qrServer);
-        }
+    // Fallback provider (qrserver)
+    if (!$tmp) {
+        $qrServer = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($detailsUrl);
+        $tmp = download_qr_to_temp($qrServer);
     }
 }
 
