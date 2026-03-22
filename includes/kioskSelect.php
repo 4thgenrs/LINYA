@@ -9,6 +9,8 @@
     <title>LINYA - Kiosk Selection</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/kioskSelect.css">
+    <link rel="icon" href="../resources/linya_logo.png" type="image/png">
+
 </head>
 <body>
     <div class="container">
@@ -47,7 +49,7 @@
             </a>
         </div>
 
-        <!-- Need Support Section -->
+        <!-- Support Section -->
         <div class="support-section">
             <p class="support-text">
                 Need support? Please contact <a href="mailto:support@linya.com" class="support-link">support@linya.com</a>

@@ -11,12 +11,36 @@ function showKioskLoginInstructions(href) {
     const modalHTML = `
       <div id="kioskLoginInstructionsModal" class="kiosk-instructions-modal">
         <div class="kiosk-instructions-content">
-          <h2>PLEASE LOOK DIRECTLY AT THE CAMERA</h2>
-          <ul>
-            <li>ENSURE GOOD LIGHTING</li>
-            <li>REMOVE SUNGLASSES OR HATS</li>
-            <li>KEEP A NEUTRAL EXPRESSION</li>
-          </ul>
+          <div class="camera-icon-wrapper">
+            <i class="fas fa-camera"></i>
+          </div>
+          <h2>Please look directly at the camera</h2>
+          <p class="subheading">Follow these tips for best results</p>
+          
+          <div class="instruction-item">
+            <i class="fas fa-sun instruction-icon"></i>
+            <div class="instruction-text">
+              <span class="main-text">Ensure good lighting</span>
+              <span class="sub-text">Face a light source, avoid backlight</span>
+            </div>
+          </div>
+          
+          <div class="instruction-item">
+            <i class="fas fa-glasses instruction-icon"></i>
+            <div class="instruction-text">
+              <span class="main-text">Remove sunglasses or hats</span>
+              <span class="sub-text">Keep your face fully visible</span>
+            </div>
+          </div>
+          
+          <div class="instruction-item">
+            <i class="fas fa-face-smile instruction-icon"></i>
+            <div class="instruction-text">
+              <span class="main-text">Keep a neutral expression</span>
+              <span class="sub-text">Look straight at the camera</span>
+            </div>
+          </div>
+          
           <div class="kiosk-instructions-actions">
             <button id="kioskInstructionsCancel" class="kiosk-instructions-btn cancel">Cancel</button>
             <button id="kioskInstructionsOk" class="kiosk-instructions-btn ok">Continue</button>

@@ -67,42 +67,29 @@ body::after {
 }
 
 @keyframes gradient {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-/* Animated background elements - HIDDEN */
-.background-elements {
-    display: none;
-}
+.background-elements { display: none; }
 
-/* MAIN CONTAINER - KEPT ORIGINAL SIZE */
+/* ========== MAIN CONTAINER ========== */
 .register-container {
     width: 100%;
     max-width: 500px;
     margin: 0 auto;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.877), rgba(255, 255, 255, 0.778));
+    background: linear-gradient(180deg, rgba(255,255,255,0.877), rgba(255,255,255,0.778));
     border-radius: 18px;
-    border: 5px solid rgb(50, 154, 45);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    border: 5px solid rgb(50,154,45);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
     padding: 70px;
     overflow: hidden;
     position: relative;
     z-index: 1;
 }
 
-
-
-/* headings - UPDATED WITH NEW GRADIENT STYLE */
+/* ========== HEADINGS ========== */
 .title {
     margin-top: -30px;
     font-size: 36px;
@@ -120,10 +107,7 @@ body::after {
     text-rendering: optimizeLegibility;
 }
 
-/* helper text - UPDATED */
-.muted {
-    color: #5a6268;
-}
+.muted { color: #5a6268; }
 
 .small {
     text-align: center;
@@ -176,7 +160,7 @@ body::after {
 .vf-field input:focus {
     outline: none;
     border-color: #0f62fe;
-    box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.2);
+    box-shadow: 0 0 0 2px rgba(15,98,254,0.2);
 }
 
 .vf-field input::placeholder {
@@ -190,7 +174,6 @@ body::after {
     color: #ff0000;
 }
 
-/* Visitor form actions - UPDATED WITH NEW BUTTON COLORS */
 .visitor-screen .vf-actions {
     display: flex;
     justify-content: center;
@@ -219,7 +202,7 @@ body::after {
 .visitor-screen .primary-btn:hover {
     background: #20851e;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 200, 100, 0.4);
+    box-shadow: 0 6px 20px rgba(0,200,100,0.4);
 }
 
 .visitor-screen .primary-btn:disabled {
@@ -229,17 +212,15 @@ body::after {
     box-shadow: none;
 }
 
-/* ========== MODAL STYLES - UPDATED TO MATCH kioskMenu.css ========== */
+/* ========== MODAL STYLES ========== */
 .vf-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(11, 18, 48, 0.6);
+    background: rgba(11,18,48,0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 9999;
@@ -248,18 +229,18 @@ body::after {
 }
 
 .vf-modal-card {
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255,255,255,0.98);
     padding: 32px;
-    margin-bottom: 20px;  /* Add this */
+    margin-bottom: 20px;
     margin-top: 10px;
     border-radius: 18px;
-    border: 5px solid rgb(50, 154, 45);
+    border: 5px solid rgb(50,154,45);
     width: 90%;
     max-width: 420px;
     height: 95%;
-    box-shadow: 0 25px 50px rgba(11, 18, 48, 0.4);
+    box-shadow: 0 25px 50px rgba(11,18,48,0.4);
     text-align: center;
-    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: relative;
@@ -300,7 +281,7 @@ body::after {
 .vf-confirm-row {
     margin: 16px 0;
     padding: 12px 16px;
-    background: rgba(42, 218, 141, 0.08);
+    background: rgba(42,218,141,0.08);
     border-radius: 10px;
     border-left: 4px solid #2ada8d;
     text-align: left;
@@ -308,33 +289,11 @@ body::after {
     font-family: sans-serif;
 }
 
-.vf-confirm-row:hover {
-    background: rgba(42, 218, 141, 0.12);
-    transform: translateX(4px);
-}
+.vf-confirm-row:hover { background: rgba(42,218,141,0.12); transform: translateX(4px); }
+.vf-confirm-row strong { color: #0b1230; font-weight: 600; display: block; margin-bottom: 4px; font-size: 14px; }
+.vf-confirm-row span   { color: #0b1230; font-weight: 500; display: block; font-size: 16px; }
+.vf-confirm-row span:empty::before { content: "Not provided"; color: var(--muted); font-style: italic; }
 
-.vf-confirm-row strong {
-    color: #0b1230;
-    font-weight: 600;
-    display: block;
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-
-.vf-confirm-row span {
-    color: #0b1230;
-    font-weight: 500;
-    display: block;
-    font-size: 16px;
-}
-
-.vf-confirm-row span:empty::before {
-    content: "Not provided";
-    color: var(--muted);
-    font-style: italic;
-}
-
-/* BUTTON CONTAINER FOR MODAL */
 .vf-actions {
     display: flex;
     align-items: center;
@@ -343,7 +302,7 @@ body::after {
     flex-direction: column;
 }
 
-/* STANDARD BUTTON STYLES - APPLIED TO ALL BUTTONS */
+/* ========== BUTTONS ========== */
 .ghost-btn,
 .cancel-btn,
 .confirm-btn,
@@ -368,59 +327,40 @@ body::after {
     -webkit-background-clip: border-box !important;
 }
 
-/* Remove underline specifically for back buttons */
-.back-btn,
-a.back-btn,
-button.back-btn {
+.back-btn, a.back-btn, button.back-btn {
     text-decoration: none !important;
     background-clip: border-box !important;
     -webkit-background-clip: border-box !important;
 }
 
-.back-btn:hover,
-.back-btn:focus,
-.back-btn:active,
-a.back-btn:hover,
-a.back-btn:focus,
-a.back-btn:active {
+.back-btn:hover, .back-btn:focus, .back-btn:active,
+a.back-btn:hover, a.back-btn:focus, a.back-btn:active {
     text-decoration: none !important;
 }
 
-/* CANCEL/BACK BUTTON STYLES - RED GRADIENT */
-.ghost-btn,
-.cancel-btn,
-.back-btn {
+/* Red — cancel/back/ghost */
+.ghost-btn, .cancel-btn, .back-btn {
     background: linear-gradient(90deg, #ef4444, #dc2626);
     color: white;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 15px rgba(239,68,68,0.3);
 }
-
-.ghost-btn:hover,
-.cancel-btn:hover,
-.back-btn:hover {
+.ghost-btn:hover, .cancel-btn:hover, .back-btn:hover {
     background: linear-gradient(90deg, #dc2626, #b91c1c);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 6px 20px rgba(239,68,68,0.4);
 }
 
-/* CONFIRM BUTTON STYLES - GREEN GRADIENT */
+/* Green — confirm */
 .confirm-btn {
     background: linear-gradient(135deg, #098525, #2ada8d);
     color: white;
     margin-bottom: -10px;
-    box-shadow: 0 4px 15px rgba(9, 133, 37, 0.3);
+    box-shadow: 0 4px 15px rgba(9,133,37,0.3);
 }
+.confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(9,133,37,0.4); }
 
-.confirm-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(9, 133, 37, 0.4);
-}
-
-/* CAMERA SCREEN STYLES */
-.camera-screen {
-    display: none;
-    padding: 0;
-}
+/* ========== CAMERA SCREEN ========== */
+.camera-screen { display: none; padding: 0; }
 
 .camera-container {
     position: relative;
@@ -433,17 +373,16 @@ a.back-btn:active {
     overflow: hidden;
     backdrop-filter: blur(600px) !important;
     -webkit-backdrop-filter: blur(600px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.3);
     isolation: isolate;
 }
 
-#video,
-#canvas {
+#video, #canvas {
     width: 100%;
     height: 300px;
     display: block;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255,255,255,0.3);
     border-radius: 10px;
     object-fit: cover;
     z-index: 2;
@@ -451,29 +390,21 @@ a.back-btn:active {
 
 #faceOutline {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     width: 200px;
     height: 280px;
     border: 2px dashed limegreen;
     border-radius: 50%;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
     pointer-events: none;
     z-index: 3;
     animation: pulseDashed 2s ease-in-out infinite;
 }
 
 @keyframes pulseDashed {
-    0%,
-    100% {
-        border-color: limegreen;
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-    }
-    50% {
-        border-color: #a8ff60;
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-    }
+    0%,100% { border-color: limegreen;  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+    50%      { border-color: #a8ff60;   box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); }
 }
 
 .instruction-panel {
@@ -485,19 +416,8 @@ a.back-btn:active {
     border-top-right-radius: 20px;
 }
 
-
-
-.instruction-panel h3 {
-    margin: 0 0 4px 0;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.instruction-panel p {
-    margin: 0;
-    font-size: 12px;
-    opacity: 0.9;
-}
+.instruction-panel h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 600; }
+.instruction-panel p  { margin: 0; font-size: 12px; opacity: 0.9; }
 
 .capture-guide {
     background: #f8f9fa;
@@ -506,27 +426,14 @@ a.back-btn:active {
     margin-bottom: 16px;
 }
 
-.capture-guide h4 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    color: #0b1230;
-}
+.capture-guide h4 { margin: 0 0 8px 0; font-size: 14px; color: #0b1230; }
+.capture-guide p  { margin: 0; font-size: 13px; color: #7c8593; }
 
-.capture-guide p {
-    margin: 0;
-    font-size: 13px;
-    color: #7c8593;
-}
-
-.small-muted {
-    font-size: 12px;
-    color: #7c8593;
-    margin-top: 8px;
-}
+.small-muted { font-size: 12px; color: #7c8593; margin-top: 8px; }
 
 .form-container {
     text-align: center;
-    display: flex; 
+    display: flex;
     flex-direction: column;
     align-items: center;
     gap: 5px;
@@ -553,165 +460,225 @@ a.back-btn:active {
 #captureBtn:hover {
     background: #20851e;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 98, 254, 0.3);
+    box-shadow: 0 4px 12px rgba(15,98,254,0.3);
 }
 
-#progress {
-    text-align: center;
-    font-size: 14px;
-    color: #0b1230;
-}
+#progress     { text-align: center; font-size: 14px; color: #0b1230; }
+#statusMessage { text-align: center; font-size: 13px; border-radius: 4px; }
 
-#statusMessage {
-    text-align: center;
-    font-size: 13px;
-    border-radius: 4px;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Responsive adjustments */
+/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
-    body::before {
-        background-size: 200px 200px;
-        opacity: 0.1;
-        filter: brightness(0) invert(1) drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
-    }
-
-    .register-container {
-        margin-top: 40px;
-        padding: 24px;
-        max-width: 400px;
-    }
-
-    .title {
-        font-size: 24px;
-    }
-
-    .small {
-        font-size: 13px;
-    }
-
-    .vf-field {
-        margin: 12px 0;
-    }
-
-    .vf-label {
-        font-size: 13px;
-    }
-
-    .vf-field input {
-        padding: 10px 12px;
-        font-size: 15px;
-    }
-
-    .visitor-screen .primary-btn {
-        font-size: 15px;
-        padding: 12px 24px;
-    }
-
-    .ghost-btn,
-    .cancel-btn,
-    .confirm-btn,
-    .back-btn,
-    #captureBtn {
-        padding: 12px 24px;
-        font-size: 15px;
-        min-width: 240px;
-        max-width: 240px;
-    }
-
-    .vf-modal {
-        padding: 15px;
-    }
-    
-    .vf-modal-card {
-        padding: 30px 20px;
-        width: 95%;
-        max-width: 95%;
-    }
+    body::before { background-size: 200px 200px; opacity: 0.1; filter: brightness(0) invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.2)); }
+    .register-container { margin-top: 40px; padding: 24px; max-width: 400px; }
+    .title { font-size: 24px; }
+    .small { font-size: 13px; }
+    .vf-field { margin: 12px 0; }
+    .vf-label { font-size: 13px; }
+    .vf-field input { padding: 10px 12px; font-size: 15px; }
+    .visitor-screen .primary-btn { font-size: 15px; padding: 12px 24px; }
+    .ghost-btn, .cancel-btn, .confirm-btn, .back-btn, #captureBtn { padding: 12px 24px; font-size: 15px; min-width: 240px; max-width: 240px; }
+    .vf-modal { padding: 15px; }
+    .vf-modal-card { padding: 30px 20px; width: 95%; max-width: 95%; }
 }
-
-
 
 @media (max-width: 520px) {
-    body::before {
-        background-size: 150px 150px;
-        opacity: 0.08;
-        filter: brightness(0) invert(1) drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.15));
-    }
+    body::before { background-size: 150px 150px; opacity: 0.08; filter: brightness(0) invert(1) drop-shadow(0 0 0.5px rgba(255,255,255,0.15)); }
+    body { padding: 16px; }
+    .register-container { margin-top: 30px; padding: 20px; max-width: 100%; }
+    .title { font-size: 22px; }
+    .vf-modal { padding: 10px; }
+    .vf-modal-card { padding: 20px 16px; width: calc(100% - 20px); margin: 16px; }
+    .vf-modal-card::before { font-size: 48px; }
+    .vf-modal-card h2 { font-size: 20px; }
+    .vf-confirm-row { padding: 10px 12px; margin: 12px 0; }
+    .vf-confirm-row strong { font-size: 13px; }
+    .vf-confirm-row span   { font-size: 14px; }
+    .ghost-btn, .cancel-btn, .confirm-btn, .back-btn, #captureBtn { width: 100%; min-width: auto; max-width: 100%; padding: 12px 20px; }
+}
 
-    body {
-        padding: 16px;
-    }
 
-    .register-container {
-        margin-top: 30px;
-        padding: 20px;
-        max-width: 100%;
-    }
+/* ================================================================
+   FLOATING KEYBOARD — White & Green Theme + Watermark Logo
+   (replaces floating-keyboard.css — no external file needed)
+   ================================================================ */
 
-    .title {
-        font-size: 22px;
-    }
+/* ── Container ── */
+.floating-keyboard-container {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f0faf4 100%);
+    border-top: 3px solid #2ada8d;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 10px 22px;
+    box-shadow: 0 -6px 32px rgba(9,133,37,0.18), 0 -2px 8px rgba(9,133,37,0.08);
+    z-index: 99999;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    overflow: hidden;
+}
 
-    .vf-modal {
-        padding: 10px;
-    }
-    
-    .vf-modal-card {
-        padding: 20px 16px;
-        width: calc(100% - 20px);
-        margin: 16px;
-    }
-    
-    .vf-modal-card::before {
-        font-size: 48px;
-    }
-    
-    .vf-modal-card h2 {
-        font-size: 20px;
-    }
-    
-    .vf-confirm-row {
-        padding: 10px 12px;
-        margin: 12px 0;
-    }
-    
-    .vf-confirm-row strong {
-        font-size: 13px;
-    }
-    
-    .vf-confirm-row span {
-        font-size: 14px;
-    }
-    
-    .ghost-btn,
-    .cancel-btn,
-    .confirm-btn,
-    .back-btn,
-    #captureBtn {
-        width: 100%;
-        min-width: auto;
-        max-width: 100%;
-        padding: 12px 20px;
-    }
+.floating-keyboard-container.active { transform: translateY(0); }
+
+/* Drag pill */
+.floating-keyboard-container::before {
+    content: '';
+    display: block;
+    width: 44px; height: 5px;
+    background: linear-gradient(90deg, #098525, #2ada8d);
+    border-radius: 3px;
+    margin: 0 auto 12px;
+    opacity: 0.5;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Watermark logo behind all keys ── */
+.kb-watermark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 260px; height: 260px;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+}
+.kb-watermark img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ── Keyboard wrapper ── */
+.keyboard-wrapper { width: 100%; position: relative; z-index: 1; }
+
+/* ── Rows ── */
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    margin: 6px 0;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+    align-items: center;
+}
+
+/* ── Keys ── */
+.keyboard-key {
+    background: #ffffff;
+    border: 1.5px solid rgba(9,133,37,0.20);
+    border-radius: 12px;
+    color: #0b1230;
+    font-size: 22px;
+    font-weight: 600;
+    padding: 13px 0;
+    min-width: 58px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+    box-shadow: 0 3px 0 rgba(9,133,37,0.18), 0 1px 3px rgba(0,0,0,0.05);
+    flex: 1 1 auto;
+    max-width: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1;
+    outline: none;
+}
+
+.keyboard-key:hover {
+    background: linear-gradient(135deg, #edfff5, #d4f9e6);
+    border-color: rgba(9,133,37,0.40);
+    box-shadow: 0 4px 0 rgba(9,133,37,0.25), 0 2px 6px rgba(9,133,37,0.12);
+}
+
+.keyboard-key:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 rgba(9,133,37,0.18);
+    background: #d0f5e3;
+}
+
+/* Space bar */
+.keyboard-space {
+    min-width: 200px; max-width: 250px; flex: 3;
+    font-size: 16px;
+    background: linear-gradient(135deg, #f0faf4, #e3f8ee);
+    color: #098525; font-weight: 700; letter-spacing: 0.04em;
+    border-color: rgba(9,133,37,0.25);
+}
+.keyboard-space:hover { background: linear-gradient(135deg, #d4f9e6, #b8f0d4); }
+
+/* Action keys */
+.keyboard-action { min-width: 80px; max-width: 110px; flex: 1.5; font-size: 18px; }
+
+/* Backspace / Clear — red */
+.keyboard-action[data-action="backspace"],
+.keyboard-action[data-action="clear"] {
+    background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+    color: #e53935;
+    border-color: rgba(229,57,53,0.22);
+    box-shadow: 0 3px 0 rgba(229,57,53,0.15);
+}
+.keyboard-action[data-action="backspace"]:hover,
+.keyboard-action[data-action="clear"]:hover {
+    background: linear-gradient(135deg, #ffe8e8, #ffd0d0);
+    border-color: rgba(229,57,53,0.38);
+}
+
+/* Done — solid green */
+.keyboard-action[data-action="done"] {
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    color: white; border-color: #0fb8a0; font-weight: 700;
+    box-shadow: 0 3px 0 rgba(7,93,20,0.35), 0 2px 8px rgba(9,133,37,0.25);
+}
+.keyboard-action[data-action="done"]:hover  { background: linear-gradient(135deg, #0a9c2d, #36e89a); }
+.keyboard-action[data-action="done"]:active { transform: translateY(3px); box-shadow: 0 0 0; }
+
+/* Symbols / Letters / ABC — light green */
+.keyboard-action[data-action="symbols"],
+.keyboard-action[data-action="letters"],
+.keyboard-action[data-action="abc"] {
+    background: linear-gradient(135deg, #f0faf4, #e0f5eb);
+    color: #098525; font-weight: 700;
+    border-color: rgba(9,133,37,0.22);
+}
+.keyboard-action[data-action="symbols"]:hover,
+.keyboard-action[data-action="letters"]:hover,
+.keyboard-action[data-action="abc"]:hover {
+    background: linear-gradient(135deg, #d4f9e6, #b8f0d4);
+}
+
+/* Shift */
+#shiftBtn {
+    background: linear-gradient(135deg, #f0faf4, #e0f5eb);
+    color: #098525; font-weight: 700;
+    border-color: rgba(9,133,37,0.22);
+}
+#shiftBtn:hover { background: linear-gradient(135deg, #d4f9e6, #b8f0d4); }
+#shiftBtn.shift-active {
+    background: linear-gradient(135deg, #098525, #2ada8d) !important;
+    color: white !important; border-color: #2ada8d !important;
+}
+
+body.keyboard-visible { padding-bottom: 350px; }
+
+/* Keyboard responsive */
+@media (max-width: 600px) {
+    .keyboard-key    { font-size: 19px; padding: 11px 0; min-width: 44px; }
+    .keyboard-space  { min-width: 150px; font-size: 14px; }
+    .keyboard-action { min-width: 65px; font-size: 16px; }
+    .kb-watermark    { width: 200px; height: 200px; }
+}
+@media (max-width: 400px) {
+    .keyboard-key   { font-size: 17px; padding: 9px 0; min-width: 34px; }
+    .keyboard-row   { gap: 4px; }
+    .keyboard-space { min-width: 120px; }
+    .kb-watermark   { width: 160px; height: 160px; }
 }

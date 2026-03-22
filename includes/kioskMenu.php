@@ -7,6 +7,7 @@ session_start(); ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk Menu</title>
+    <link rel="icon" href="../resources/linya_logo.png" type="image/png">
     <link rel="stylesheet" href="../css/kioskMenu.css">
 
     <!-- Floating Keyboard Styles -->
@@ -14,11 +15,11 @@ session_start(); ?>
         #floatingKeyboardContainer {
             position: fixed;
             bottom: 0; left: 0; right: 0;
-            background: #1e1e1e;
-            border-top: 2px solid #333;
+            background: linear-gradient(180deg, #ffffff 0%, #f0faf4 100%);
+            border-top: 3px solid #2ada8d;
             border-radius: 20px 20px 0 0;
-            padding: 15px 10px 20px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            padding: 14px 10px 22px;
+            box-shadow: 0 -6px 32px rgba(9, 133, 37, 0.18), 0 -2px 8px rgba(9,133,37,0.08);
             z-index: 99999;
             transform: translateY(100%);
             transition: transform 0.3s ease;
@@ -26,9 +27,41 @@ session_start(); ?>
             max-width: 800px;
             margin: 0 auto;
             width: 100%;
+            overflow: hidden;
         }
 
         #floatingKeyboardContainer.active { transform: translateY(0); }
+
+        /* Drag pill */
+        #floatingKeyboardContainer::before {
+            content: '';
+            display: block;
+            width: 44px; height: 5px;
+            background: linear-gradient(90deg, #098525, #2ada8d);
+            border-radius: 3px;
+            margin: 0 auto 12px;
+            opacity: 0.5;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Watermark logo behind all keys ── */
+        .kb-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 260px;
+            height: 260px;
+            opacity: 0.50;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .kb-watermark img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
         .keyboard-section { width: 100%; }
 
@@ -37,46 +70,114 @@ session_start(); ?>
             justify-content: center;
             margin: 6px 0;
             gap: 6px;
+            position: relative;
+            z-index: 1;
+            align-items: center;
         }
 
         .keyboard-key {
-            background: linear-gradient(135deg, #333, #222);
-            border: 1px solid #444;
+            background: #ffffff;
+            border: 1.5px solid rgba(9,133,37,0.20);
             border-radius: 12px;
-            color: white;
+            color: #0b1230;
             font-size: 24px;
-            font-weight: 500;
+            font-weight: 600;
             padding: 15px 0;
             min-width: 60px;
             text-align: center;
             cursor: pointer;
             user-select: none;
-            transition: all 0.1s ease;
-            box-shadow: 0 4px 0 #0a0a0a;
+            transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+            box-shadow: 0 3px 0 rgba(9,133,37,0.18), 0 1px 3px rgba(0,0,0,0.05);
             flex: 1 1 auto;
             max-width: 80px;
             display: flex;
+            opacity: 0.8;
             align-items: center;
             justify-content: center;
         }
 
-        .keyboard-key:active { transform: translateY(4px); box-shadow: 0 0 0 #0a0a0a; }
-        .keyboard-key.wide { min-width: 100px; max-width: 120px; flex: 1.5; }
+        .keyboard-key:hover {
+            background: linear-gradient(135deg, #edfff5, #d4f9e6);
+            border-color: rgba(9,133,37,0.40);
+            box-shadow: 0 4px 0 rgba(9,133,37,0.25), 0 2px 6px rgba(9,133,37,0.12);
+        }
+        .keyboard-key:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(9,133,37,0.18);
+            background: #d0f5e3;
+        }
+
+        .keyboard-key.wide       { min-width: 100px; max-width: 120px; flex: 1.5; }
         .keyboard-key.extra-wide { min-width: 200px; max-width: 250px; flex: 3; font-size: 18px; }
-        .keyboard-key.space { background: linear-gradient(135deg, #444, #333); }
-        .keyboard-key.done { background: linear-gradient(135deg, #07bf85, #0c9e3d); border-color: #0fb8a0; }
+
+        .keyboard-key.space {
+            background: linear-gradient(135deg, #f0faf4, #e3f8ee);
+            color: #098525;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            border-color: rgba(9,133,37,0.25);
+        }
+        .keyboard-key.space:hover { background: linear-gradient(135deg, #d4f9e6, #b8f0d4); }
+
+        .keyboard-key.done {
+            background: linear-gradient(135deg, #098525, #2ada8d);
+            color: white;
+            border-color: #0fb8a0;
+            font-weight: 700;
+            box-shadow: 0 3px 0 rgba(7,93,20,0.35), 0 2px 8px rgba(9,133,37,0.25);
+        }
+        .keyboard-key.done:hover  { background: linear-gradient(135deg, #0a9c2d, #36e89a); }
+        .keyboard-key.done:active { transform: translateY(4px); box-shadow: 0 0 0; }
+
+        /* Shift highlighted state */
+        .keyboard-key.shift-active {
+            background: linear-gradient(135deg, #098525, #2ada8d) !important;
+            color: white !important;
+            border-color: #2ada8d !important;
+        }
+
         .keyboard-key.symbol { font-size: 20px; }
+
+        /* Backspace / Clear */
+        .keyboard-key[data-action="backspace"],
+        .keyboard-key[data-action="clear"] {
+            background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+            color: #e53935;
+            border-color: rgba(229,57,53,0.22);
+            box-shadow: 0 3px 0 rgba(229,57,53,0.15);
+        }
+        .keyboard-key[data-action="backspace"]:hover,
+        .keyboard-key[data-action="clear"]:hover {
+            background: linear-gradient(135deg, #ffe8e8, #ffd0d0);
+            border-color: rgba(229,57,53,0.38);
+        }
+
+        /* Symbols / ABC toggle */
+        .keyboard-key[data-action="symbols"],
+        .keyboard-key[data-action="letters"] {
+            background: linear-gradient(135deg, #f0faf4, #e0f5eb);
+            color: #098525;
+            font-weight: 700;
+            border-color: rgba(9,133,37,0.22);
+        }
+        .keyboard-key[data-action="symbols"]:hover,
+        .keyboard-key[data-action="letters"]:hover {
+            background: linear-gradient(135deg, #d4f9e6, #b8f0d4);
+        }
 
         #symbolKeyboard { display: none; }
 
         @media (max-width: 600px) {
             .keyboard-key { font-size: 20px; padding: 12px 0; min-width: 45px; }
             .keyboard-key.extra-wide { min-width: 150px; font-size: 16px; }
+            .kb-watermark { width: 200px; height: 200px; }
         }
 
         @media (max-width: 400px) {
             .keyboard-key { font-size: 18px; padding: 10px 0; min-width: 35px; }
             .keyboard-row { gap: 4px; }
+            .kb-watermark { width: 160px; height: 160px; }
         }
 
         input, textarea { margin-bottom: 10px; }
@@ -278,6 +379,12 @@ session_start(); ?>
 
     <!-- ===== FLOATING KEYBOARD ===== -->
     <div id="floatingKeyboardContainer">
+
+        <!-- Big watermark logo behind all keys -->
+        <div class="kb-watermark">
+            <img src="../resources/linya_logo.png" alt="" />
+        </div>
+
         <!-- Main Letters Keyboard -->
         <div id="mainKeyboard" class="keyboard-section">
             <div class="keyboard-row">
@@ -426,7 +533,8 @@ session_start(); ?>
                 if (k && k.length === 1 && /[a-z]/i.test(k)) { const nk = isShifted ? k.toUpperCase() : k.toLowerCase(); btn.textContent = nk; btn.dataset.key = nk; }
             });
             const sb = document.getElementById('shiftBtn');
-            if (sb) sb.style.background = isShifted ? 'linear-gradient(135deg,#07bf85,#0c9e3d)' : 'linear-gradient(135deg,#444,#333)';
+            /* CHANGED: use CSS class instead of inline style so green theme applies correctly */
+            if (sb) { sb.classList.toggle('shift-active', isShifted); sb.style.background = ''; }
         }
 
         function showKeyboard() {

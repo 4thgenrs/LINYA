@@ -189,6 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <title>Face Login</title>
     <link rel="stylesheet" href="../css/backButton.css">
     <link rel="stylesheet" href="../css/kioskLogin.css">
+    <link rel="icon" href="../resources/linya_logo.png" type="image/png">
 </head>
 
 <body>
@@ -228,13 +229,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div id="faceOutline"></div>
         </div>
 
-        <form method="POST" action="kioskLogin.php" id="loginForm">
-            <input type="hidden" name="image" id="imageInput">
-            <input type="hidden" name="check_glasses" id="checkGlasses" value="true">
+        <!-- ✅ CORRECT — statusMessage outside form, no inline style -->
+<div id="statusMessage" role="status" aria-live="polite"></div>
 
-            <div id="statusMessage" role="status" aria-live="polite" style="margin-bottom: 12px;"></div>
-
-        </form>
+<form method="POST" action="kioskLogin.php" id="loginForm" style="display:none;">
+    <input type="hidden" name="image" id="imageInput">
+    <input type="hidden" name="check_glasses" id="checkGlasses" value="true">
+</form>
     </div>
 
     <?php
@@ -615,7 +616,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     ?>
 
-    <script src="../js/kioskLogin.js" defer></script>
+    <script src="../js/kioskLogin.js"></script>
 
 </body>
 

@@ -114,7 +114,7 @@ body::after {
 /* ========== HEADINGS ========== */
 .title {
     margin-top: -60px;
-    margin-bottom: -20px;
+    margin-bottom: 10px;
     font-size: 36px;
     text-align: center;
     font-weight: 800;
@@ -133,7 +133,7 @@ body::after {
 
 .small {
     text-align: center;
-    margin-top: -10px;
+    margin-top: -30px;
     margin-bottom: 30px;
     font-size: 14px;
     color: #5a6268;
@@ -362,7 +362,6 @@ body::after {
 .vf-field select:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ========== STUDENT MODAL ========== */
-/* z-index is BELOW the floating keyboard (99999) so keyboard always appears on top */
 #studentModal {
     position: fixed;
     top: 0; left: 0;
@@ -374,7 +373,6 @@ body::after {
     -webkit-backdrop-filter: blur(12px);
     z-index: 9998;
     animation: fadeIn 0.3s ease;
-    /* Padding-bottom creates room so card scrolls above the keyboard */
     padding: 60px 20px 360px;
     overflow-y: auto;
     align-items: flex-start;
@@ -385,7 +383,6 @@ body::after {
     width: 90%;
     position: relative;
     z-index: 9999;
-    /* Center card vertically when keyboard is hidden */
     margin: auto;
 }
 
@@ -460,6 +457,7 @@ body::after {
     font-weight: 500;
     line-height: 1.5;
     max-width: 600px;
+    margin-top: -50px;
 }
 
 .grid {
@@ -918,6 +916,172 @@ body::after {
 
 .grid.animating { animation: fadeInUp 0.4s ease; }
 
+/* ========== FLOATING KEYBOARD — White & Green Theme ========== */
+#floatingKeyboardContainer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f0faf4 100%);
+    border-top: 3px solid #2ada8d;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 10px 22px;
+    box-shadow: 0 -6px 32px rgba(9, 133, 37, 0.18), 0 -2px 8px rgba(9,133,37,0.08);
+    z-index: 99999;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    overflow: hidden;
+}
+
+#floatingKeyboardContainer.active { transform: translateY(0); }
+
+/* Drag pill at top */
+#floatingKeyboardContainer::before {
+    content: '';
+    display: block;
+    width: 44px; height: 5px;
+    background: linear-gradient(90deg, #098525, #2ada8d);
+    border-radius: 3px;
+    margin: 0 auto 12px;
+    opacity: 0.5;
+    position: relative;
+    z-index: 1;
+}
+
+/* Big watermark logo centred behind all keys */
+.kb-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 260px;
+    height: 260px;
+    opacity: 0.10;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.kb-watermark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Section wrappers */
+.keyboard-section { width: 100%; }
+
+/* Rows sit above watermark */
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    margin: 6px 0;
+    gap: 5px;
+    position: relative;
+    z-index: 1;
+    align-items: center;
+}
+
+/* Keys */
+.keyboard-key {
+    background: #ffffff;
+    border: 1.5px solid rgba(9,133,37,0.20);
+    border-radius: 12px;
+    color: #0b1230;
+    font-size: 22px;
+    font-weight: 600;
+    padding: 13px 0;
+    min-width: 58px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+    box-shadow: 0 3px 0 rgba(9,133,37,0.18), 0 1px 3px rgba(0,0,0,0.05);
+    flex: 1 1 auto;
+    max-width: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyboard-key:hover {
+    background: linear-gradient(135deg, #edfff5, #d4f9e6);
+    border-color: rgba(9,133,37,0.40);
+    box-shadow: 0 4px 0 rgba(9,133,37,0.25), 0 2px 6px rgba(9,133,37,0.12);
+}
+
+.keyboard-key:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 rgba(9,133,37,0.18);
+    background: #d0f5e3;
+}
+
+/* Size variants */
+.keyboard-key.wide       { min-width: 96px;  max-width: 120px; flex: 1.5; font-size: 18px; }
+.keyboard-key.extra-wide { min-width: 190px; max-width: 240px; flex: 3;   font-size: 16px; }
+
+/* Space */
+.keyboard-key.space {
+    background: linear-gradient(135deg, #f0faf4, #e3f8ee);
+    color: #098525;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-color: rgba(9,133,37,0.25);
+}
+.keyboard-key.space:hover { background: linear-gradient(135deg, #d4f9e6, #b8f0d4); }
+
+/* Done */
+.keyboard-key.done {
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    color: white;
+    border-color: #0fb8a0;
+    font-weight: 700;
+    box-shadow: 0 3px 0 rgba(7,93,20,0.35), 0 2px 8px rgba(9,133,37,0.25);
+}
+.keyboard-key.done:hover { background: linear-gradient(135deg, #0a9c2d, #36e89a); }
+.keyboard-key.done:active { transform: translateY(3px); box-shadow: 0 0 0; }
+
+/* Shift active state */
+.keyboard-key.shift-active {
+    background: linear-gradient(135deg, #098525, #2ada8d) !important;
+    color: white !important;
+    border-color: #2ada8d !important;
+}
+
+/* Backspace / Clear */
+.keyboard-key[data-action="backspace"],
+.keyboard-key[data-action="clear"] {
+    background: linear-gradient(135deg, #fff5f5, #ffe8e8);
+    color: #e53935;
+    border-color: rgba(229,57,53,0.22);
+    box-shadow: 0 3px 0 rgba(229,57,53,0.15);
+}
+.keyboard-key[data-action="backspace"]:hover,
+.keyboard-key[data-action="clear"]:hover {
+    background: linear-gradient(135deg, #ffe8e8, #ffd0d0);
+    border-color: rgba(229,57,53,0.38);
+}
+
+/* Symbols / ABC toggle */
+.keyboard-key[data-action="symbols"],
+.keyboard-key[data-action="letters"] {
+    background: linear-gradient(135deg, #f0faf4, #e0f5eb);
+    color: #098525;
+    font-weight: 700;
+    border-color: rgba(9,133,37,0.22);
+}
+.keyboard-key[data-action="symbols"]:hover,
+.keyboard-key[data-action="letters"]:hover {
+    background: linear-gradient(135deg, #d4f9e6, #b8f0d4);
+}
+
+/* Symbol keyboard hidden by default */
+#symbolKeyboard { display: none; }
+
+input, textarea { margin-bottom: 10px; }
+body.keyboard-visible { padding-bottom: 350px; }
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     body::before { background-size: 200px 200px; opacity: 0.1; filter: brightness(0) invert(1) drop-shadow(0 0 1px rgba(255,255,255,0.2)); }
@@ -947,6 +1111,10 @@ body::after {
     .vf-modal { padding: 15px; }
     .vf-modal-card { padding: 24px 20px; width: calc(100% - 30px); max-width: 100%; }
     #studentModal .vf-modal-card { width: calc(100% - 30px); max-width: 100%; }
+
+    .keyboard-key { font-size: 20px; padding: 12px 0; min-width: 45px; }
+    .keyboard-key.extra-wide { min-width: 150px; font-size: 16px; }
+    .kb-watermark { width: 200px; height: 200px; }
 }
 
 @media (max-width: 520px) {
@@ -975,4 +1143,8 @@ body::after {
     .pagination-btn.next-btn::after  { margin-left:  4px; }
     .controls-btn { flex-direction: column; gap: 10px; }
     #multiSelectToggle, #backBtn { width: 100%; margin-top: 10px; }
+
+    .keyboard-key { font-size: 18px; padding: 10px 0; min-width: 35px; }
+    .keyboard-row { gap: 4px; }
+    .kb-watermark { width: 160px; height: 160px; }
 }

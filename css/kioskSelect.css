@@ -135,25 +135,46 @@ body::before {
     box-shadow: 0 6px 20px rgba(12, 158, 61, 0.4);
 }
 
+/* ========== DOUBLE-RING ICON ========== */
 .btn-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
-    height: 50px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+    /* Outer ring: semi-transparent white */
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.45);
     margin-right: 15px;
-    font-size: 1.4em;
     flex-shrink: 0;
     transition: all 0.3s ease;
-    color: white;
+}
+
+.btn-icon i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    /* Inner ring: solid white circle */
+    background: rgba(255, 255, 255, 0.92);
+    color: #0c9e3d;
+    font-size: 1.2em;
+    transition: all 0.3s ease;
 }
 
 .kiosk-btn:hover .btn-icon {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.35);
     transform: scale(1.1);
 }
+
+.kiosk-btn:hover .btn-icon i {
+    background: white;
+    color: #098525;
+}
+/* ========================================= */
 
 .btn-text {
     text-align: left;
@@ -194,7 +215,7 @@ body::before {
     text-decoration: underline;
 }
 
-/* ========== KIOSK INSTRUCTIONS MODAL STYLES ========== */
+/* ========== KIOSK INSTRUCTIONS MODAL STYLES - WITH CAMERA ICON ABOVE ========== */
 .kiosk-instructions-modal {
     display: flex;
     position: fixed;
@@ -202,121 +223,187 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     z-index: 10000;
     align-items: center;
     justify-content: center;
-    animation: modalFadeIn 0.3s ease;
+    animation: modalFadeIn 0.2s ease;
 }
 
 .kiosk-instructions-content {
     background: white;
-    border-radius: 25px;
-    max-width: 450px;
+    border-radius: 28px;
+    max-width: 440px;
     width: 90%;
-    padding: 35px 30px;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-    animation: modalSlideUp 0.4s ease;
-    border: 3px solid #0c9e3d;
-    text-align: center;
-}
-
-.kiosk-instructions-content h2 {
-    font-size: 1.5em;
-    font-weight: 900;
-    color: #0c9e3d;
-    margin-bottom: 25px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-bottom: 2px solid rgba(12, 158, 61, 0.2);
-    padding-bottom: 15px;
-}
-
-.kiosk-instructions-content ul {
-    list-style: none;
-    background: #f8f9fa;
-    border-radius: 15px;
-    padding: 20px 25px;
-    margin-bottom: 30px;
+    padding: 36px 32px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    animation: modalSlideUp 0.3s ease;
     text-align: left;
 }
 
-.kiosk-instructions-content ul li {
-    margin: 15px 0;
-    font-size: 1.1em;
-    color: #333;
-    font-weight: 500;
+.camera-icon-wrapper {
     display: flex;
-    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
-.kiosk-instructions-content ul li::before {
-    content: "•";
+.camera-icon-wrapper i {
+    font-size: 3.5em;
     color: #0c9e3d;
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-right: 10px;
+    background: rgba(12, 158, 61, 0.1);
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 20px rgba(12, 158, 61, 0.2);
+}
+
+.kiosk-instructions-content h2 {
+    font-size: 1.6em;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 6px;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.kiosk-instructions-content .subheading {
+    font-size: 1em;
+    color: #666;
+    margin-bottom: 28px;
+    font-weight: 400;
+    text-align: center;
+}
+
+.kiosk-instructions-content .instruction-item {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.kiosk-instructions-content .instruction-icon {
+    font-size: 1.2em;
+    color: white;
+    width: 42px;
+    height: 42px;
+    background: #0c9e3d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(12, 158, 61, 0.25);
+    margin-top: 2px;
+}
+
+.kiosk-instructions-content .instruction-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.kiosk-instructions-content .instruction-text .main-text {
+    font-size: 1.15em;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 4px;
+}
+
+.kiosk-instructions-content .instruction-text .sub-text {
+    font-size: 0.95em;
+    color: #666;
+    font-weight: 400;
+    line-height: 1.4;
 }
 
 .kiosk-instructions-actions {
     display: flex;
-    gap: 15px;
-    justify-content: center;
+    gap: 16px;
+    justify-content: flex-end;
+    margin-top: 20px;
 }
 
 .kiosk-instructions-btn {
-    flex: 1;
-    padding: 14px 20px;
+    padding: 12px 28px;
     border: none;
-    border-radius: 12px;
-    font-size: 1.1em;
-    font-weight: 600;
+    border-radius: 30px;
+    font-size: 1em;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    max-width: 150px;
+    transition: all 0.2s ease;
 }
 
 .kiosk-instructions-btn.cancel {
-    background: #f44336;
-    color: white;
+    background: transparent;
+    color: #555;
+    border: 1px solid #ccc;
 }
 
 .kiosk-instructions-btn.cancel:hover {
-    background: #d32f2f;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(244, 67, 54, 0.4);
+    background: #f5f5f5;
 }
 
 .kiosk-instructions-btn.ok {
-    background: linear-gradient(135deg, #0c9e3d, #07bf85);
+    background: #0c9e3d;
     color: white;
+    border: none;
 }
 
 .kiosk-instructions-btn.ok:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(12, 158, 61, 0.4);
+    background: #0b8a35;
+    box-shadow: 0 4px 12px rgba(12, 158, 61, 0.3);
 }
 
 /* Animations */
 @keyframes modalFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .kiosk-instructions-content {
+        padding: 28px 22px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    
+    .camera-icon-wrapper i {
+        font-size: 3em;
+        width: 70px;
+        height: 70px;
     }
+    
+    .kiosk-instructions-content h2 {
+        font-size: 1.4em;
+    }
+    
+    .kiosk-instructions-actions {
+        flex-direction: column;
+    }
+    
+    .kiosk-instructions-btn {
+        width: 100%;
+    }
+}
+
+/* Animations */
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Mobile Responsive */
@@ -333,13 +420,8 @@ body::before {
         margin-bottom: -10px;
     }
 
-    .logo {
-        font-size: 2em;
-    }
-
-    .subtitle {
-        font-size: 1em;
-    }
+    .logo { font-size: 2em; }
+    .subtitle { font-size: 1em; }
 
     .kiosk-btn {
         padding: 20px 25px;
@@ -347,43 +429,40 @@ body::before {
     }
 
     .btn-icon {
-        width: 45px;
-        height: 45px;
-        font-size: 1.2em;
+        width: 50px;
+        height: 50px;
         margin-right: 12px;
     }
 
-    .support-text {
-        font-size: 0.85em;
+    .btn-icon i {
+        width: 34px;
+        height: 34px;
+        font-size: 1.1em;
     }
 
-    .kiosk-instructions-content {
-        padding: 25px 20px;
-    }
+    .support-text { font-size: 0.85em; }
 
-    .kiosk-instructions-content h2 {
-        font-size: 1.3em;
+    .kiosk-instructions-content { 
+        padding: 25px 20px; 
     }
-
-    .kiosk-instructions-content ul li {
-        font-size: 1em;
+    
+    .kiosk-instructions-content h2 { 
+        font-size: 1.3em; 
     }
-
-    .kiosk-instructions-actions {
-        flex-direction: column;
-        align-items: center;
+    
+    .kiosk-instructions-actions { 
+        flex-direction: column; 
+        justify-content: center;
     }
-
-    .kiosk-instructions-btn {
-        max-width: 100%;
-        width: 100%;
+    
+    .kiosk-instructions-btn { 
+        width: 100%; 
+        text-align: center;
     }
 }
 
 @media (max-width: 400px) {
-    .container {
-        padding: 25px 15px;
-    }
+    .container { padding: 25px 15px; }
 
     .logo-image {
         width: 80px;
@@ -391,9 +470,7 @@ body::before {
         margin-bottom: -5px;
     }
 
-    .logo {
-        font-size: 1.8em;
-    }
+    .logo { font-size: 1.8em; }
 
     .kiosk-btn {
         padding: 18px 20px;
@@ -401,25 +478,25 @@ body::before {
     }
 
     .btn-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.1em;
+        width: 44px;
+        height: 44px;
         margin-right: 10px;
     }
 
-    .kiosk-instructions-content {
-        padding: 20px 15px;
+    .btn-icon i {
+        width: 30px;
+        height: 30px;
+        font-size: 1em;
+    }
+
+    .kiosk-instructions-content { 
+        padding: 20px 15px; 
     }
 }
 
 /* Loading animation */
-.kiosk-btn:active {
-    transform: scale(0.98);
-}
-
-.kiosk-btn:active .btn-icon {
-    transform: scale(0.95);
-}
+.kiosk-btn:active { transform: scale(0.98); }
+.kiosk-btn:active .btn-icon { transform: scale(0.95); }
 
 /* Accessibility */
 .kiosk-btn:focus {
