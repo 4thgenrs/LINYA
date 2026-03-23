@@ -20,6 +20,24 @@
 // Your Cloud Run service URL - deployed and tested
 define('PYTHON_API_BASE', 'https://face-recognition-api-546052063562.asia-southeast1.run.app');
 
+// ============== QZ TRAY TRUST CONFIGURATION ==============
+// Update these paths after placing your real QZ files on the server.
+if (!defined('QZ_CERTIFICATE_PATH')) {
+	define('QZ_CERTIFICATE_PATH', __DIR__ . '/resources/qz/digital-certificate.txt');
+}
+
+if (!defined('QZ_PRIVATE_KEY_PATH')) {
+	define('QZ_PRIVATE_KEY_PATH', __DIR__ . '/resources/qz/private-key.pem');
+}
+
+if (!defined('QZ_SIGNATURE_ALGORITHM')) {
+	define('QZ_SIGNATURE_ALGORITHM', 'SHA256');
+}
+
+if (!defined('PUBLIC_APP_URL')) {
+	define('PUBLIC_APP_URL', 'https://linya.ucc-bsit.org/LINYA');
+}
+
 /**
  * NOTE ON STORAGE:
  * 

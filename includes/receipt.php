@@ -88,9 +88,23 @@ session_start();
   // Optional QR host overrides (leave blank to use hostname)
   $qr_host_override = '';
   $qr_port_override = '';
+
+  // QZ Tray printing settings
+  $qz_printer_name = '';
+  $qz_use_default_printer = true;
+  $qz_fallback_to_browser_print = false;
+  $qz_certificate_url = '../backend/qzCertificate.php';
+  $qz_sign_url = '../backend/qzSign.php';
+  $qz_signature_algorithm = defined('QZ_SIGNATURE_ALGORITHM') ? QZ_SIGNATURE_ALGORITHM : 'SHA256';
   ?>
   <script>
     window.APP_BASE = "<?php echo addslashes($app_base); ?>";
+    window.QZ_PRINTER_NAME = "<?php echo addslashes($qz_printer_name); ?>";
+    window.QZ_USE_DEFAULT_PRINTER = <?php echo $qz_use_default_printer ? 'true' : 'false'; ?>;
+    window.QZ_FALLBACK_TO_BROWSER_PRINT = <?php echo $qz_fallback_to_browser_print ? 'true' : 'false'; ?>;
+    window.QZ_CERTIFICATE_URL = "<?php echo addslashes($qz_certificate_url); ?>";
+    window.QZ_SIGN_URL = "<?php echo addslashes($qz_sign_url); ?>";
+    window.QZ_SIGNATURE_ALGORITHM = "<?php echo addslashes($qz_signature_algorithm); ?>";
     <?php if (!empty($qr_host_override)): ?>
       window.QR_HOST_OVERRIDE = "<?php echo addslashes($qr_host_override); ?>";
     <?php endif; ?>
@@ -102,8 +116,13 @@ session_start();
     console.log('APP_BASE set to:', window.APP_BASE);
     console.log('Current URL:', window.location.href);
     console.log('FACE_LOGGED:', window.FACE_LOGGED);
+    console.log('QZ_PRINTER_NAME:', window.QZ_PRINTER_NAME || '(default printer)');
+    console.log('QZ_CERTIFICATE_URL:', window.QZ_CERTIFICATE_URL);
+    console.log('QZ_SIGN_URL:', window.QZ_SIGN_URL);
+    console.log('QZ_SIGNATURE_ALGORITHM:', window.QZ_SIGNATURE_ALGORITHM);
   </script>
 
+  <script src="../js/qz-tray.js"></script>
   <script src="../js/receipt.js?v=<?php echo time(); ?>"></script>
 </body>
 

@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const queueId = params.get('queue_id');
+  const receiptPrintUrl = `../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId || '')}`;
 
   const rQueue = document.getElementById('rQueue');
   const rOffice = document.getElementById('rOffice');
@@ -16,6 +17,216 @@ document.addEventListener('DOMContentLoaded', () => {
   const rRowName = document.getElementById('rRowName');
   const rRowPhone = document.getElementById('rRowPhone');
   const rRowEmail = document.getElementById('rRowEmail');
+
+  let qzSecurityConfigured = false;
+
+  function configureQzSecurity() {
+    if (!window.qz || !qz.security || qzSecurityConfigured) {
+      return;
+    }
+
+    qz.security.setCertificatePromise(function(resolve, reject) {
+      fetch(window.QZ_CERTIFICATE_URL, {
+        cache: 'no-store',
+        headers: { 'Content-Type': 'text/plain' }
+      })
+        .then(response => response.ok
+          ? response.text()
+          : response.text().then(text => Promise.reject(new Error(text || 'Failed to load QZ certificate.'))))
+        .then(resolve)
+        .catch(reject);
+    });
+
+    qz.security.setSignaturePromise(function(toSign) {
+      return function(resolve, reject) {
+        fetch(window.QZ_SIGN_URL, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+          },
+          body: `request=${encodeURIComponent(toSign)}`
+        })
+          .then(response => response.ok
+            ? response.text()
+            : response.text().then(text => Promise.reject(new Error(text || 'Failed to sign QZ request.'))))
+          .then(resolve)
+          .catch(reject);
+      };
+    });
+
+    qzSecurityConfigured = true;
+  }
+
+  function applyQzSignatureAlgorithm() {
+    if (!window.qz || !qz.security || typeof qz.security.setSignatureAlgorithm !== 'function') {
+      return;
+    }
+
+    try {
+      qz.security.setSignatureAlgorithm(window.QZ_SIGNATURE_ALGORITHM || 'SHA256');
+    } catch (error) {
+      console.warn('QZ signature algorithm could not be applied yet:', error);
+    }
+  }
+
+  function getStatusNode() {
+    let statusNode = document.getElementById('printStatus');
+
+    if (!statusNode) {
+      statusNode = document.createElement('div');
+      statusNode.id = 'printStatus';
+      statusNode.style.cssText =
+        'position:fixed;top:20px;left:50%;transform:translateX(-50%);' +
+        'color:white;padding:12px 24px;border-radius:8px;z-index:9999;' +
+        'font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.18);';
+      document.body.appendChild(statusNode);
+    }
+
+    return statusNode;
+  }
+
+  function setPrintStatus(message, type = 'info') {
+    const statusNode = getStatusNode();
+    const background = type === 'error'
+      ? '#dc3545'
+      : type === 'success'
+        ? '#198754'
+        : type === 'warning'
+          ? '#fd7e14'
+          : '#007bff';
+
+    statusNode.style.background = background;
+    statusNode.textContent = message;
+  }
+
+  function clearPrintStatus(delay = 2500) {
+    const statusNode = document.getElementById('printStatus');
+    if (!statusNode) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      const activeStatusNode = document.getElementById('printStatus');
+      if (activeStatusNode) {
+        activeStatusNode.remove();
+      }
+    }, delay);
+  }
+
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+
+    for (let index = 0; index < bytes.length; index += chunkSize) {
+      const chunk = bytes.subarray(index, index + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+
+    return btoa(binary);
+  }
+
+  async function fetchReceiptPdfBase64() {
+    const response = await fetch(receiptPrintUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Unable to generate receipt PDF.');
+    }
+
+    const pdfBuffer = await response.arrayBuffer();
+    return arrayBufferToBase64(pdfBuffer);
+  }
+
+  async function ensureQzConnection() {
+    if (!window.qz) {
+      throw new Error('QZ Tray JavaScript library is not loaded.');
+    }
+
+    configureQzSecurity();
+
+    if (typeof qz.websocket.isActive === 'function' && qz.websocket.isActive()) {
+      applyQzSignatureAlgorithm();
+      return;
+    }
+
+    await qz.websocket.connect({ retries: 2, delay: 1 });
+
+    if (qz.api && typeof qz.api.getVersion === 'function') {
+      try {
+        await qz.api.getVersion();
+      } catch (error) {
+        console.warn('Unable to fetch QZ Tray version:', error);
+      }
+    }
+
+    applyQzSignatureAlgorithm();
+  }
+
+  async function resolvePrinterName() {
+    const configuredPrinter = String(window.QZ_PRINTER_NAME || '').trim();
+
+    if (configuredPrinter) {
+      return qz.printers.find(configuredPrinter);
+    }
+
+    if (window.QZ_USE_DEFAULT_PRINTER !== false) {
+      return qz.printers.getDefault();
+    }
+
+    const printers = await qz.printers.find();
+    if (Array.isArray(printers) && printers.length > 0) {
+      return printers[0];
+    }
+
+    throw new Error('No printer is available through QZ Tray.');
+  }
+
+  async function printViaQz(queueCode) {
+    setPrintStatus('Connecting to QZ Tray...');
+    await ensureQzConnection();
+
+    const printerName = await resolvePrinterName();
+    setPrintStatus(`Sending receipt to ${printerName}...`);
+
+    const pdfBase64 = await fetchReceiptPdfBase64();
+    const config = qz.configs.create(printerName, {
+      jobName: `LINYA Receipt ${queueCode}`,
+      colorType: 'grayscale'
+    });
+    const data = [{
+      type: 'pixel',
+      format: 'pdf',
+      flavor: 'base64',
+      data: pdfBase64,
+      options: {
+        altFontRendering: true,
+        ignoreTransparency: true
+      }
+    }];
+
+    await qz.print(config, data);
+    return printerName;
+  }
+
+  async function printViaBrowserFallback() {
+    const response = await fetch(receiptPrintUrl, { cache: 'no-store' });
+
+    if (!response.ok) {
+      throw new Error('Print failed');
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      iframe.contentWindow.print();
+    };
+  }
 
   if (!queueId) {
     rQueue.textContent = 'Missing queue id';
@@ -123,38 +334,34 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // --------------------------------------------------
-      // PRINT BUTTON (UNCHANGED)
+      // PRINT BUTTON (QZ TRAY FIRST)
       // --------------------------------------------------
       printBtn.addEventListener('click', async () => {
-        const statusMsg = document.createElement('div');
-        statusMsg.id = 'printStatus';
-        statusMsg.style.cssText =
-          'position:fixed;top:20px;left:50%;transform:translateX(-50%);' +
-          'background:#007bff;color:white;padding:12px 24px;border-radius:8px;z-index:9999;';
-        statusMsg.textContent = '🖨️ Preparing receipt for printing...';
-        document.body.appendChild(statusMsg);
-
         try {
-          const response =
-            await fetch(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`);
-
-          if (!response.ok) throw new Error("Print failed");
-
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = url;
-          document.body.appendChild(iframe);
-
-          iframe.onload = () => {
-            iframe.contentWindow.print();
-          };
-
+          setPrintStatus('Preparing receipt for QZ Tray...');
+          const printerName = await printViaQz(q.queue_code);
+          setPrintStatus(`Receipt sent to ${printerName}.`, 'success');
+          clearPrintStatus();
         } catch (err) {
           console.error(err);
-          window.open(`../backend/receiptPrint.php?queue_id=${encodeURIComponent(queueId)}`, '_blank');
+
+          if (window.QZ_FALLBACK_TO_BROWSER_PRINT) {
+            setPrintStatus('QZ Tray unavailable. Falling back to browser print...', 'warning');
+
+            try {
+              await printViaBrowserFallback();
+              clearPrintStatus(4000);
+            } catch (fallbackErr) {
+              console.error(fallbackErr);
+              setPrintStatus(`Printing failed: ${fallbackErr.message}`, 'error');
+              clearPrintStatus(5000);
+            }
+
+            return;
+          }
+
+          setPrintStatus(`QZ Tray print failed: ${err.message}`, 'error');
+          clearPrintStatus(5000);
         }
       });
 
