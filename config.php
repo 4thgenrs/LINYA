@@ -21,7 +21,7 @@
 define('PYTHON_API_BASE', 'https://face-recognition-api-546052063562.asia-southeast1.run.app');
 
 // ============== QZ TRAY TRUST CONFIGURATION ==============
-// Update these paths after placing your real QZ files on the server.
+// Keep these files outside public web paths and reference their absolute server paths.
 if (!defined('QZ_CERTIFICATE_PATH')) {
 	define('QZ_CERTIFICATE_PATH', __DIR__ . '/resources/qz/digital-certificate.txt');
 }
@@ -32,10 +32,6 @@ if (!defined('QZ_PRIVATE_KEY_PATH')) {
 
 if (!defined('QZ_SIGNATURE_ALGORITHM')) {
 	define('QZ_SIGNATURE_ALGORITHM', 'SHA256');
-}
-
-if (!defined('PUBLIC_APP_URL')) {
-	define('PUBLIC_APP_URL', 'https://linya.ucc-bsit.org/LINYA');
 }
 
 /**

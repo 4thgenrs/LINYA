@@ -13,7 +13,7 @@ if ($requestToSign === '') {
 
 if (!defined('QZ_PRIVATE_KEY_PATH') || !is_file(QZ_PRIVATE_KEY_PATH) || !is_readable(QZ_PRIVATE_KEY_PATH)) {
     http_response_code(500);
-    echo 'QZ private key not found. Upload private-key.pem to the configured secure path.';
+    echo 'QZ private key not found or not readable at path: ' . (defined('QZ_PRIVATE_KEY_PATH') ? QZ_PRIVATE_KEY_PATH : '(undefined)');
     exit;
 }
 
@@ -27,7 +27,7 @@ if ($privateKeyPem === false || trim($privateKeyPem) === '') {
 $privateKey = openssl_pkey_get_private($privateKeyPem);
 if ($privateKey === false) {
     http_response_code(500);
-    echo 'Unable to load QZ private key.';
+    echo 'Unable to load QZ private key. Ensure PEM format is valid.';
     exit;
 }
 

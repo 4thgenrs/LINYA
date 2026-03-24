@@ -29,11 +29,15 @@ if (!$fpdf_loaded) {
 }
 
 include '../linya_db/config.php';
-require_once __DIR__ . '/../config.php';
 session_start();
 
-// Determine whether current viewer is a face-logged session
+// Determine whether current viewer is a face-logged session.
+// Printing can also pass an explicit include_qr flag from the receipt page so
+// guest receipts never inherit a stale QR decision from an old session.
 $face_logged = isset($_SESSION['client']) && is_array($_SESSION['client']);
+$includeQrParam = isset($_GET['include_qr']) ? trim((string)$_GET['include_qr']) : null;
+$includeQrRequested = $includeQrParam === null ? $face_logged : $includeQrParam === '1';
+$should_include_qr = $face_logged && $includeQrRequested;
 
 $queueId = isset($_GET['queue_id']) ? intval($_GET['queue_id']) : 0;
 if (!$queueId) { die('Missing queue_id'); }
@@ -63,10 +67,6 @@ while ($row = $r2->fetch_assoc()) {
 $qs->close();
 
 function build_queue_details_url(int $queueId): string {
-    if (defined('PUBLIC_APP_URL') && trim((string)PUBLIC_APP_URL) !== '') {
-        return rtrim((string)PUBLIC_APP_URL, '/') . '/queueDetails.php?queue_id=' . rawurlencode((string)$queueId);
-    }
-
     $httpsOn = !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
     $isHttps = $httpsOn || (isset($_SERVER['SERVER_PORT']) && intval($_SERVER['SERVER_PORT']) === 443);
     $scheme = $isHttps ? 'https' : 'http';
@@ -85,28 +85,52 @@ function build_queue_details_url(int $queueId): string {
 
 /**
  * Download remote image to a temporary PNG file.
+ * Uses cURL first because shared hosts often disable allow_url_fopen.
  * Returns filepath or false.
  */
 function download_qr_to_temp(string $url) {
     $tmp = tempnam(sys_get_temp_dir(), 'qr_');
-    if ($tmp === false) return false;
+    if ($tmp === false) {
+        return false;
+    }
     $tmpPng = $tmp . '.png';
+    $img = false;
 
-    $ctx = stream_context_create([
-        'http' => [
-            'timeout' => 8,
-            'header'  => "User-Agent: LINYA-Receipt/1.0\r\n",
-        ],
-        'ssl' => [
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-        ],
-    ]);
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_TIMEOUT => 8,
+            CURLOPT_USERAGENT => 'LINYA-Receipt/1.0',
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ]);
+        $img = curl_exec($ch);
+        $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($img === false || $statusCode >= 400) {
+            $img = false;
+        }
+        curl_close($ch);
+    }
 
-    $img = @file_get_contents($url, false, $ctx);
+    if ($img === false && filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => 8,
+                'header'  => "User-Agent: LINYA-Receipt/1.0\r\n",
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+        $img = @file_get_contents($url, false, $ctx);
+    }
 
     // Guard against empty response / HTML error page
-    if ($img === false || strlen($img) < 100) {
+    if ($img === false || strlen((string) $img) < 100) {
         @unlink($tmp);
         return false;
     }
@@ -121,16 +145,18 @@ function download_qr_to_temp(string $url) {
 // --------------------------------------------------
 $tmp = false;
 
-$detailsUrl = build_queue_details_url((int)$queue['queue_id']);
+if ($should_include_qr) {
+    $detailsUrl = build_queue_details_url((int)$queue['queue_id']);
 
-// Primary QR provider (Google Chart)
-$googleQr = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($detailsUrl) . "&chld=L|1";
-$tmp = download_qr_to_temp($googleQr);
+    // Primary QR provider (Google Chart)
+    $googleQr = "https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=" . urlencode($detailsUrl) . "&chld=L|1";
+    $tmp = download_qr_to_temp($googleQr);
 
-// Fallback provider (qrserver)
-if (!$tmp) {
-    $qrServer = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($detailsUrl);
-    $tmp = download_qr_to_temp($qrServer);
+    // Fallback provider (qrserver)
+    if (!$tmp) {
+        $qrServer = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($detailsUrl);
+        $tmp = download_qr_to_temp($qrServer);
+    }
 }
 
 // create PDF receipt (80mm width)
@@ -186,20 +212,13 @@ foreach ($services as $s) {
 }
 $pdf->Ln(6);
 
-// Embed QR code when it was generated successfully.
-if ($tmp && file_exists($tmp)) {
+// Embed QR code only for receipts printed from a face-logged session.
+if ($should_include_qr && $tmp && file_exists($tmp)) {
     $imgWidth = 40; // mm
     $x = ($pdf->GetPageWidth() - $imgWidth) / 2;
     $pdf->Image($tmp, $x, $pdf->GetY(), $imgWidth, $imgWidth, 'PNG'); // explicit PNG
     @unlink($tmp);
     $pdf->Ln($imgWidth + 4);
-
-    $pdf->SetFont('Arial', '', 7);
-    $pdf->MultiCell(0, 4, 'Scan the QR code or open this link to view your queue details:', 0, 'C');
-    $pdf->SetTextColor(0, 70, 140);
-    $pdf->MultiCell(0, 4, $detailsUrl, 0, 'C');
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->Ln(2);
 }
 
 $pdf->SetFont('Arial', 'I', 8);
