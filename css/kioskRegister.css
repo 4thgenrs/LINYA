@@ -231,13 +231,10 @@ body::after {
 .vf-modal-card {
     background: rgba(255,255,255,0.98);
     padding: 32px;
-    margin-bottom: 20px;
-    margin-top: 10px;
     border-radius: 18px;
     border: 5px solid rgb(50,154,45);
     width: 90%;
     max-width: 420px;
-    height: 95%;
     box-shadow: 0 25px 50px rgba(11,18,48,0.4);
     text-align: center;
     animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
@@ -247,25 +244,143 @@ body::after {
     z-index: 10000;
 }
 
-.vf-modal-card::before {
-    content: "👤";
-    font-size: 64px;
-    display: block;
-    text-transform: capitalize;
-    margin-bottom: 16px;
-}
+.controls-btn { display: flex; flex-direction: row; justify-content: space-between; gap: 10px; }
+
+.vf-modal-card::before { content: "👤"; font-size: 64px; display: block; margin-bottom: 16px; }
 
 .vf-modal-card h2 {
     font-size: 24px;
     font-weight: 700;
     color: #0b1230;
     margin-bottom: 8px;
-    font-family: sans-serif;
     background: linear-gradient(135deg, #098525, #2ada8d);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+.confirm-instruction {
+    font-size: 14px;
+    color: #5a6268;
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.vf-confirm-row {
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: rgba(42,218,141,0.08);
+    border-radius: 10px;
+    border-left: 4px solid #2ada8d;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.vf-confirm-row:hover { background: rgba(42,218,141,0.12); transform: translateX(4px); }
+.vf-confirm-row strong { color: #0b1230; font-weight: 600; display: block; margin-bottom: 4px; font-size: 14px; }
+.vf-confirm-row span { color: #0b1230; font-weight: 500; display: block; font-size: 16px; }
+.vf-confirm-row span:empty::before { content: "Not provided"; color: var(--muted); font-style: italic; }
+
+.vf-actions { display: flex; align-items: center; padding-top: 20px; gap: 20px; flex-direction: column; }
+
+.vf-modal-ghost {
+    padding: 12px 24px;
+    border: none;
+    transition: all 0.3s ease;
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 260px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+}
+
+.vf-modal-ghost:hover { background: linear-gradient(90deg, #dc2626, #b91c1c); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4); }
+
+.vf-modal-confirm {
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    border: none;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    min-width: 260px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(9,133,37,0.3);
+}
+
+.vf-modal-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(9,133,37,0.4); }
+.vf-modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#studentModal .vf-field {
+    text-align: left;
+
+    margin: 14px 0;
+}
+
+#studentModal .vf-field input,
+#studentModal .vf-field select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(11,18,48,0.1);
+    background: rgba(255,255,255,0.9);
+    transition: all 0.2s ease;
+    color: #0b1230;
+}
+
+#studentModal .vf-field input:focus,
+#studentModal .vf-field select:focus {
+    outline: none;
+    border-color: rgba(42,218,141,0.6);
+    box-shadow: 0 0 0 3px rgba(42,218,141,0.15);
+    background: white;
+}
+
+#studentModal .student-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+#studentModal .vf-modal-confirm { width: 100%; min-width: unset; }
+#studentModal .vf-modal-ghost {
+    padding: 12px 24px;
+    border: none;
+    transition: all 0.3s ease;
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    min-width: 260px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+    width: 100%;
+    min-width: unset;
+    margin-bottom: 8px;
+}
+
+#studentModal .vf-modal-ghost:hover { background: linear-gradient(90deg, #dc2626, #b91c1c); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4); }
 
 .confirm-instruction {
     font-size: 14px;
@@ -681,4 +796,207 @@ body.keyboard-visible { padding-bottom: 350px; }
     .keyboard-row   { gap: 4px; }
     .keyboard-space { min-width: 120px; }
     .kb-watermark   { width: 160px; height: 160px; }
+}
+
+/* ========== STUDENT CHECKBOX ========== */
+.vf-field .student-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(11,18,48,0.1);
+    background: rgba(255,255,255,0.9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+    user-select: none;
+    margin: 0 auto;
+}
+
+.vf-field .student-checkbox-row:hover {
+    border-color: rgba(42,218,141,0.6);
+    box-shadow: 0 0 0 3px rgba(42,218,141,0.15);
+    background: white;
+}
+
+.vf-field input[type="checkbox"]#visitorIsStudent {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    border: 2px solid rgba(11,18,48,0.2);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.vf-field input[type="checkbox"]#visitorIsStudent:hover {
+    border-color: #2ada8d;
+    box-shadow: 0 0 0 3px rgba(42,218,141,0.15);
+}
+
+.vf-field input[type="checkbox"]#visitorIsStudent:checked {
+    background: linear-gradient(135deg, #098525, #2ada8d);
+    border-color: #098525;
+    box-shadow: 0 2px 8px rgba(9,133,37,0.35);
+}
+
+.vf-field input[type="checkbox"]#visitorIsStudent:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 7px;
+    height: 12px;
+    border: 2.5px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+}
+
+.vf-field .student-checkbox-row .vf-label {
+    margin: 0;
+    cursor: pointer;
+    font-size: 15px;
+    color: #0b1230;
+    font-weight: 600;
+}
+
+/* Student badge shown after modal is confirmed */
+.student-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(42,218,141,0.08);
+    border: 1px solid rgba(42,218,141,0.4);
+    border-radius: 10px;
+    margin-top: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.student-badge .badge-icon { font-size: 22px; }
+.student-badge .badge-info { flex: 1; }
+
+.student-badge .badge-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0b1230;
+}
+
+.student-badge .badge-course {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.student-badge .badge-edit {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--muted);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.student-badge .badge-edit:hover {
+    background: rgba(42,218,141,0.15);
+    color: #098525;
+}
+
+/* ========== STUDENT MODAL ========== */
+#studentModal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex;
+    justify-content: center;
+    background: rgba(11,18,48,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9998;
+    animation: fadeIn 0.3s ease;
+    padding: 60px 20px 360px;
+    overflow-y: auto;
+    align-items: flex-start;
+}
+
+#studentModal .vf-modal-card {
+    width: 100%;
+    max-width: 500px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(11,18,48,0.3);
+    animation: slideUp 0.3s ease;
+    position: relative;
+    margin: 0 auto;
+}
+
+#studentModal .vf-modal-card::before {
+    content: "🎓";
+    font-size: 64px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+#studentModal .vf-modal-card h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.student-modal-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#studentModal .vf-field {
+    margin-bottom: 16px;
+}
+
+#studentModal .vf-field input,
+#studentModal .vf-field select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(11,18,48,0.1);
+    background: rgba(255,255,255,0.9);
+    transition: all 0.2s ease;
+}
+
+#studentModal .vf-field input:focus,
+#studentModal .vf-field select:focus {
+    border-color: #2ada8d;
+    box-shadow: 0 0 0 3px rgba(42,218,141,0.15);
+    background: white;
+}
+
+.student-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+#studentModal .vf-modal-confirm {
+    width: 100%;
+    min-width: unset;
+}
+
+#studentModal .vf-modal-ghost {
+    width: 100%;
+    min-width: unset;
 }

@@ -71,6 +71,17 @@ function isValidEmail(e) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
+function isValidStudentNumber(s) {
+    if (!s) return false;
+    // Format: 20001234-S (year 2000–2026)
+    const match = s.match(/^(\d{4})(\d{4})-([A-Z])$/);
+    if (!match) return false;
+    const year = parseInt(match[1], 10);
+    const num = match[2];
+    const suffix = match[3];
+    return year >= 2000 && year <= 2026 && num.length === 4 && suffix === 'S';
+}
+
 function visitorSyncState() {
     const nameEl = document.getElementById('visitorName');
     const phoneEl = document.getElementById('visitorPhone');
@@ -91,7 +102,13 @@ function visitorSyncState() {
     const emailHint = document.getElementById('visitorEmailHint');
     if (emailHint) emailHint.style.display = email === '' ? 'none' : (emailOk ? 'none' : 'block');
 
-    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk);
+    // Student check: read from hidden fields (filled by modal)
+    const isStudent   = document.getElementById('visitorIsStudent')?.checked || false;
+    const studentNum  = document.getElementById('visitorStudentNumber')?.value?.trim() || '';
+    const courseVal   = document.getElementById('visitorCourse')?.value || '';
+    const studentOk   = !isStudent || (isStudent && isValidStudentNumber(studentNum) && courseVal !== '');
+
+    proceedBtn.disabled = !(name.length > 0 && phoneOk && emailOk && studentOk);
 }
 
 function openVisitorConfirm() {
@@ -103,6 +120,19 @@ function openVisitorConfirm() {
     document.getElementById('confirmPhone').textContent = phone || '-';
     document.getElementById('confirmEmail').textContent = email || '-';
 
+    // Student info
+    const isStudent = document.getElementById('visitorIsStudent')?.checked || false;
+    const studentRow = document.getElementById('confirmStudentRow');
+    const studentSpan = document.getElementById('confirmStudent');
+    if (isStudent) {
+        const studentNum = document.getElementById('visitorStudentNumber').value.trim();
+        const course = document.getElementById('visitorCourse').value;
+        studentSpan.textContent = `${studentNum} (${course})`;
+        studentRow.style.display = '';
+    } else {
+        studentRow.style.display = 'none';
+    }
+
     const modal = document.getElementById('visitorConfirmModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -112,12 +142,68 @@ function closeVisitorConfirm() {
     if (modal) modal.style.display = 'none';
 }
 
+// ========== STUDENT MODAL ==========
+function openStudentModal() {
+    const modal = document.getElementById('studentModal');
+    if (modal) modal.style.display = 'flex';
+    // Pre-fill from hidden fields
+    const numEl = document.getElementById('modalStudentNumber');
+    const courseEl = document.getElementById('modalCourse');
+    if (numEl) numEl.value = document.getElementById('visitorStudentNumber').value;
+    if (courseEl) courseEl.value = document.getElementById('visitorCourse').value;
+}
+
+function closeStudentModal() {
+    const modal = document.getElementById('studentModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmStudentModal() {
+    const num = document.getElementById('modalStudentNumber').value.trim();
+    const course = document.getElementById('modalCourse').value;
+
+    if (!isValidStudentNumber(num)) {
+        alert('Invalid student number format.');
+        return;
+    }
+
+    if (!course) {
+        alert('Please select a course.');
+        return;
+    }
+
+    // Populate hidden fields
+    document.getElementById('visitorStudentNumber').value = num;
+    document.getElementById('visitorCourse').value = course;
+
+    // Show badge
+    document.getElementById('badgeStudentNumber').textContent = num;
+    document.getElementById('badgeCourse').textContent = course;
+    document.getElementById('studentBadge').style.display = 'flex';
+
+    closeStudentModal();
+    visitorSyncState();
+}
+
+function cancelStudentModal() {
+    closeStudentModal();
+    // If no student data yet, uncheck the box
+    const isStudent = document.getElementById('visitorIsStudent');
+    const studentNum = document.getElementById('visitorStudentNumber').value.trim();
+    if (isStudent && !studentNum) {
+        isStudent.checked = false;
+    }
+    visitorSyncState();
+}
+
 async function acceptVisitorAndProceed() {
     closeVisitorConfirm();
 
     const name  = document.getElementById('visitorName').value.trim();
     const email = document.getElementById('visitorEmail').value.trim();
     const phone = document.getElementById('visitorPhone').value.trim();
+    const student_number = document.getElementById('visitorStudentNumber').value.trim();
+    const course = document.getElementById('visitorCourse').value;
 
     // Validate against existing clients before proceeding
     console.log('Checking for duplicate name/email...');
@@ -126,7 +212,7 @@ async function acceptVisitorAndProceed() {
         const checkResponse = await fetch('../backend/checkClientDuplicate.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, phone }),
+            body: JSON.stringify({ name, email, phone, student_number, course }),
             cache: 'no-store'
         });
 
@@ -809,6 +895,39 @@ document.addEventListener('DOMContentLoaded', function() {
             acceptVisitorAndProceed();
         });
     }
+
+    // Student checkbox toggle
+    document.getElementById('visitorIsStudent')?.addEventListener('change', function() {
+        if (this.checked) {
+            openStudentModal();
+        } else {
+            // Clear student data
+            document.getElementById('visitorStudentNumber').value = '';
+            document.getElementById('visitorCourse').value = '';
+            document.getElementById('studentBadge').style.display = 'none';
+            visitorSyncState();
+        }
+    });
+
+    // Student badge edit
+    document.getElementById('studentBadgeEdit')?.addEventListener('click', openStudentModal);
+
+    // Student modal buttons
+    document.getElementById('studentModalConfirm')?.addEventListener('click', confirmStudentModal);
+    document.getElementById('studentModalCancel')?.addEventListener('click', cancelStudentModal);
+
+    // Student checkbox row click
+    document.querySelector('.student-checkbox-row')?.addEventListener('click', function() {
+        const checkbox = document.getElementById('visitorIsStudent');
+        if (checkbox) checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    });
+
+    // Student modal input validation
+    document.getElementById('modalStudentNumber')?.addEventListener('input', function() {
+        const hint = document.getElementById('modalStudentNumberHint');
+        if (hint) hint.style.display = isValidStudentNumber(this.value.trim()) ? 'none' : 'block';
+    });
 
     const captureBtn = document.getElementById('captureBtn');
     if (captureBtn) {

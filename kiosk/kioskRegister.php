@@ -218,11 +218,85 @@ require_once __DIR__ . '/../config.php';
                     <div id="visitorEmailHint" class="vf-hint" style="display:none;">Please enter a valid email address</div>
                 </label>
 
+                <!-- Student checkbox -->
+                <label class="vf-field">
+                    <div class="student-checkbox-row">
+                        <input type="checkbox" id="visitorIsStudent" />
+                        <div class="vf-label">Are you a student?</div>
+                    </div>
+                    <!-- Badge shown after student modal is confirmed -->
+                    <div id="studentBadge" class="student-badge" style="display:none;">
+                        <span class="badge-icon">🎓</span>
+                        <div class="badge-info">
+                            <div class="badge-name" id="badgeStudentNumber"></div>
+                            <div class="badge-course" id="badgeCourse"></div>
+                        </div>
+                        <button type="button" class="badge-edit" id="studentBadgeEdit" title="Edit student info">✏️</button>
+                    </div>
+                </label>
+
+                <!-- Hidden fields populated by student modal -->
+                <input type="hidden" id="visitorStudentNumber" />
+                <input type="hidden" id="visitorCourse" />
+
                 <div class="vf-actions">
                     <button id="visitorProceed" class="primary-btn" type="button" disabled>Proceed to Face Capture</button>
                     <a href="../includes/kioskSelect.php" class="back-btn" title="Go back to selection">Go Back</a>
                 </div>
             </form>
+        </div>
+
+        <!-- ===== STUDENT DETAILS MODAL ===== -->
+        <div id="studentModal" class="vf-modal" style="display:none">
+            <div class="vf-modal-card">
+                <h2>STUDENT DETAILS</h2>
+                <p class="student-modal-subtitle">Please enter your student information</p>
+
+                <label class="vf-field">
+                    <div class="vf-label">Student Number</div>
+                    <input type="text" id="modalStudentNumber" placeholder="20001234-S" maxlength="20" />
+                    <div id="modalStudentNumberHint" class="vf-hint" style="display:none;color:#ff0000">Format: 20001234-S (year 2000–2026)</div>
+                </label>
+
+                <label class="vf-field">
+                    <div class="vf-label">Course</div>
+                    <select id="modalCourse">
+                        <option value="">-- Select Course --</option>
+                        <option>BA COMM</option>
+                        <option>BA POS</option>
+                        <option>BPA</option>
+                        <option>BPA ECGE</option>
+                        <option>BECED</option>
+                        <option>BSA</option>
+                        <option>BSAIS</option>
+                        <option>BSBA FMGT</option>
+                        <option>BSBA HRM</option>
+                        <option>BSBA MKTG</option>
+                        <option>BSCS</option>
+                        <option>BS CRIM</option>
+                        <option>BSEMC</option>
+                        <option>BS ENTREP</option>
+                        <option>BSHM</option>
+                        <option>BSISM</option>
+                        <option>BSIS</option>
+                        <option>BSIT</option>
+                        <option>BS MATH</option>
+                        <option>BSOAD</option>
+                        <option>BS PSY</option>
+                        <option>BSSW</option>
+                        <option>BSTM</option>
+                        <option>BSE ENG</option>
+                        <option>BSE ENG-CHI</option>
+                        <option>BSE SCI</option>
+                        <option>BTLED HE</option>
+                    </select>
+                </label>
+
+                <div class="student-modal-actions">
+                    <button id="studentModalConfirm" class="vf-modal-confirm" type="button">Confirm</button>
+                    <button id="studentModalCancel" class="vf-modal-ghost" type="button">Cancel</button>
+                </div>
+            </div>
         </div>
 
         <!-- CONFIRMATION MODAL -->
@@ -235,6 +309,7 @@ require_once __DIR__ . '/../config.php';
                 <div class="vf-confirm-row"><strong>Name:</strong>  <span id="confirmName"></span></div>
                 <div class="vf-confirm-row"><strong>Phone:</strong> <span id="confirmPhone"></span></div>
                 <div class="vf-confirm-row"><strong>Email:</strong> <span id="confirmEmail"></span></div>
+                <div class="vf-confirm-row" id="confirmStudentRow" style="display:none;"><strong>Student:</strong> <span id="confirmStudent"></span></div>
 
                 <div class="vf-actions" style="margin-top:20px">
                     <button id="visitorConfirm" class="confirm-btn" type="button">Confirm &amp; Start Face Capture</button>
@@ -274,6 +349,61 @@ require_once __DIR__ . '/../config.php';
 
             <p id="progress">Images captured: <span id="count">0</span> / 5</p>
             <div id="statusMessage" role="status" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <!-- ===== STUDENT DETAILS MODAL ===== -->
+    <div id="studentModal" style="display:none;">
+        <div class="vf-modal-card">
+            <h2>STUDENT DETAILS</h2>
+            <p class="student-modal-subtitle">Please enter your student information</p>
+
+            <label class="vf-field">
+                <div class="vf-label">Student Number</div>
+                <input type="text" id="modalStudentNumber" placeholder="20001234-S" maxlength="20" />
+                <div id="modalStudentNumberHint" class="vf-hint" style="display:none;color:#ff0000">
+                    Format: 20001234-S (year 2000–2026)
+                </div>
+            </label>
+
+            <label class="vf-field">
+                <div class="vf-label">Course</div>
+                <select id="modalCourse">
+                    <option value="">-- Select Course --</option>
+                    <option>BA COMM</option>
+                    <option>BA POS</option>
+                    <option>BPA</option>
+                    <option>BPA ECGE</option>
+                    <option>BECED</option>
+                    <option>BSA</option>
+                    <option>BSAIS</option>
+                    <option>BSBA FMGT</option>
+                    <option>BSBA HRM</option>
+                    <option>BSBA MKTG</option>
+                    <option>BSCS</option>
+                    <option>BS CRIM</option>
+                    <option>BSEMC</option>
+                    <option>BS ENTREP</option>
+                    <option>BSHM</option>
+                    <option>BSISM</option>
+                    <option>BSIS</option>
+                    <option>BSIT</option>
+                    <option>BS MATH</option>
+                    <option>BSOAD</option>
+                    <option>BS PSY</option>
+                    <option>BSSW</option>
+                    <option>BSTM</option>
+                    <option>BSE ENG</option>
+                    <option>BSE ENG-CHI</option>
+                    <option>BSE SCI</option>
+                    <option>BTLED HE</option>
+                </select>
+            </label>
+
+            <div class="student-modal-actions">
+                <button id="studentModalConfirm" class="vf-modal-confirm" type="button">Confirm</button>
+                <button id="studentModalCancel"  class="vf-modal-ghost"   type="button">Cancel</button>
+            </div>
         </div>
     </div>
 
