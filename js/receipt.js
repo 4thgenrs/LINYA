@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!window.FACE_LOGGED) {
         const qrBlock = document.querySelector('.qr-block');
         if (qrBlock) qrBlock.style.display = 'none';
+        qrImg.style.display = 'none';
       } else {
         const googleQr =
           `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(payloadB64Url)}&chld=L|1`;
