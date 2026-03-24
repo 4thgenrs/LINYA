@@ -384,6 +384,7 @@ require_once __DIR__ . '/../config.php';
                 input.addEventListener('keyup',     function () { this.dataset.cursorPos = this.selectionStart; });
                 input.addEventListener('click',     function () { this.dataset.cursorPos = this.selectionStart; activeInput = this; showKeyboard(); });
                 input.addEventListener('focus',     function () { this.dataset.cursorPos = this.selectionStart; activeInput = this; showKeyboard(); });
+                input.addEventListener('input',     function () { this.dataset.cursorPos = this.selectionStart; });
             });
         }
 
@@ -402,7 +403,11 @@ require_once __DIR__ . '/../config.php';
 
         function insertText(text) {
             if (!activeInput) return;
-            const cur = activeInput.selectionStart, val = activeInput.value;
+            let cur = activeInput.selectionStart;
+            const savedPos = Number.parseInt(activeInput.dataset.cursorPos, 10);
+            if (!Number.isInteger(cur) || cur < 0) cur = Number.isInteger(savedPos) ? savedPos : activeInput.value.length;
+            if (cur > activeInput.value.length) cur = activeInput.value.length;
+            const val = activeInput.value;
             if (isShifted && /[a-z]/.test(text)) text = text.toUpperCase();
             activeInput.value = val.substring(0, cur) + text + val.substring(cur);
             const np = cur + text.length;
@@ -415,7 +420,11 @@ require_once __DIR__ . '/../config.php';
 
         function backspace() {
             if (!activeInput) return;
-            const cur = activeInput.selectionStart, val = activeInput.value;
+            let cur = activeInput.selectionStart;
+            const savedPos = Number.parseInt(activeInput.dataset.cursorPos, 10);
+            if (!Number.isInteger(cur) || cur < 0) cur = Number.isInteger(savedPos) ? savedPos : activeInput.value.length;
+            if (cur > activeInput.value.length) cur = activeInput.value.length;
+            const val = activeInput.value;
             if (cur > 0) {
                 activeInput.value = val.substring(0, cur - 1) + val.substring(cur);
                 const np = cur - 1;
